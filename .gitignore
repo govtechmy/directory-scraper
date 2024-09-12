@@ -8,6 +8,8 @@ env/
 venv/
 .venv/
 
+output/
+
 # Scrapy-specific files
 .scrapy/
 

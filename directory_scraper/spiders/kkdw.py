@@ -3,7 +3,7 @@ import json
 from scrapy_playwright.page import PageMethod
 import logging
 
-class KKWDDynamicTableSpider(scrapy.Spider):
+class KKWDSpider(scrapy.Spider):
     name = "kkdw"
     
     def start_requests(self):
