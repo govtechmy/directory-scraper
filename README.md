@@ -1,5 +1,13 @@
 # Directory Scraper
 
+## Overview
+
+This project is a web scraping tool built using Scrapy, designed to scrape directory listings and save the results in JSON format. It uses spiders to collect specific information from websites and outputs the data in a structured format.
+
+## Getting Started
+
+Follow the instructions below to set up the environment and run the scraper.
+
 Make sure you have the following installed:
 - **Python 3.11**
 
