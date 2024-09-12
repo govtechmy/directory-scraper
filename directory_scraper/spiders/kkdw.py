@@ -90,14 +90,14 @@ class KKWDDynamicTableSpider(scrapy.Spider):
         for row in data:
             yield {
                 'agency': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
-                'no': row[0],
-                'wdt_ID': row[1],
+                #'no': row[0],
+                #'wdt_ID': row[1],
                 'division': row[2],
                 'unit': row[6],
-                'photo': self.extract_image_url(row[3]),
+                #'photo': self.extract_image_url(row[3]),
                 'person_name': row[4],
                 'person_position': row[5],
-                'personal_phone': row[7],
+                #'personal_phone': row[7],
                 'person_phone': row[8],
                 'person_email': self.extract_email(row[9]),
             }

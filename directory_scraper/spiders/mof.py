@@ -72,12 +72,12 @@ class MOFSpider(scrapy.Spider):
             yield {
                 'agency': agency,
                 'division': division,
-                'division_address': division_address,
-                'division_phone': division_phone,
-                'division_fax': division_fax,
+                #'division_address': division_address,
+                #'division_phone': division_phone,
+                #'division_fax': division_fax,
                 'unit': current_unit,  
-                'unit_address': unit_address if unit_address else None,  #store None if missing
-                'unit_phone': unit_phone if unit_phone else None,
+                #'unit_address': unit_address if unit_address else None,  #store None if missing
+                #'unit_phone': unit_phone if unit_phone else None,
                 'person_name': person_name,
                 'person_phone': person_phone if person_phone else None,  #store None if missing
                 'person_position': person_position,

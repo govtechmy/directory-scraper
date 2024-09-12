@@ -51,8 +51,8 @@ class JPMSpider(scrapy.Spider):
                 yield {
                     'agency': agency,
                     'division': division,
-                    'division_address': division_address,
-                    'division_phone': division_phone,
+                    #'division_address': division_address,
+                    #'division_phone': division_phone,
                     'person_name': person_name,
                     'unit': unit,
                     'person_phone': person_phone,
