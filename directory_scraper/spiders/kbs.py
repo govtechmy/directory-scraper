@@ -1,8 +1,8 @@
 import re
 import scrapy
 
-class MOFSpider(scrapy.Spider):
-    name = 'mof'
+class KBSSpider(scrapy.Spider):
+    name = 'kbs'
     start_urls = [
         "https://www.kbs.gov.my/1-info-kbs/pengurusan-tertinggi.html",
         "https://www.kbs.gov.my/1-info-kbs/ketua-jabatan-agensi.html",
