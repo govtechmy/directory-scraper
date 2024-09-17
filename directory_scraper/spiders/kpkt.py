@@ -78,8 +78,8 @@ class KPKTSpider(scrapy.Spider):
                 unit = unit_panel.css('h5.panel-title a::text').get().strip()
                 
                 #set unit to None if unit==division. redundency
-                if division == main_division:
-                    division = None
+                #if division == main_division:
+                #    division = None
 
                 rows = unit_panel.css('table tbody tr')
                 for row in rows:
