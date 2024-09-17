@@ -1,20 +1,17 @@
-#script works well! but it excludes some seksyen when paginating. i will improve this by choosing "semua" instead of "10" for items shown for every page. see result48.json
 import scrapy
 from scrapy_playwright.page import PageMethod
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urlencode
 import base64
 import re
 
-class KPKMMainSpider(scrapy.Spider):
+class KPKMSpider(scrapy.Spider):
     name = 'kpkm'
     allowed_domains = ['kpkm.gov.my']
-    start_urls = ['https://www.kpkm.gov.my/bm/direktori-pegawai']
+    start_urls = ['https://www.kpkm.gov.my/bm/direktori-pegawai?limit=0']
 
     def __init__(self, *args, **kwargs):
-        super(KPKMMainSpider, self).__init__(*args, **kwargs)
+        super(KPKMSpider, self).__init__(*args, **kwargs)
         self.seen_items = set()
-        self.visited_pages = set()
-        self.main_url_path = urlparse(self.start_urls[0]).path.rstrip('/')
         self.item_count = 0
 
     def start_requests(self):
@@ -29,7 +26,6 @@ class KPKMMainSpider(scrapy.Spider):
                     "playwright_page_methods": [
                         PageMethod("wait_for_selector", 'div.person'),
                     ],
-                    "page_number": 1,
                 },
             )
 
@@ -37,13 +33,12 @@ class KPKMMainSpider(scrapy.Spider):
         page = response.meta["playwright_page"]
         await page.wait_for_selector('div.person')
 
-        current_page = response.meta.get("page_number", 1)
-        print(f"\nProcessing page {current_page} of URL: {response.url}")
+        print(f"\nProcessing URL: {response.url}")
 
         #process each heading group (division/unit section)
         heading_groups = response.xpath('//div[@class="heading-group"]')
         for group in heading_groups:
-
+            
             division = None #init
             unit = None #init
 
@@ -61,7 +56,7 @@ class KPKMMainSpider(scrapy.Spider):
             else:
                 strong_text = None
 
-            #extract texts after <strong>, including sibling divs
+            #extract texts after <strong>, including the sibling divs
             text_after_strong = []
 
             #get the parent element of <strong>
@@ -84,7 +79,7 @@ class KPKMMainSpider(scrapy.Spider):
                 if not re.search(r'(Aras|Wisma|No\.|Persiaran|Presint|Putrajaya|Telefon|Faks|Malaysia|\d{5})', text, re.IGNORECASE):
                     division_candidates.append(text)
 
-            #determine division and unit
+            #determine division and unit if both exists, and if only one exists
             if strong_text:
                 if division_candidates:
                     unit = strong_text
@@ -101,7 +96,7 @@ class KPKMMainSpider(scrapy.Spider):
                     division = heading_text
                     unit = None
 
-            #extract person details within this heading group
+            #extract person details within this heading group.
             persons = self.get_persons_for_heading_group(group)
             for person in persons:
                 person_name = person.xpath('.//div[contains(@class, "fieldname")]/span/text()').get()
@@ -112,56 +107,23 @@ class KPKMMainSpider(scrapy.Spider):
                 person_email = self.extract_email(email_element)
 
                 item = {
-                    'agency': "KPKM",
+                    'agency': "KEMENTERIAN PERTANIAN DAN KETERJAMINAN MAKANAN",
                     'person_name': person_name,
                     'division': division,
                     'unit': unit,
                     'person_position': person_position,
                     'person_phone': person_phone,
                     'person_email': person_email,
-                    'url': response.url,
-                    'page_number': current_page
+                    #'url': response.url,
                 }
 
-                #no duplicates
+                #check duplicates
                 item_tuple = tuple(item.values())
                 if item_tuple not in self.seen_items:
                     self.seen_items.add(item_tuple)
                     self.item_count += 1
                     print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
                     yield item
-
-        #pagination handling within the main page
-        pagination_links = response.xpath('//nav[@class="pagination__wrapper"]//a[@class="page-link"]/@href').getall()
-
-        for link in pagination_links:
-            full_link = response.urljoin(link)
-            parsed_url = urlparse(full_link)
-            next_page_path = parsed_url.path.rstrip('/')
-
-            #check if the path is exactly the same as the main URL's path
-            if next_page_path == self.main_url_path:
-                if full_link not in self.visited_pages:
-                    self.visited_pages.add(full_link)
-                    query_params = parse_qs(parsed_url.query)
-                    start_param = query_params.get('start', [0])[0]
-                    next_page_number = int(int(start_param) / 10) + 1  #assuming 10 items per page
-                    print(f"Next page URL: {full_link}")
-                    yield scrapy.Request(
-                        url=full_link,
-                        callback=self.parse_page,
-                        meta={
-                            "playwright": True,
-                            "playwright_include_page": True,
-                            "playwright_page_methods": [
-                                PageMethod("wait_for_selector", 'div.person'),
-                            ],
-                            "page_number": next_page_number,
-                        },
-                        dont_filter=True
-                    )
-            else:
-                print(f"Skipping link outside main URL: {full_link}")
 
         await page.close()
 
@@ -176,7 +138,7 @@ class KPKMMainSpider(scrapy.Spider):
                 persons.extend(person_elements)
         return persons
 
-    def extract_email(self, email_element):
+    def extract_email(self, email_element): #email using joomla. needs to be decode.
         if not email_element:
             return None
 
