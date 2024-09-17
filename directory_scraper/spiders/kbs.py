@@ -22,7 +22,7 @@ class KBSSpider(scrapy.Spider):
             in response.css("div[class^='sppb-person-introtext']").getall()
         ]
 
-        directory_lst = list()
+        # directory_lst = list()
         for name, data in zip(name_lst, data_lst):
             person_dict = {
                 "agency": phone_lst[0] if (phone_lst := [string for string in data if re.match(r"^Kementerian", string)]) else "Kementerian Belia dan Sukan",
@@ -33,6 +33,4 @@ class KBSSpider(scrapy.Spider):
                 "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else None,
                 "person_email": email_lst[0] if (email_lst := [string.replace(" ", "") for string in data if re.match(email_regex, string)]) else None
             }
-            directory_lst.append(person_dict)
-
-        yield directory_lst
+            yield person_dict
