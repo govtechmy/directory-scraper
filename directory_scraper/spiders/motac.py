@@ -31,6 +31,7 @@ class MOTACSpider(CrawlSpider):
             phone = phone_str[0].strip() if (phone_str := re.findall(pattern=phone_regex, string=datapoint[-1])) else None
 
             person_data = {
+                "agency": "KEMENTERIAN PELANCONGAN, SENI DAN BUDAYA",
                 "person_name": name,
                 "person_email": email,
                 "person_phone": phone,
