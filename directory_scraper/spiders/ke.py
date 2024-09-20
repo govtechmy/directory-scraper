@@ -7,12 +7,21 @@ class KESpider(scrapy.Spider):
     allowed_domains = ['ekonomi.gov.my']
     start_urls = ['https://www.ekonomi.gov.my/ms/profil-jabatan/organisasi/direktori']
 
+    #Do manual mapping for "unit" key. To map "unit" with its relevant "division"
+    division_unit_mapping = {
+        'Seksyen Perakaunan Pengurusan': 'Bahagian Akaun',
+        'Seksyen Pemantauan dan Perundingan': 'Bahagian Akaun',
+        'Seksyen Perakaunan Kewangan': 'Bahagian Akaun',
+        'Seksyen Pembangunan Sumber Manusia (Latihan)': 'Bahagian Sumber Manusia',
+        'Seksyen Pengurusan Sumber Manusia (Perkhidmatan)': 'Bahagian Sumber Manusia'
+    }
+
     def parse(self, response):
         last_page_link = response.css('a[rel="last"]::attr(href)').get()
         if last_page_link:
             total_pages = int(re.search(r'page=(\d+)', last_page_link).group(1)) #find the last page
         else:
-            total_pages = 0 #set 0
+            total_pages = 0  #set 0
 
         #AJAX endpoint where the data is loaded dynamically via POST
         ajax_url = 'https://www.ekonomi.gov.my/ms/views/ajax?_wrapper_format=drupal_ajax'
@@ -71,12 +80,22 @@ class KESpider(scrapy.Spider):
                     person_email = row.css('td:nth-child(4)::text').get('').strip() + '@ekonomi.gov.my'
                     person_phone = row.css('td:nth-child(5)::text').get('').strip()
 
+                    #check if the division is in the 'division_unit_mapping'
+                    if division in self.division_unit_mapping:
+                        unit = division  #set the current division as the "unit"
+                        division = self.division_unit_mapping[division]  #then,map the correct "division"
+                    else:
+                        unit = None
+
                     yield {
+                        'agency': "KEMENTERIAN EKONOMI",
                         'person_name': person_name,
                         'person_position': person_position,
                         'division': division,
+                        'unit': unit,
                         'person_email': person_email,
-                        'person_phone': person_phone
+                        'person_phone': person_phone,
+                        #'page': response.meta['page'],
                     }
 
         #print(f"Processed page {response.meta['page']}")
