@@ -1,23 +1,34 @@
 import scrapy
 
 class KlnSpider(scrapy.Spider):
-    name = 'kln_v9'
+    name = 'kln_v11'
     allowed_domains = ['direktori.kln.gov.my']
-    start_urls = ['https://direktori.kln.gov.my/?m=wisma+putra&j=Pejabat+Menteri+Luar+Negeri+%28WP1+Aras+3%29'] #Wisma Putra
+    start_urls = [
+        'https://direktori.kln.gov.my/?m=wisma+putra&j=Pejabat+Menteri+Luar+Negeri+%28WP1+Aras+3%29', #Wisma Putra
+        'https://direktori.kln.gov.my/?m=idfr&j=Institut+Diplomasi+dan+Hubungan+Luar+Negeri', #IDFR
+        'https://direktori.kln.gov.my/?m=searcct&j=Pusat+Serantau+Asia+Tenggara+Bagi+Mencegah+Keganasan', #SEARCCT
+    ]
 
     def parse(self, response):
 
-        divisions = response.css('select.form-select:nth-of-type(1) option')
-
-        for division in divisions:
-            division_name = division.css('::text').get().strip()
-            division_value = division.css('::attr(value)').get()
-            if division_value:
-                division_link = f"https://direktori.kln.gov.my/?m=wisma+putra&j={division_value}"
-                yield scrapy.Request(division_link, callback=self.parse_division, meta={'division_name': division_name})
+        #check if the start URL is "idfr" or "searcct" - these url don't require division links (the url is sufficient for scraping all persons without needing to "follow" division links)
+        if 'idfr' in response.url or 'searcct' in response.url:
+            division_name = response.url.split('j=')[1].replace('+', ' ').strip()
+            print(f"Direct parsing for: {division_name}")
+            yield from self.parse_person_info(response, division_name)  #directly parse the person information to parse_person_info() (parse_division() is not needed)
+        else:
+            #handle cases where we need to follow division links (only "Wisma Putra" atm)
+            divisions = response.css('select.form-select:nth-of-type(1) option')
+            for division in divisions:
+                division_name = division.css('::text').get().strip()
+                division_value = division.css('::attr(value)').get()
+                if division_value:
+                    division_link = f"https://direktori.kln.gov.my/?m=wisma+putra&j={division_value}"
+                    yield scrapy.Request(division_link, callback=self.parse_division, meta={'division_name': division_name})
 
     def parse_division(self, response):
         division_name = response.meta['division_name']
+        print(f"\n\nScraping division: {division_name}, URL: {response.url}")
 
         subdivision_blocks = response.css('ul.comments-list')
 
@@ -46,7 +57,7 @@ class KlnSpider(scrapy.Spider):
                 'agency': 'KEMENTERIAN LUAR NEGERI',
                 'person_name': person_name,
                 'division': division_name,
-                'unit': subdivision_name if division_name!=subdivision_name else None,
+                'unit': subdivision_name if division_name != subdivision_name else None,
                 'person_position': person_position,
                 'person_phone': person_phone,
                 'person_email': person_email,
@@ -54,6 +65,38 @@ class KlnSpider(scrapy.Spider):
                 #'url': response.url
             }
 
+    def parse_person_info(self, response, division_name):
+        """Directly scrape person info when the 'start URL' is sufficient to get all persons"""
+        print(f"Parsing direct person info for {division_name}")
+        
+        subdivision_blocks = response.css('ul.comments-list')
 
-#Wisma Putra (/)
-#IDFR, Searcct, Pejabat Perwakilan (X)
+        for subdivision_block in subdivision_blocks:
+            subdivision_name = subdivision_block.css('h5.comments-title::text').get('').strip()
+            person_entries = subdivision_block.css('li.comment')
+
+            for person in person_entries:
+                person_name = person.css('a.author-name::text').get('').strip()
+                person_position = person.css('span.date::text').get('').strip()
+
+                person_email = person.xpath('.//i[@class="fa fa-envelope"]/following-sibling::text()').get('').strip().lstrip(':').strip()
+                person_phone = person.xpath('.//i[@class="fa fa-phone"]/following-sibling::text()').get('').strip().lstrip(':').strip()
+
+                image_url = person.css('.comment-avatar img::attr(src)').get()
+                if image_url:
+                    image_url = response.urljoin(image_url)
+
+                yield {
+                    'agency': 'KEMENTERIAN LUAR NEGERI',
+                    'person_name': person_name,
+                    'division': division_name,
+                    'unit': subdivision_name if division_name != subdivision_name else None,
+                    'person_position': person_position,
+                    'person_phone': person_phone,
+                    'person_email': person_email,
+                    #'image_url': image_url,
+                    #'url': response.url
+                }
+
+#Wisma Putra, IDFR, Searcct (/)
+#Pejabat Perwakilan (X)
