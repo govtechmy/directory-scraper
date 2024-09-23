@@ -42,6 +42,10 @@ class KKWDSpider(scrapy.Spider):
             #calculate number of pages (assume 10 records per page as of that website)
             num_pages = -(-total_records // 10)
 
+            wdt_nonce = await page.evaluate('''
+                    () => document.querySelector('input[name="wdtNonceFrontendServerSide_106"]').value
+                    ''')
+
             for page_num in range(num_pages):
                 ajax_url = 'https://www.rurallink.gov.my/wp-admin/admin-ajax.php?action=get_wdtable&table_id=106'
                 
@@ -55,7 +59,7 @@ class KKWDSpider(scrapy.Spider):
                     "start": page_num * 10,
                     "length": 10,
                     "search": {"value": "", "regex": "false"},
-                    "wdtNonce": "619a57c70f", #"9e65f5ca8e",
+                    "wdtNonce": wdt_nonce,
                     "sRangeSeparator": "|"
                 }
 
