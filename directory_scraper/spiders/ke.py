@@ -92,7 +92,7 @@ class KESpider(scrapy.Spider):
                     #check if the division is in the 'division_unit_mapping'
                     if division in self.division_unit_mapping:
                         unit = division  #set the current division as the "unit"
-                        division = self.division_unit_mapping[division]  # Then map the correct "division"
+                        division = self.division_unit_mapping[division]  #then, map the correct "division"
                     else:
                         unit = None
 
@@ -112,4 +112,5 @@ class KESpider(scrapy.Spider):
                         'unit': unit,
                         'person_email': person_email,
                         'person_phone': person_phone,
+                        #'page': response.meta['page']
                     }
