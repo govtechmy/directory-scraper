@@ -23,10 +23,12 @@ class KBSSpider(scrapy.Spider):
         ]
 
         # directory_lst = list()
-        for name, data in zip(name_lst, data_lst):
+        for person_order, (name, data) in enumerate(zip(name_lst, data_lst)):
             person_dict = {
                 "agency": phone_lst[0] if (phone_lst := [string for string in data if re.match(r"^Kementerian", string)]) else "Kementerian Belia dan Sukan",
                 "person_name": name,
+                "person_sort_order": person_order+1,
+                "division_sort_order": self.start_urls.index(response.url)+1,
                 "division": div_lst[0] if (div_lst := [string for string in data if string.startswith("Bahagian")]) else None,
                 "unit": div_lst[0] if (div_lst := [string for string in data if re.match(unit_regex, string)]) else None,
                 "person_position": data[0],
