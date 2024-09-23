@@ -7,6 +7,12 @@ class KESpider(scrapy.Spider):
     allowed_domains = ['ekonomi.gov.my']
     start_urls = ['https://www.ekonomi.gov.my/ms/profil-jabatan/organisasi/direktori']
 
+    person_sort_order = 0 #init
+    division_sort_order = 0 #init
+
+    #Dictionary to track divisions and their assigned sort order
+    division_tracker = {}
+
     #Do manual mapping for "unit" key. To map "unit" with its relevant "division"
     division_unit_mapping = {
         'Seksyen Perakaunan Pengurusan': 'Bahagian Akaun',
@@ -19,9 +25,9 @@ class KESpider(scrapy.Spider):
     def parse(self, response):
         last_page_link = response.css('a[rel="last"]::attr(href)').get()
         if last_page_link:
-            total_pages = int(re.search(r'page=(\d+)', last_page_link).group(1)) #find the last page
+            total_pages = int(re.search(r'page=(\d+)', last_page_link).group(1))  # Find the last page
         else:
-            total_pages = 0  #set 0
+            total_pages = 0  # Set 0 if no pagination
 
         #AJAX endpoint where the data is loaded dynamically via POST
         ajax_url = 'https://www.ekonomi.gov.my/ms/views/ajax?_wrapper_format=drupal_ajax'
@@ -34,7 +40,7 @@ class KESpider(scrapy.Spider):
             'view_path': '/node/14',
             'view_base_path': '',
             'view_dom_id': 'ad0c89cf4789151f31ca8a9cc808abadeee0d85d05109cf1ead1d8efe5a86cb3',
-            'pager_element': '0', #'page' parameter is to be updated when looping, since we need to increment the page number
+            'pager_element': '0',  # 'page' parameter is to be updated when looping, since we need to increment the page number
             '_drupal_ajax': '1',
             'ajax_page_state[theme]': 'mea',
             'ajax_page_state[theme_token]': '',
@@ -49,17 +55,18 @@ class KESpider(scrapy.Spider):
             'Referer': 'https://www.ekonomi.gov.my/ms/profil-jabatan/organisasi/direktori',
         }
 
-        for page in range(total_pages + 1):  #increment +1 the page number until the last page. loop from 0-last page
+        for page in range(total_pages + 1):  #increment +1 the page number until the last page, loop from 0-last page
             payload = base_payload.copy()
             payload['page'] = str(page)
-            
+
             yield scrapy.FormRequest(
                 url=ajax_url,
                 method='POST',
                 formdata=payload,
                 headers=headers,
                 callback=self.parse_ajax_response,
-                meta={'page': page} #update 'page' parameter
+                meta={'page': page},  #update 'page' parameter
+                priority=-page  #priority(earlier pages have higher priority)
             )
 
     def parse_ajax_response(self, response):
@@ -70,7 +77,6 @@ class KESpider(scrapy.Spider):
             if item.get('command') == 'insert' and item.get('data'):
                 html_content = scrapy.Selector(text=item['data'])
                 
-                #extract table rows
                 rows = html_content.css('table tbody tr')
                 
                 for row in rows:
@@ -80,22 +86,30 @@ class KESpider(scrapy.Spider):
                     person_email = row.css('td:nth-child(4)::text').get('').strip() + '@ekonomi.gov.my'
                     person_phone = row.css('td:nth-child(5)::text').get('').strip()
 
+                    #increment person_sort_order for each person
+                    self.person_sort_order += 1
+
                     #check if the division is in the 'division_unit_mapping'
                     if division in self.division_unit_mapping:
                         unit = division  #set the current division as the "unit"
-                        division = self.division_unit_mapping[division]  #then,map the correct "division"
+                        division = self.division_unit_mapping[division]  # Then map the correct "division"
                     else:
                         unit = None
 
+                    #track by division only, and ignore unit in this case
+                    if division not in self.division_tracker:
+                        #if it's a new division, increment the division_sort_order and store it
+                        self.division_sort_order += 1
+                        self.division_tracker[division] = self.division_sort_order
+
                     yield {
                         'agency': "KEMENTERIAN EKONOMI",
+                        'person_sort_order': self.person_sort_order,
+                        'division_sort_order': self.division_tracker[division],
                         'person_name': person_name,
                         'person_position': person_position,
                         'division': division,
                         'unit': unit,
                         'person_email': person_email,
                         'person_phone': person_phone,
-                        #'page': response.meta['page'],
                     }
-
-        #print(f"Processed page {response.meta['page']}")
