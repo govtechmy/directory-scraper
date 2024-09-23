@@ -114,6 +114,8 @@ class KLNSpider(scrapy.Spider):
                 'person_position': person_position if person_position else None,
                 'person_phone': person_phone if person_phone else None,
                 'person_email': person_email if person_email else None,
+                #'image_url': image_url if image_url else None,
+                #'url': response.url
             }
 
     def parse_person_info(self, response, division_name):
@@ -148,6 +150,8 @@ class KLNSpider(scrapy.Spider):
                     'person_position': person_position if person_position else None,
                     'person_phone': person_phone if person_phone else None,
                     'person_email': person_email if person_email else None,
+                    #'image_url': image_url if image_url else None,
+                    #'url': response.url
                 }
 
 #Wisma Putra, IDFR, Searcct, Pejabat Perwakilan (/)
