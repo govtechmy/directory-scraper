@@ -15,6 +15,61 @@ class KPTSpider(CrawlSpider):
     "https://app.mohe.gov.my/direktori/jabatan/JPPKK",
     "https://app.mohe.gov.my/direktori/jabatan/AKEPT/161"
     ]
+    
+    directory_urls = [
+        "https://app.mohe.gov.my/direktori/menteri/KPT/68",
+        "https://app.mohe.gov.my/direktori/menteri/KPT/74",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/67",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/73",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/72",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/63",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/80",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/60",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/62",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/164",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/165",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/59",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/61",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/58",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/66",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/69",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/75",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/81",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/152",
+        "https://app.mohe.gov.my/direktori/jabatan/KPT/167",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/89",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/90",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/91",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/98",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/102",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/100",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/101",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/93",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/95",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/96",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/94",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/103",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/99",
+        "https://app.mohe.gov.my/direktori/jabatan/JPT/92",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/82",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/16",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/83",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/5",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/154",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/3",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/155",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/8",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/6",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/14",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/10",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/13",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/148",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/147",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/76",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/149",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/2",
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/160"
+    ]
 
     rules = (
         Rule(LinkExtractor(allow=r"/\d+?"), callback='parse_item'),
@@ -30,25 +85,34 @@ class KPTSpider(CrawlSpider):
         default_unit = None
 
         for row_idx, row in enumerate(response.css("tbody > tr")):
-            person_data = {"agency": "Kementerian Pendidikan Tinggi", "division": division, "unit": default_unit}
+            person_data = {
+                "agency": "Kementerian Pendidikan Tinggi",
+                "division": division,
+                "unit": default_unit,
+                "directory_sort_order": self.directory_urls.index(response.url)+1
+            }
             for idx, col in enumerate(row.css("td")):
                 if unit_name := col.css("b").getall():
                     default_unit = clean_html(unit_name[0])
                     continue
 
-                temp_col = [i for i in clean_html(col.getall()[0]).split("\n") if len(i) > 2]
-                if idx == 1:
+                temp_col = [i for i in clean_html(col.getall()[0]).split("\n") if len(i) > 1]
+                if idx == 0:
+                    person_data.update({
+                        "person_sort_order": temp_col.pop(0)[:-1] if temp_col else None
+                    })
+                elif idx == 1:
                     # print(col)
                     person_data.update({
                         "person_name": temp_col.pop(0) if temp_col else None,
                         "person_position": temp_col.pop(0) if temp_col else None,
                         "position_grade": temp_col.pop(0) if temp_col else None
                     })
-                if idx == 2:
+                elif idx == 2:
                     person_data.update({
                         "person_email": f"{temp_col.pop(0) if temp_col else None}{email_extension}"
                     })
-                if idx == 3:
+                elif idx == 3:
                     if department_number:
                         person_data.update({
                             "person_phone": f"{department_number[0]} ext {temp_col.pop(0) if temp_col else None}" 
@@ -57,5 +121,5 @@ class KPTSpider(CrawlSpider):
                         person_data.update({
                             "person_phone": f"{temp_col.pop(0) if temp_col else None}" 
                         })
-            if len(person_data) > 2:
+            if len(person_data) > 5:
                 yield person_data
