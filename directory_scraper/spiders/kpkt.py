@@ -5,6 +5,9 @@ class KPKTSpider(scrapy.Spider):
     name = "kpkt"
     start_urls = ['https://edirektori.kpkt.gov.my/edirektori/']
 
+    person_sort_order = 0  #init
+    division_sort_order = {}  #dictionary to store division sort order based on "grid number"
+
     def parse(self, response):
         #follow the url links using regex for the 'grid' pattern
         grid_links = response.css('a::attr(href)').re(r'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/\d+')
@@ -23,12 +26,13 @@ class KPKTSpider(scrapy.Spider):
 
         #loop thru each extracted grid link & visit each grid page to extract main_division
         for link in filtered_grid_links:
+            grid_number = int(re.search(r'/grid/(\d+)', link).group(1))  #extract the grid number. to set as value for priority
             yield scrapy.Request(
                 url=link,
                 callback=self.parse_grid_page,
-                meta={'grid_url': link}  # pass the grid URL to be used later
+                meta={'grid_url': link, 'grid_number': grid_number},  # pass the grid URL to be used later
+                priority=grid_number
             )
-
 
     def parse_grid_page(self, response):
         # Extract the main_division from the static HTML page
@@ -38,6 +42,10 @@ class KPKTSpider(scrapy.Spider):
         else:
             self.logger.warning(f'Main division not found on {response.url}, setting it as "Unknown"')
             main_division = "Unknown"
+
+        grid_number = response.meta['grid_number']
+        if main_division not in self.division_sort_order:
+            self.division_sort_order[main_division] = grid_number #division_sort_order=grid number
 
         grid_url = response.meta['grid_url']
         grid_id = re.search(r'/grid/(\d+)', grid_url).group(1)
@@ -51,7 +59,7 @@ class KPKTSpider(scrapy.Spider):
             url='https://edirektori.kpkt.gov.my/edirektori/index.php/home/ajx_dbah/',
             formdata=form_data,
             headers={
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0 Safari/537.36',
                 'Accept': 'text/html, */*; q=0.01',
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -76,7 +84,7 @@ class KPKTSpider(scrapy.Spider):
 
             for unit_panel in unit_panels:
                 unit = unit_panel.css('h5.panel-title a::text').get().strip()
-                
+
                 #set unit to None if unit==division. redundency
                 #if division == main_division:
                 #    division = None
@@ -90,16 +98,18 @@ class KPKTSpider(scrapy.Spider):
                     person_phone = row.css('td:nth-child(6)::text').get()
                     person_fax = row.css('td:nth-child(7)::text').get()
 
+                    self.person_sort_order += 1 #increment globally
+
                     yield {
                         'agency': "KEMENTERIAN PERUMAHAN DAN KERAJAAN TEMPATAN",
+                        'division_sort_order': self.division_sort_order[main_division],
+                        'person_sort_order': self.person_sort_order,
                         #'main_division': main_division,
                         'person_name': person_name,
                         'division': main_division,
                         'unit': f"{division} > {unit}" if division and (main_division != unit) else None,  # combine division + unit_detailed as one string.(only if 'division' exists, & division != unit)
-                        #'unit_detailed': unit,
-                        'person_position': person_position,
                         'person_phone': person_phone,
-                        'person_email': None, #email is stored as image. to solve later.
+                        'person_email': None,  #email is stored as image. to solve later.
                         #'person_fax': person_fax,
-                        #'url': grid_url  
+                        #'url': grid_url 
                     }
