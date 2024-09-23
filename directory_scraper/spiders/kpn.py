@@ -58,15 +58,21 @@ class KPNSpider(CrawlSpider):
                 team_type = "missing"
             return team_type
 
+        person_sort_order = 1
         for item in response.css("div[class='personlist'] > div"):
             if item.attrib["class"] == "heading-group":
                 current_team = item.css("span::text").get()
                 team_type = determine_team(item.css("span::text").get())
                 continue
             else:
-                person_data = {"agency": "Kementerian Perpaduan Negara", team_type: current_team}
+                person_data = {
+                    "agency": "Kementerian Perpaduan Negara", team_type: current_team,
+                    "person_sort_order": person_sort_order,
+                    "division_sort_order": [idx for idx, current_url in enumerate(self.start_urls) if str(response.url).startswith(current_url)][-1]
+                }
                 for data in item.css("div[class='personinfo'] > div > span"):
                     if data_type := data.attrib.get("aria-label", None):
                         person_data[name_mappings[data_type.lower()]] = data.css("span::text").get()
+                person_sort_order += 1
 
                 yield person_data
