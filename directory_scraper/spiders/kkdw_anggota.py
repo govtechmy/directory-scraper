@@ -128,8 +128,10 @@ class KKWD_AnggotaSpider(scrapy.Spider):
             division_sort_order = self.division_sort_mapping.get(division_name, 999)  #default to 999 if not found
 
             email = row[7] if row[7] else None
-            if email and "[at]infra[.]gov[.]my" not in email:
-                email = f"{email}@rurallink.gov.my"
+            if email:
+                email = email.replace('[at]', '@').replace('[.]', '.')
+                if "infra.gov.my" not in email:
+                    email = f"{email}@rurallink.gov.my"
 
             yield {
                 'agency': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
