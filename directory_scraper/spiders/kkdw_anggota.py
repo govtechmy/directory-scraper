@@ -127,6 +127,10 @@ class KKWD_AnggotaSpider(scrapy.Spider):
             #lookup the division_sort_order using the division name
             division_sort_order = self.division_sort_mapping.get(division_name, 999)  #default to 999 if not found
 
+            email = row[7] if row[7] else None
+            if email and "[at]infra[.]gov[.]my" not in email:
+                email = f"{email}@rurallink.gov.my"
+
             yield {
                 'agency': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
                 'division_sort_order': division_sort_order,
@@ -136,7 +140,7 @@ class KKWD_AnggotaSpider(scrapy.Spider):
                 'person_name': row[4] if row[4] else None,
                 'person_position': row[5] if row[5] else None,
                 'person_phone': row[6] if row[6] else None,
-                'person_email': f"{row[7]}@rurallink.gov.my" if row[7] else None,
+                'person_email': email,
             }
 
     async def errback_httpbin(self, failure):
