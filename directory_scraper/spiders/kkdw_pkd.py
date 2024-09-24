@@ -47,7 +47,7 @@ class KKWDSpider(scrapy.Spider):
                     ''')
 
             for page_num in range(num_pages):
-                ajax_url = 'https://www.rurallink.gov.my/wp-admin/admin-ajax.php?action=get_wdtable&table_id=106'
+                ajax_url = 'https://www.rurallink.gov.my/wp-admin/admin-ajax.php?action=get_wdtable&table_id=58'
                 
                 payload = {
                     "draw": page_num + 1,
