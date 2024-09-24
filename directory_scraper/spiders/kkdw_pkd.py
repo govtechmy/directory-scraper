@@ -3,8 +3,8 @@ import json
 from scrapy_playwright.page import PageMethod
 import logging
 
-class KKWDSpider(scrapy.Spider):
-    name = "kkdw"
+class KKWD_PKDSpider(scrapy.Spider):
+    name = "kkdw_pkd"
     
     def start_requests(self):
         url = 'https://www.rurallink.gov.my/direktori-pkd/'
@@ -47,7 +47,7 @@ class KKWDSpider(scrapy.Spider):
                     ''')
 
             for page_num in range(num_pages):
-                ajax_url = 'https://www.rurallink.gov.my/wp-admin/admin-ajax.php?action=get_wdtable&table_id=58'
+                ajax_url = 'https://www.rurallink.gov.my/wp-admin/admin-ajax.php?action=get_wdtable&table_id=106'
                 
                 payload = {
                     "draw": page_num + 1,
