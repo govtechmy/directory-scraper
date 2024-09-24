@@ -9,24 +9,30 @@ class JPMSpider(scrapy.Spider):
         'https://direktori.jpm.gov.my/jpm/4',
         'https://direktori.jpm.gov.my/jpm/5',
         'https://direktori.jpm.gov.my/jpm/6',
-        'https://direktori.jpm.gov.my/jpm/7', # to fix
-        'https://direktori.jpm.gov.my/jpm/8', # to fix: got section/unit structure
-        'https://direktori.jpm.gov.my/jpm/9', # to fix: missing data; for section & unit structure
+        'https://direktori.jpm.gov.my/jpm/7',
+        'https://direktori.jpm.gov.my/jpm/8',
+        'https://direktori.jpm.gov.my/jpm/9',
         'https://direktori.jpm.gov.my/jpm/10',
-        'https://direktori.jpm.gov.my/jpm/11', # to fix: missing data; for section & unit structure
-        'https://direktori.jpm.gov.my/jpm/12', # to fix: missing data; for section & unit structure
+        'https://direktori.jpm.gov.my/jpm/11',
+        'https://direktori.jpm.gov.my/jpm/12',
         'https://direktori.jpm.gov.my/jpm/13'
     ]
 
+    person_sort_order = 0 
+
     def start_requests(self):
-        for url in self.start_urls:
+        for i, url in enumerate(self.start_urls):
+            division_sort_order = i + 1  #assign division_sort_order based on the URL's index
+            priority_value = len(self.start_urls) - i  #set higher priority for earlier URLs
             yield scrapy.Request(
                 url=url,
-                callback=self.parse_static
+                callback=self.parse_static,
+                meta={'division_sort_order': division_sort_order},  # Pass division_sort_order to the callback
+                priority=priority_value  #set priority for ordering
             )
 
     def parse_static(self, response):
-
+        division_sort_order = response.meta['division_sort_order']
         division = response.css('h3.card-title::text').get(default='').strip()
         division_address = response.css('span.text-sm.text.mb-0::text').get(default='').strip()
         division_phone = response.css('p.mt-1 span.text-default::text').get(default='').strip()
@@ -36,11 +42,11 @@ class JPMSpider(scrapy.Spider):
 
         for section in accordion_sections:
 
-            main_unit_case1 = section.css('div.card-header h2::text').get(default='').strip() #most jpm
-            main_unit_case2 = section.css('div.card-header h2 b::text').get(default='').strip() #jpm11
+            main_unit_case1 = section.css('div.card-header h2::text').get(default='').strip()  # most jpm
+            main_unit_case2 = section.css('div.card-header h2 b::text').get(default='').strip()  # jpm11
 
-            detailed_unit_case1 = section.css('div.card-header h3::text').get(default='').strip() #jpm5, jpm8, jpm2, and most jpm
-            detailed_unit_case2 = section.css('div.card-header2 h4 ::text').get(default='').strip() #jpm11
+            detailed_unit_case1 = section.css('div.card-header h3::text').get(default='').strip()  # jpm5, jpm8, jpm2, and most jpm
+            detailed_unit_case2 = section.css('div.card-header2 h4 ::text').get(default='').strip()  # jpm11
 
             if main_unit_case1:
                 main_unit = main_unit_case1
@@ -62,29 +68,33 @@ class JPMSpider(scrapy.Spider):
 
             # Handle cases where there might be only main_unit, only detailed_unit, both, or neither
             unit_full = None
-            if main_unit and detailed_unit: #if both main unit and detailed unit exists
-                unit_full = f"{main_unit} > {detailed_unit}"  #combine main unit and detailed unit
+            if main_unit and detailed_unit:  # if both main unit and detailed unit exist
+                unit_full = f"{main_unit} > {detailed_unit}"  # Combine main unit and detailed unit
             elif detailed_unit:
-                unit_full = detailed_unit  #if only detailed_unit exists
+                unit_full = detailed_unit  # if only detailed_unit exists
             elif main_unit:
-                unit_full = main_unit  #if only main_unit exists
+                unit_full = main_unit  # if only main_unit exists
 
             #iterate contact row in the section's table
             for contact in section.css('tbody tr.d-flex'):
+                self.person_sort_order += 1  # Increment global person_sort_order
+
                 person_name = contact.css('td.col-4 b::text').get(default='').strip()
                 person_position = contact.css('td.col-3::text').get(default='').strip()
                 person_phone_prefix = contact.css('td.col-2::text').get(default='').strip()
-                person_phone = f"03{person_phone_prefix}" if person_phone_prefix else ''
+                person_phone = f"03-{person_phone_prefix}" if person_phone_prefix else ''
                 
-                email_list = contact.css('td.col-3::text').getall() 
+                email_list = contact.css('td.col-3::text').getall()
                 if email_list:
                     person_email_prefix = email_list[-1].strip()
                 else:
-                    person_email_prefix = ''     
+                    person_email_prefix = ''
                 person_email = f"{person_email_prefix}@jpm.gov.my" if person_email_prefix else ''
 
                 yield {
                     'agency': "JABATAN PERDANA MENTERI",
+                    'division_sort_order': division_sort_order,
+                    'global_person_sort_order': self.person_sort_order,
                     'division': division if division else None,
                     #'division_address': division_address,
                     #'division_phone': division_phone,
