@@ -94,7 +94,7 @@ class JPMSpider(scrapy.Spider):
                 yield {
                     'agency': "JABATAN PERDANA MENTERI",
                     'division_sort_order': division_sort_order,
-                    'global_person_sort_order': self.person_sort_order,
+                    'person_sort_order': self.person_sort_order,
                     'division': division if division else None,
                     #'division_address': division_address,
                     #'division_phone': division_phone,
