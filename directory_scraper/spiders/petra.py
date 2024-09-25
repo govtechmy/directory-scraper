@@ -70,16 +70,24 @@ class PetraSpider(scrapy.Spider):
         'BAHAGIAN KHIDMAT PENGURUSAN (BKP)'
     ]
 
+    person_sort_order = 0
+    
     def start_requests(self):
         for dept in self.departments:
+            division_sort_order = self.departments.index(dept) + 1 #division_sort_order is based on the 'department' index
             url = self.base_url.format(dept=dept, page=1)
             self.logger.info(f"Starting to scrape {dept}")
-            yield scrapy.Request(url=url, callback=self.parse, meta={'dept': dept, 'page': 1})
+            yield scrapy.Request(
+                url=url, 
+                callback=self.parse, 
+                meta={'dept': dept, 'page': 1, 'division_sort_order': division_sort_order}
+            )
 
     def parse(self, response):
         dept = response.meta['dept']
         page = response.meta['page']
-        
+        division_sort_order = response.meta['division_sort_order']
+
         # Log which page and dept are being scraped for debugging purposes
         self.logger.info(f"Scraping department: {dept} on page: {page}")
 
@@ -89,6 +97,8 @@ class PetraSpider(scrapy.Spider):
             self.logger.warning(f"No rows found for department: {dept} on page: {page}")
 
         for row in rows:
+            self.person_sort_order += 1  # Increment person_sort_order for each person
+
             person_name = row.xpath("./td[2]/text()").get(default='').strip()
             division_or_unit = row.xpath("./td[3]/text()").get(default='').strip()
             person_position = row.xpath("./td[4]/text()").get(default='').strip()
@@ -110,7 +120,9 @@ class PetraSpider(scrapy.Spider):
 
             yield {
                 'agency': 'KEMENTERIAN PERALIHAN TENAGA DAN TRANSFORMASI AIR',
-                'department': dept,
+                'division_sort_order': division_sort_order,  #sort based on department sequence
+                'person_sort_order': self.person_sort_order,
+                #'department': dept,
                 'person_name': person_name,
                 'division': current_division,
                 'unit': unit,
@@ -123,6 +135,10 @@ class PetraSpider(scrapy.Spider):
         next_page = response.xpath("//li[@class='next']/a/@href").get()
         if next_page:
             next_page_url = response.urljoin(next_page)
-            yield scrapy.Request(url=next_page_url, callback=self.parse, meta={'dept': dept, 'page': page + 1})
+            yield scrapy.Request(
+                url=next_page_url, 
+                callback=self.parse, 
+                meta={'dept': dept, 'page': page + 1, 'division_sort_order': division_sort_order}
+            )
         else:
             self.logger.info(f"Finished scraping {dept}")
