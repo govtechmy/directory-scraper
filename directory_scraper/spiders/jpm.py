@@ -105,5 +105,5 @@ class JPMSpider(scrapy.Spider):
                     'person_phone': person_phone if person_phone else None,
                     'person_position': person_position if person_position else None,
                     'person_email': person_email if person_email else None,
-                    'url': response.url,
+                    #'url': response.url,
                 }
