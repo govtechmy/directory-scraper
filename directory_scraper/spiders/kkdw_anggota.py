@@ -134,6 +134,7 @@ class KKWD_AnggotaSpider(scrapy.Spider):
                     email = f"{email}@rurallink.gov.my"
 
             yield {
+                'agency_id': 'RURALLINK',
                 'agency': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
                 'division_sort_order': division_sort_order,
                 'person_sort_order': self.person_sort_order,

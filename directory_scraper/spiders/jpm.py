@@ -92,6 +92,7 @@ class JPMSpider(scrapy.Spider):
                 person_email = f"{person_email_prefix}@jpm.gov.my" if person_email_prefix else ''
 
                 yield {
+                    'agency_id': "JPM",
                     'agency': "JABATAN PERDANA MENTERI",
                     'division_sort_order': division_sort_order,
                     'person_sort_order': self.person_sort_order,

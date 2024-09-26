@@ -93,6 +93,7 @@ class KKWD_PKDSpider(scrapy.Spider):
     def parse_ajax_data(self, data):
         for row in data:
             yield {
+                'agency_id': "RURALLINK",
                 'agency': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
                 #'no': row[0],
                 #'wdt_ID': row[1],

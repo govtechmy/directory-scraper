@@ -141,6 +141,7 @@ class KLNSpider(scrapy.Spider):
                 self.person_sort_order += 1
 
                 yield {
+                    'agency_id': 'KLN',
                     'agency': 'KEMENTERIAN LUAR NEGERI',
                     'division_sort_order': self.division_tracker[division_name],
                     'person_sort_order': self.person_sort_order,

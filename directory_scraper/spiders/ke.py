@@ -103,7 +103,8 @@ class KESpider(scrapy.Spider):
                         self.division_tracker[division] = self.division_sort_order
 
                     yield {
-                        'agency': "KEMENTERIAN EKONOMI",
+                        'agency_id': 'EKONOMI',
+                        'agency': 'KEMENTERIAN EKONOMI',
                         'person_sort_order': self.person_sort_order,
                         'division_sort_order': self.division_tracker[division],
                         'person_name': person_name,

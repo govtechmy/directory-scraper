@@ -119,6 +119,7 @@ class KPKMSpider(scrapy.Spider):
                 self.person_sort_order += 1
 
                 item = {
+                    'agency_id': "KPKM",
                     'agency': "KEMENTERIAN PERTANIAN DAN KETERJAMINAN MAKANAN",
                     'person_sort_order': self.person_sort_order,
                     'division_sort_order': self.division_sort_order,

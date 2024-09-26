@@ -56,6 +56,7 @@ class MotSpider(scrapy.Spider):
             person_email = f"{person_email_prefix}@mot.gov.my" if person_email_prefix else None
 
             yield {
+                'agency_id': "MOT",
                 'agency': "KEMENTERIAN PENGANGKUTAN",
                 'division_sort_order': division_sort_order,  #based on "start_urls" sequence
                 'person_sort_order': self.person_sort_order,  #global

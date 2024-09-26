@@ -38,6 +38,7 @@ class KKRSpider(scrapy.Spider):
                 person_phone = row.xpath('.//td[4]/text()').get().strip()
 
                 yield {
+                    'agency_id': 'KKR',
                     'agency': 'KEMENTERIAN KERJA RAYA',
                     'person_name': person_name,
                     'person_sort_order': self.person_counter,

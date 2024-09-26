@@ -50,6 +50,7 @@ class MohaSpider(CrawlSpider):
             person_phone = self.extract_phone(person_phone_text)
 
             yield {
+                'agency_id': 'MOHA',
                 'agency': 'KEMENTERIAN DALAM NEGERI',
                 'person_name': person_name,
                 'division': division,

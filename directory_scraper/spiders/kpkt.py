@@ -101,6 +101,7 @@ class KPKTSpider(scrapy.Spider):
                     self.person_sort_order += 1 #increment globally
 
                     yield {
+                        'agency_id': 'KPKT',
                         'agency': "KEMENTERIAN PERUMAHAN DAN KERAJAAN TEMPATAN",
                         'division_sort_order': self.division_sort_order[main_division],
                         'person_sort_order': self.person_sort_order,

@@ -107,6 +107,7 @@ class MOFSpider(scrapy.Spider):
             person_phone = row.xpath('.//i[@class="fa fa-phone-alt"]/following-sibling::text()[1]').get(default='').strip()
 
             yield {
+                'agency_id': "MOF",
                 'agency': agency,
                 'division_sort_order': division_sort_order,
                 'person_sort_order': self.person_sort_order,
