@@ -4,6 +4,11 @@ import re
 class KKRSpider(scrapy.Spider):
     name = 'kkr'
     start_urls = ['https://www.kkr.gov.my/ms/direktori?field_tax_bahagian_target_id=All&title=']
+    
+    person_counter = 0 #init
+    division_counter = 0 #init
+
+    last_processed_division = None
 
     def parse(self, response):
         tables = response.xpath('//table')
@@ -18,7 +23,12 @@ class KKRSpider(scrapy.Spider):
             normalized_unit = self.normalize_string(unit)
 
             if self.strings_are_similar(normalized_division, normalized_unit):
-                unit = None #if division=unit, then unit = None.
+                unit = None  #if division=unit, then unit = None.
+
+            #check if this is a new division
+            if division != self.last_processed_division:
+                self.division_counter += 1  #increment division_sort_order only if it's a new division
+                self.last_processed_division = division
 
             rows = table.xpath('.//tbody/tr')
             for row in rows:
@@ -30,12 +40,16 @@ class KKRSpider(scrapy.Spider):
                 yield {
                     'agency': 'KEMENTERIAN KERJA RAYA',
                     'person_name': person_name,
+                    'person_sort_order': self.person_counter,
+                    'division_sort_order': self.division_counter,
                     'division': division,
                     'unit': unit,
                     'person_position': person_position,
                     'person_email': person_email,
                     'person_phone': person_phone,
                 }
+
+                self.person_counter += 1 #increment the person_sort_order after each person
 
     def normalize_string(self, text): #need to normalize before comparing whether division = unit. e.g division = "Bahagian Pembangunan & Penswastaan" -> "Bahagian Pembangunan dan Penswastaan
         text = text.lower()
@@ -54,3 +68,6 @@ class KKRSpider(scrapy.Spider):
         str2 = str2.strip()
         
         return str1 == str2 #check if the remaining strings is same
+
+
+#can use last_processed_division bcs the data is already sorted in table and row format
