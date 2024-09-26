@@ -9,6 +9,11 @@ class KPKMSpider(scrapy.Spider):
     allowed_domains = ['kpkm.gov.my']
     start_urls = ['https://www.kpkm.gov.my/bm/direktori-pegawai?limit=0']
 
+    person_sort_order = 0 #init
+    division_sort_order = 0 #init
+
+    last_processed_division = None
+
     def __init__(self, *args, **kwargs):
         super(KPKMSpider, self).__init__(*args, **kwargs)
         self.seen_items = set()
@@ -96,6 +101,10 @@ class KPKMSpider(scrapy.Spider):
                     division = heading_text
                     unit = None
 
+            if division != self.last_processed_division: #check if this is a new division
+                self.division_sort_order += 1 
+                self.last_processed_division = division
+
             #extract person details within this heading group.
             persons = self.get_persons_for_heading_group(group)
             for person in persons:
@@ -106,23 +115,27 @@ class KPKMSpider(scrapy.Spider):
                 email_element = person.xpath('.//div[contains(@class, "fieldemail")]//joomla-hidden-mail')
                 person_email = self.extract_email(email_element)
 
+                #increment person_sort_order for each person
+                self.person_sort_order += 1
+
                 item = {
                     'agency': "KEMENTERIAN PERTANIAN DAN KETERJAMINAN MAKANAN",
+                    'person_sort_order': self.person_sort_order,
+                    'division_sort_order': self.division_sort_order,
                     'person_name': person_name,
                     'division': division,
                     'unit': unit,
                     'person_position': person_position,
                     'person_phone': person_phone,
                     'person_email': person_email,
-                    #'url': response.url,
                 }
 
-                #check duplicates
-                item_tuple = tuple(item.values())
+                # Check duplicates without person_sort_order and division_sort_order
+                item_tuple = (person_name, person_position, person_phone, person_email, division, unit)
                 if item_tuple not in self.seen_items:
                     self.seen_items.add(item_tuple)
                     self.item_count += 1
-                    print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
+                    #print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
                     yield item
 
         await page.close()
@@ -161,3 +174,5 @@ class KPKMSpider(scrapy.Spider):
         except Exception as e:
             print(f"Error decoding: {e}")
             return None
+
+#can use last_processed_division bcs the data is already sorted row by row
