@@ -27,7 +27,7 @@ class KKRSpider(scrapy.Spider):
 
             #check if this is a new division
             if division != self.last_processed_division:
-                self.division_counter += 1  #increment division_sort_order only if it's a new division
+                self.division_counter += 1  #increment division_sort only if it's a new division
                 self.last_processed_division = division
 
             rows = table.xpath('.//tbody/tr')
@@ -38,16 +38,20 @@ class KKRSpider(scrapy.Spider):
                 person_phone = row.xpath('.//td[4]/text()').get().strip()
 
                 yield {
-                    'agency_id': 'KKR',
-                    'agency': 'KEMENTERIAN KERJA RAYA',
-                    'person_name': person_name,
+                    'org_sort': 2,
+                    'org_id': 'KKR',
+                    'org_name': 'KEMENTERIAN KERJA RAYA',
+                    'org_type': 'ministry',
+                    'division_sort': self.division_counter,
                     'person_sort_order': self.person_counter,
-                    'division_sort_order': self.division_counter,
-                    'division': division,
-                    'unit': unit,
+                    'division_name': division,
+                    'unit_name': unit,
+                    'person_name': person_name,
                     'person_position': person_position,
-                    'person_email': person_email,
                     'person_phone': person_phone,
+                    'person_email': person_email,
+                    'person_fax': None,
+                    'parent_org_id': [],
                 }
 
                 self.person_counter += 1 #increment the person_sort_order after each person

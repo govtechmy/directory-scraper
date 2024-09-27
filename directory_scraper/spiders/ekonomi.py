@@ -2,18 +2,18 @@ import scrapy
 import json
 import re
 
-class KESpider(scrapy.Spider):
-    name = 'ke'
+class EKONOMISpider(scrapy.Spider):
+    name = 'ekonomi'
     allowed_domains = ['ekonomi.gov.my']
     start_urls = ['https://www.ekonomi.gov.my/ms/profil-jabatan/organisasi/direktori']
 
     person_sort_order = 0 #init
-    division_sort_order = 0 #init
+    division_sort = 0 #init
 
     #Dictionary to track divisions and their assigned sort order
     division_tracker = {}
 
-    #Do manual mapping for "unit" key. To map "unit" with its relevant "division"
+    #Do manual mapping for "unit_name" key. To map "unit_name" with its relevant "division_name"
     division_unit_mapping = {
         'Seksyen Perakaunan Pengurusan': 'Bahagian Akaun',
         'Seksyen Pemantauan dan Perundingan': 'Bahagian Akaun',
@@ -82,36 +82,40 @@ class KESpider(scrapy.Spider):
                 for row in rows:
                     person_name = row.css('td:nth-child(2) p::text').get('').strip()
                     person_position = row.css('td:nth-child(2) p::text').getall()[-1].strip()
-                    division = row.css('td:nth-child(3)::text').get('').strip()
+                    division_name = row.css('td:nth-child(3)::text').get('').strip()
                     person_email = row.css('td:nth-child(4)::text').get('').strip() + '@ekonomi.gov.my'
                     person_phone = row.css('td:nth-child(5)::text').get('').strip()
 
                     #increment person_sort_order for each person
                     self.person_sort_order += 1
 
-                    #check if the division is in the 'division_unit_mapping'
-                    if division in self.division_unit_mapping:
-                        unit = division  #set the current division as the "unit"
-                        division = self.division_unit_mapping[division]  #then, map the correct "division"
+                    #check if the division_name is in the 'division_unit_mapping'
+                    if division_name in self.division_unit_mapping:
+                        unit_name = division_name  #set the current division_name as the "unit_name"
+                        division_name = self.division_unit_mapping[division_name]  #then, map the correct "division_name"
                     else:
-                        unit = None
+                        unit_name = None
 
-                    #track by division only, and ignore unit in this case
-                    if division not in self.division_tracker:
-                        #if it's a new division, increment the division_sort_order and store it
-                        self.division_sort_order += 1
-                        self.division_tracker[division] = self.division_sort_order
+                    #track by division_name only, and ignore unit_name in this case
+                    if division_name not in self.division_tracker:
+                        #if it's a new division_name, increment the division_sort and store it
+                        self.division_sort += 1
+                        self.division_tracker[division_name] = self.division_sort
 
                     yield {
-                        'agency_id': 'EKONOMI',
-                        'agency': 'KEMENTERIAN EKONOMI',
+                        'org_sort': 2,
+                        'org_id': 'EKONOMI',
+                        'org_name': 'KEMENTERIAN EKONOMI',
+                        'org_type': 'ministry',
+                        'division_sort': self.division_tracker[division_name],
                         'person_sort_order': self.person_sort_order,
-                        'division_sort_order': self.division_tracker[division],
+                        'division_name': division_name,
+                        'unit_name': unit_name,
                         'person_name': person_name,
                         'person_position': person_position,
-                        'division': division,
-                        'unit': unit,
                         'person_email': person_email,
                         'person_phone': person_phone,
+                        'person_fax': None,
+                        'parent_org_id': [], #is the parent
                         #'page': response.meta['page']
                     }

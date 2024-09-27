@@ -27,9 +27,9 @@ class MotSpider(scrapy.Spider):
     person_sort_order = 0  #init
 
     def parse(self, response):
-        #index of the current URL in start_urls to define the division_sort_order
+        #index of the current URL in start_urls to define the division_sort
         current_url = response.url
-        division_sort_order = self.start_urls.index(current_url) + 1  #add 1 to start from 1
+        division_sort = self.start_urls.index(current_url) + 1  #add 1 to start from 1
 
         # Select the 2nd container (the first is assumed to be empty)
         container = response.xpath("(//div[@class='grid-container staff-directory'])[2]")
@@ -56,14 +56,18 @@ class MotSpider(scrapy.Spider):
             person_email = f"{person_email_prefix}@mot.gov.my" if person_email_prefix else None
 
             yield {
-                'agency_id': "MOT",
-                'agency': "KEMENTERIAN PENGANGKUTAN",
-                'division_sort_order': division_sort_order,  #based on "start_urls" sequence
+                'org_sort': 3,
+                'org_id': 'MOT',
+                'org_name': 'KEMENTERIAN PENGANGKUTAN',
+                'org_type': 'ministry',
+                'division_sort': division_sort,  #based on "start_urls" sequence
                 'person_sort_order': self.person_sort_order,  #global
+                'division_name': division,  #first element of the division list
+                'unit_name': unit,  #second element of the division_name list (if exists)
                 'person_name': person_name,
-                'division': division,  #first element of the division list
-                'unit': unit,  #second element of the division list (if exists)
                 'person_position': person_position,
                 'person_phone': person_phone,
                 'person_email': person_email,
+                'person_fax': None,
+                'parent_org_id': [], #is the parent
             }

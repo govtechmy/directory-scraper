@@ -6,13 +6,13 @@ class KPKTSpider(scrapy.Spider):
     start_urls = ['https://edirektori.kpkt.gov.my/edirektori/']
 
     person_sort_order = 0  #init
-    division_sort_order = {}  #dictionary to store division sort order based on "grid number"
+    division_sort = {}  #dictionary to store division_name sort order based on "grid number"
 
     def parse(self, response):
         #follow the url links using regex for the 'grid' pattern
         grid_links = response.css('a::attr(href)').re(r'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/\d+')
 
-        #exclude these Jabatan for now. (bcs the structure of their division & unit is different than KPKT)
+        #exclude these Jabatan for now. (bcs the structure of their division_name & unit_name is different than KPKT)
         excluded_links = [
             'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/25',
             'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/26',
@@ -40,12 +40,12 @@ class KPKTSpider(scrapy.Spider):
         if main_division:
             main_division = main_division.strip()
         else:
-            self.logger.warning(f'Main division not found on {response.url}, setting it as "Unknown"')
+            self.logger.warning(f'Main division_name not found on {response.url}, setting it as "Unknown"')
             main_division = "Unknown"
 
         grid_number = response.meta['grid_number']
-        if main_division not in self.division_sort_order:
-            self.division_sort_order[main_division] = grid_number #division_sort_order=grid number
+        if main_division not in self.division_sort:
+            self.division_sort[main_division] = grid_number #division_sort=grid number
 
         grid_url = response.meta['grid_url']
         grid_id = re.search(r'/grid/(\d+)', grid_url).group(1)
@@ -74,20 +74,20 @@ class KPKTSpider(scrapy.Spider):
         main_division = response.meta['main_division']
         grid_url = response.meta['grid_url']
 
-        #loop thru all division and unit panels
+        #loop thru all division_name and unit_name panels
         division_panels = response.css('.panel.panel-primary')
 
         for division_panel in division_panels:
-            division = division_panel.css('h4.panel-title a::text').get().strip()
+            division_name = division_panel.css('h4.panel-title a::text').get().strip()
             
             unit_panels = division_panel.css('.panel-success')
 
             for unit_panel in unit_panels:
-                unit = unit_panel.css('h5.panel-title a::text').get().strip()
+                unit_name = unit_panel.css('h5.panel-title a::text').get().strip()
 
-                #set unit to None if unit==division. redundency
-                #if division == main_division:
-                #    division = None
+                #set unit_name to None if unit_name==division_name. redundency
+                #if division_name == main_division:
+                #    division_name = None
 
                 rows = unit_panel.css('table tbody tr')
                 for row in rows:
@@ -101,16 +101,20 @@ class KPKTSpider(scrapy.Spider):
                     self.person_sort_order += 1 #increment globally
 
                     yield {
-                        'agency_id': 'KPKT',
-                        'agency': "KEMENTERIAN PERUMAHAN DAN KERAJAAN TEMPATAN",
-                        'division_sort_order': self.division_sort_order[main_division],
+                        'org_sort': 4,
+                        'org_id': 'KPKT',
+                        'org_name': 'KEMENTERIAN PERUMAHAN DAN KERAJAAN TEMPATAN',
+                        'org_type': 'ministry',
+                        'division_sort': self.division_sort[main_division],
                         'person_sort_order': self.person_sort_order,
                         #'main_division': main_division,
+                        'division_name': main_division,
+                        'unit_name': f"{division_name} > {unit_name}" if division_name and (main_division != unit_name) else None,  # combine division_name + unit_detailed as one string.(only if 'division_name' exists, & division_name != unit_name)
+                        'person_position': person_position,
                         'person_name': person_name,
-                        'division': main_division,
-                        'unit': f"{division} > {unit}" if division and (main_division != unit) else None,  # combine division + unit_detailed as one string.(only if 'division' exists, & division != unit)
                         'person_phone': person_phone,
                         'person_email': None,  #email is stored as image. to solve later.
-                        #'person_fax': person_fax,
+                        'person_fax': person_fax,
+                        'parent_org_id': [], #is the parent
                         #'url': grid_url 
                     }

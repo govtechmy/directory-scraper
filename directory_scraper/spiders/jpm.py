@@ -22,18 +22,18 @@ class JPMSpider(scrapy.Spider):
 
     def start_requests(self):
         for i, url in enumerate(self.start_urls):
-            division_sort_order = i + 1  #assign division_sort_order based on the URL's index
+            division_sort = i + 1  #assign division_sort based on the URL's index
             priority_value = len(self.start_urls) - i  #set higher priority for earlier URLs
             yield scrapy.Request(
                 url=url,
                 callback=self.parse_static,
-                meta={'division_sort_order': division_sort_order},  # Pass division_sort_order to the callback
+                meta={'division_sort': division_sort},  # Pass division_sort to the callback
                 priority=priority_value  #set priority for ordering
             )
 
     def parse_static(self, response):
-        division_sort_order = response.meta['division_sort_order']
-        division = response.css('h3.card-title::text').get(default='').strip()
+        division_sort = response.meta['division_sort']
+        division_name = response.css('h3.card-title::text').get(default='').strip()
         division_address = response.css('span.text-sm.text.mb-0::text').get(default='').strip()
         division_phone = response.css('p.mt-1 span.text-default::text').get(default='').strip()
 
@@ -68,8 +68,8 @@ class JPMSpider(scrapy.Spider):
 
             # Handle cases where there might be only main_unit, only detailed_unit, both, or neither
             unit_full = None
-            if main_unit and detailed_unit:  # if both main unit and detailed unit exist
-                unit_full = f"{main_unit} > {detailed_unit}"  # Combine main unit and detailed unit
+            if main_unit and detailed_unit:  # if both main unit_name and detailed unit_name exist
+                unit_full = f"{main_unit} > {detailed_unit}"  # Combine main unit_name and detailed unit_name
             elif detailed_unit:
                 unit_full = detailed_unit  # if only detailed_unit exists
             elif main_unit:
@@ -92,19 +92,23 @@ class JPMSpider(scrapy.Spider):
                 person_email = f"{person_email_prefix}@jpm.gov.my" if person_email_prefix else ''
 
                 yield {
-                    'agency_id': "JPM",
-                    'agency': "JABATAN PERDANA MENTERI",
-                    'division_sort_order': division_sort_order,
+                    'org_sort': 1,
+                    'org_id': 'JPM',
+                    'org_name': 'JABATAN PERDANA MENTERI',
+                    'org_type': 'ministry',
+                    'division_sort': division_sort,
                     'person_sort_order': self.person_sort_order,
-                    'division': division if division else None,
+                    'division_name': division_name if division_name else None,
                     #'division_address': division_address,
                     #'division_phone': division_phone,
-                    'person_name': person_name if person_name else None,
-                    'unit': unit_full if unit_full else None,
+                    'unit_name': unit_full if unit_full else None,
                     #'main_unit': main_unit, #debugging
                     #'detailed_unit': detailed_unit, #debugging
-                    'person_phone': person_phone if person_phone else None,
+                    'person_name': person_name if person_name else None,
                     'person_position': person_position if person_position else None,
+                    'person_phone': person_phone if person_phone else None,
                     'person_email': person_email if person_email else None,
+                    'person_fax': None,
+                    'parent_org_id': [], #is the parent
                     #'url': response.url,
                 }
