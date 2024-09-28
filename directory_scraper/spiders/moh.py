@@ -1,5 +1,4 @@
 import scrapy
-from time import sleep
 from scrapy.selector import Selector
 from scrapy_playwright.page import PageMethod
 
