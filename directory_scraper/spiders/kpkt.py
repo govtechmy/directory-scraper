@@ -93,7 +93,7 @@ class KPKTSpider(scrapy.Spider):
                 for row in rows:
                     person_name_raw = row.css('td:nth-child(3)').xpath('normalize-space(strong/text())').get()
                     person_name = person_name_raw.replace("\n", "").strip() if person_name_raw else None
-                    person_position_raw = row.css('td:nth-child(3)').xpath('normalize-space(text()[following-sibling::br])').get()
+                    person_position_raw = row.css('td:nth-child(3)').xpath('normalize-space(text()[preceding-sibling::strong/following-sibling::br[1]])').get()
                     person_position = person_position_raw.strip() if person_position_raw else None
                     person_phone = row.css('td:nth-child(6)::text').get()
                     person_fax = row.css('td:nth-child(7)::text').get()
