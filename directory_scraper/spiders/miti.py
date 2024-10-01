@@ -5,6 +5,10 @@ class MitiSpider(scrapy.Spider):
     allowed_domains = ['www.miti.gov.my']
     start_urls = ['https://www.miti.gov.my/index.php/edirectory/edirectory_list/4']
 
+    division_sort_order = 0
+    person_sort_order = 0
+    seen_divisions = set()  #track unique divisions
+
     def start_requests(self):
         #1: switch language to BM
         yield scrapy.Request(
@@ -56,12 +60,14 @@ class MitiSpider(scrapy.Spider):
         person_items = response.css('div.list-item')
 
         for item in person_items:
+            self.person_sort_order += 1  #increment person sort order globally for each person
+
             person_name = item.css('h1 a::text').get(default='').strip()
             person_position = item.css('p::text').get(default='').strip()
             profile_url = item.css('h1 a::attr(href)').get(default='')
             image_url = response.urljoin(item.css('img::attr(src)').get(default=''))
 
-            details = item.css('table.profile-detail-table tbody tr') #table
+            details = item.css('table.profile-detail-table tbody tr')  # table
             person_phone = self.get_data_label(details, 0)
             person_email = self.get_data_label(details, 1)
             division = self.get_data_label(details, 2)
@@ -70,18 +76,26 @@ class MitiSpider(scrapy.Spider):
             if person_email:
                 person_email = person_email + '@miti.gov.my'
 
+            #check if division is new, and increment division_sort_order accordingly
+            if division and division not in self.seen_divisions:
+                self.division_sort_order += 1  #increment division sort order for new unique division
+                self.seen_divisions.add(division)  #add the division to the set of seen divisions
+
             yield {
                 'org_sort': 999,
                 'org_id': "MITI",
-                'agency': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
-                'person_name': person_name,
-                'division_name': division,
-                'unit_name': section,
-                'person_position': person_position,
-                'person_phone': person_phone,
-                'person_email': person_email,
+                'org_name': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
+                'org_type': 'ministry',
+                'division_sort': self.division_sort_order,
+                'person_sort_order': self.person_sort_order,
+                'division_name': division if division else None,
+                'unit_name': section if section else None,
+                'person_name': person_name if person_name else None,
+                'person_position': person_position if person_position else None,
+                'person_phone': person_phone if person_phone else None,
+                'person_email': person_email if person_email else None,
                 'person_fax': None,
-                'parent_org_id': None, #is the parent
+                'parent_org_id': None,  # is the parent
                 #'image_url': image_url,
                 #'profile_url': profile_url,
             }
