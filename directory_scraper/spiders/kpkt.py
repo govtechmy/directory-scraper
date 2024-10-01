@@ -115,6 +115,6 @@ class KPKTSpider(scrapy.Spider):
                         'person_phone': person_phone,
                         'person_email': None,  #email is stored as image. to solve later.
                         'person_fax': person_fax,
-                        'parent_org_id': [], #is the parent
+                        'parent_org_id': None, #is the parent
                         #'url': grid_url 
                     }

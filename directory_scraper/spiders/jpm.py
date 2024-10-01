@@ -109,6 +109,6 @@ class JPMSpider(scrapy.Spider):
                     'person_phone': person_phone if person_phone else None,
                     'person_email': person_email if person_email else None,
                     'person_fax': None,
-                    'parent_org_id': [], #is the parent
+                    'parent_org_id': None, #is the parent
                     #'url': response.url,
                 }

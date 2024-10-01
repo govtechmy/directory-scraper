@@ -44,14 +44,14 @@ class KKRSpider(scrapy.Spider):
                     'org_type': 'ministry',
                     'division_sort': self.division_counter,
                     'person_sort_order': self.person_counter,
-                    'division_name': division,
-                    'unit_name': unit,
-                    'person_name': person_name,
-                    'person_position': person_position,
-                    'person_phone': person_phone,
-                    'person_email': person_email,
+                    'division_name': division if division else None,
+                    'unit_name': unit if unit else None,
+                    'person_name': person_name if person_name else None,
+                    'person_position': person_position if person_position else None,
+                    'person_phone': person_phone if person_phone else None,
+                    'person_email': person_email if person_email else None,
                     'person_fax': None,
-                    'parent_org_id': [],
+                    'parent_org_id': None,
                 }
 
                 self.person_counter += 1 #increment the person_sort_order after each person
