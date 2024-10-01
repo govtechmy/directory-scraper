@@ -116,6 +116,6 @@ class EKONOMISpider(scrapy.Spider):
                         'person_email': person_email,
                         'person_phone': person_phone,
                         'person_fax': None,
-                        'parent_org_id': [], #is the parent
+                        'parent_org_id': None, #is the parent
                         #'page': response.meta['page']
                     }

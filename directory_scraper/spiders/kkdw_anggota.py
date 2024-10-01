@@ -2,7 +2,7 @@ import scrapy
 import json
 from scrapy_playwright.page import PageMethod
 
-class KKWD_AnggotaSpider(scrapy.Spider):
+class KKDW_AnggotaSpider(scrapy.Spider):
     name = "kkdw_anggota"
 
     #manual mapping of division names to sort order as seen on website (unknown division will be set as 999)
@@ -68,9 +68,7 @@ class KKWD_AnggotaSpider(scrapy.Spider):
         page = response.meta["playwright_page"]
         
         try:
-            wdt_nonce = await page.evaluate('''
-                () => document.querySelector('input[name="wdtNonceFrontendServerSide_58"]').value
-            ''')
+            wdt_nonce = await page.evaluate('''() => document.querySelector('input[name="wdtNonceFrontendServerSide_58"]').value''')
 
             payload = {
                 "draw": 5,
@@ -134,16 +132,20 @@ class KKWD_AnggotaSpider(scrapy.Spider):
                     email = f"{email}@rurallink.gov.my"
 
             yield {
-                'agency_id': 'RURALLINK',
-                'agency': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
-                'division_sort_order': division_sort_order,
+                'org_sort': 999,
+                'org_id': 'RURALLINK',
+                'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
+                'org_type': 'ministry',
+                'division_sort': division_sort_order,
                 'person_sort_order': self.person_sort_order,
-                'division': division_name,
-                'unit': None,
+                'division_name': division_name,
+                'unit_name': None,
                 'person_name': row[4] if row[4] else None,
                 'person_position': row[5] if row[5] else None,
                 'person_phone': row[6] if row[6] else None,
                 'person_email': email,
+                'person_fax': None,
+                'parent_org_id': None, #is the parent
             }
 
     async def errback_httpbin(self, failure):

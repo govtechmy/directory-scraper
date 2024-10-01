@@ -60,7 +60,6 @@ class MOFSpider(scrapy.Spider):
     ]
 
     def parse(self, response):
-        agency = "KEMENTERIAN KEWANGAN MALAYSIA"
 
         division = response.css('h2::text').get(default='').strip()
         division_address_block = response.xpath('//div[@class="category-desc"]//p/text()[normalize-space()]').getall()
@@ -107,18 +106,23 @@ class MOFSpider(scrapy.Spider):
             person_phone = row.xpath('.//i[@class="fa fa-phone-alt"]/following-sibling::text()[1]').get(default='').strip()
 
             yield {
-                'agency_id': "MOF",
-                'agency': agency,
-                'division_sort_order': division_sort_order,
+                'org_sort': 999,
+                'org_id': "MOF",
+                'org_name': "KEMENTERIAN KEWANGAN MALAYSIA",
+                'org_type': 'ministry',
+                'division_sort': division_sort_order,
                 'person_sort_order': self.person_sort_order,
-                'division': division,
-                #'division_address': division_address,
-                #'division_phone': division_phone,
-                #'division_fax': division_fax,
-                'unit': current_unit,
+                'division_name': division if division else None,
+                #'division_address': division_address if division_address else None,
+                #'division_phone': division_phone if division_phone else None,
+                #'division_fax': division_fax if division_fax else None,
+                'unit_name': current_unit if current_unit else None,
                 #'unit_address': unit_address if unit_address else None,
-                'person_name': person_name,
+                'person_name': person_name if person_name else None,
                 'person_phone': person_phone if person_phone else None,
-                'person_position': person_position,
-                'person_email': person_email if person_email else None
+                'person_position': person_position if person_position else None,
+                'person_email': person_email if person_email else None,
+                'person_fax': None,
+                'parent_org_id': None, #is the parent
+
             }

@@ -50,15 +50,19 @@ class MohaSpider(CrawlSpider):
             person_phone = self.extract_phone(person_phone_text)
 
             yield {
-                'agency_id': 'MOHA',
-                'agency': 'KEMENTERIAN DALAM NEGERI',
-                'person_name': person_name,
-                'division': division,
-                'unit': '',
-                'person_position': person_position,
-                'person_phone': person_phone,
+                'org_sort': 999,
+                'org_id': 'MOHA',
+                'org_name': 'KEMENTERIAN DALAM NEGERI',
+                'org_type': 'ministry',
+                'division_name': division if division else None,
+                'unit_name': None,
+                'person_name': person_name if person_name else None,
+                'person_position': person_position if person_position else None,
+                'person_phone': person_phone if person_phone else None,
+                #'person_email': person_email #to fix,
+                'person_fax': None,
+                'parent_org_id': None, #is the parent
                 #'url': response.url,
                 #'page_number': page_number,
-                #'person_email': person_email #to fix
             }
 

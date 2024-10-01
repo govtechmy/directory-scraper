@@ -71,14 +71,17 @@ class MitiSpider(scrapy.Spider):
                 person_email = person_email + '@miti.gov.my'
 
             yield {
-                'agency_id': "MITI",
+                'org_sort': 999,
+                'org_id': "MITI",
                 'agency': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
                 'person_name': person_name,
-                'division': division,
-                'unit': section,
+                'division_name': division,
+                'unit_name': section,
                 'person_position': person_position,
                 'person_phone': person_phone,
                 'person_email': person_email,
+                'person_fax': None,
+                'parent_org_id': None, #is the parent
                 #'image_url': image_url,
                 #'profile_url': profile_url,
             }

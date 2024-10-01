@@ -119,17 +119,21 @@ class PetraSpider(scrapy.Spider):
                     current_division = division_or_unit  # Fallback to using the table value as the division
 
             yield {
-                'agency_id': "PETRA",
-                'agency': 'KEMENTERIAN PERALIHAN TENAGA DAN TRANSFORMASI AIR',
-                'division_sort_order': division_sort_order,  #sort based on department sequence
+                'org_sort': 999,
+                'org_id': "PETRA",
+                'org_name': 'KEMENTERIAN PERALIHAN TENAGA DAN TRANSFORMASI AIR',
+                'org_type': 'ministry',
+                'division_sort': division_sort_order,  #sort based on department sequence
                 'person_sort_order': self.person_sort_order,
                 #'department': dept,
-                'person_name': person_name,
-                'division': current_division,
-                'unit': unit,
-                'person_position': person_position,
-                'person_phone': person_phone,
-                'person_email': person_email,
+                'division_name': current_division if current_division else None,
+                'unit_name': unit if unit else None,
+                'person_name': person_name if person_name else None,
+                'person_position': person_position if person_position else None,
+                'person_phone': person_phone if person_phone else None,
+                'person_email': person_email if person_email else None,
+                'person_fax': None,
+                'parent_org_id': None, #is the parent
             }
 
         #pagination (next button)

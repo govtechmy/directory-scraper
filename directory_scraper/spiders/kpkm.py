@@ -21,7 +21,7 @@ class KPKMSpider(scrapy.Spider):
 
     def start_requests(self):
         for url in self.start_urls:
-            print(f"Starting scrape from: {url}")
+            #print(f"Starting scrape from: {url}")
             yield scrapy.Request(
                 url=url,
                 callback=self.parse_page,
@@ -38,7 +38,7 @@ class KPKMSpider(scrapy.Spider):
         page = response.meta["playwright_page"]
         await page.wait_for_selector('div.person')
 
-        print(f"\nProcessing URL: {response.url}")
+        #print(f"\nProcessing URL: {response.url}")
 
         #process each heading group (division/unit section)
         heading_groups = response.xpath('//div[@class="heading-group"]')
@@ -119,16 +119,21 @@ class KPKMSpider(scrapy.Spider):
                 self.person_sort_order += 1
 
                 item = {
-                    'agency_id': "KPKM",
-                    'agency': "KEMENTERIAN PERTANIAN DAN KETERJAMINAN MAKANAN",
+                    'org_sort': 999,
+                    'org_id': "KPKM",
+                    'org_name': "KEMENTERIAN PERTANIAN DAN KETERJAMINAN MAKANAN",
+                    'org_type': 'ministry',
+                    'division_sort': self.division_sort_order,
                     'person_sort_order': self.person_sort_order,
-                    'division_sort_order': self.division_sort_order,
-                    'person_name': person_name,
-                    'division': division,
-                    'unit': unit,
-                    'person_position': person_position,
-                    'person_phone': person_phone,
-                    'person_email': person_email,
+                    'division_name': division if division else None,
+                    'unit_name': unit if unit else None,
+                    'person_name': person_name if person_name else None,
+                    'person_position': person_position if person_position else None,
+                    'person_phone': person_phone if person_phone else None,
+                    'person_email': person_email if person_email else None,
+                    'person_fax': None,
+                    'parent_org_id': None, #is the parent
+
                 }
 
                 # Check duplicates without person_sort_order and division_sort_order

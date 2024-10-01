@@ -3,7 +3,7 @@ import json
 from scrapy_playwright.page import PageMethod
 import logging
 
-class KKWD_PKDSpider(scrapy.Spider):
+class KKDW_PKDSpider(scrapy.Spider):
     name = "kkdw_pkd"
     
     def start_requests(self):
@@ -93,18 +93,21 @@ class KKWD_PKDSpider(scrapy.Spider):
     def parse_ajax_data(self, data):
         for row in data:
             yield {
-                'agency_id': "RURALLINK",
-                'agency': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
+                'org_sort': 999,
+                'org_id': "RURALLINK",
+                'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
                 #'no': row[0],
                 #'wdt_ID': row[1],
-                'division': "Pusat Komuniti Desa (PKD)",
-                'unit': f"{row[2]} ({row[6]})",
+                'division_name': "Pusat Komuniti Desa (PKD)",
+                'unit_name': f"{row[2]} ({row[6]})",
                 #'photo': self.extract_image_url(row[3]),
                 'person_name': row[4],
                 'person_position': row[5],
                 #'personal_phone': row[7],
                 'person_phone': row[8],
                 'person_email': self.extract_email(row[9]),
+                'person_fax': None,
+                'parent_org_id': None, #is the parent
             }
 
     def extract_image_url(self, html_string):
