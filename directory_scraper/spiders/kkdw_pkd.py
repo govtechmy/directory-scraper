@@ -111,7 +111,7 @@ class KKDW_PKDSpider(scrapy.Spider):
                 'org_id': "RURALLINK",
                 'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
                 'org_type': 'ministry',
-                'division_sort_order': division_sort_order,
+                'division_sort': division_sort_order,
                 'person_sort_order': self.person_sort_order,
                 #'no': row[0],
                 #'wdt_ID': row[1],
