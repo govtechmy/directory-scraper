@@ -6,6 +6,10 @@ import logging
 class KKDW_PKDSpider(scrapy.Spider):
     name = "kkdw_pkd"
     
+    seen_divisions = {} #init
+    division_sort_counter = 1  #init (start w/ 1)
+    person_sort_order = 0 #init global
+
     def start_requests(self):
         url = 'https://www.rurallink.gov.my/direktori-pkd/'
         yield scrapy.Request(
@@ -26,7 +30,7 @@ class KKDW_PKDSpider(scrapy.Spider):
         
         try:
             #get total number of records
-            total_records = await page.evaluate('''
+            total_records = await page.evaluate(r'''
                 () => {
                     const info = document.querySelector('.dataTables_info');
                     if (info) {
@@ -36,8 +40,6 @@ class KKDW_PKDSpider(scrapy.Spider):
                     return 0;
                 }
             ''')
-
-            self.logger.info(f"Total records found: {total_records}")
 
             #calculate number of pages (assume 10 records per page as of that website)
             num_pages = -(-total_records // 10)
@@ -92,14 +94,29 @@ class KKDW_PKDSpider(scrapy.Spider):
 
     def parse_ajax_data(self, data):
         for row in data:
+            division_name = row[2]
+            
+            # Check if this is a new division
+            if division_name not in self.seen_divisions:
+                self.seen_divisions[division_name] = self.division_sort_counter
+                division_sort_order = self.division_sort_counter
+                self.division_sort_counter += 1
+            else:
+                division_sort_order = self.seen_divisions[division_name]
+
+            self.person_sort_order += 1
+
             yield {
                 'org_sort': 999,
                 'org_id': "RURALLINK",
                 'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
+                'org_type': 'ministry',
+                'division_sort_order': division_sort_order,
+                'person_sort_order': self.person_sort_order,
                 #'no': row[0],
                 #'wdt_ID': row[1],
-                'division_name': "Pusat Komuniti Desa (PKD)",
-                'unit_name': f"{row[2]} ({row[6]})",
+                'division_name': f"Pusat Komuniti Desa {row[2]}",
+                'unit_name': row[6], 
                 #'photo': self.extract_image_url(row[3]),
                 'person_name': row[4],
                 'person_position': row[5],
@@ -107,7 +124,7 @@ class KKDW_PKDSpider(scrapy.Spider):
                 'person_phone': row[8],
                 'person_email': self.extract_email(row[9]),
                 'person_fax': None,
-                'parent_org_id': None, #is the parent
+                'parent_org_id': None, 
             }
 
     def extract_image_url(self, html_string):
