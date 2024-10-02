@@ -47,14 +47,19 @@ class KPWKMSpider(scrapy.Spider):
             if table := row.css("div[id='direktori-staf-grid']").css("tbody > tr"):
                 for data_point in table:
                     person_data = {
+                        "org_id": "kpwkm",
+                        "org_name": "Kementerian Pembangunan Wanita, Keluarga dan Masyarakat",
+                        "org_sort": 15,
                         "division_name": division_name,
                         "division_sort": division_sort,
-                        "unit": current_unit,
+                        "unit_name": current_unit,
+                        "person_position": data_point.xpath("*[3]/text()").get(),
                         "person_name": data_point.xpath("*[2]//a/text()").get(),
-                        "person_position": data_point.xpath("*[2]//a/text()").get(),
-                        "person_email": data_point.xpath("*[2]//a/text()").get(),
-                        "person_phone": data_point.xpath("*[2]//a/text()").get(),
-                        "person_sort": person_sort
+                        "person_email": data_point.xpath("*[4]/text()").get(),
+                        "person_fax": "NULL",
+                        "person_phone": data_point.xpath("*[5]/text()").get(),
+                        "person_sort": person_sort,
+                        "parent_org_id": "NULL",
                     }
                     yield person_data
                     person_sort += 1
