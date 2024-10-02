@@ -231,6 +231,7 @@ class MODSpider(scrapy.Spider):
                 "org_id": "MOD",
                 "org_name": "Kementerian Pertahanan",
                 "org_sort": 13,
+                "org_type": "ministry",
                 "division_name": current_division,
                 "division_sort": division_sort,
                 "unit_name": unit_name if (unit_name := " > ".join(unit_lst)) else "",
