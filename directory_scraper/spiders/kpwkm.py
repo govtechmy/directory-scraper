@@ -1,5 +1,4 @@
 import scrapy
-from scrapy_playwright.page import PageMethod
 
 class KPWKMSpider(scrapy.Spider):
     name = "kpwkm"
