@@ -1,5 +1,4 @@
 import re
-import json
 import scrapy
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
@@ -25,54 +24,66 @@ class KPNSpider(CrawlSpider):
         "https://www.perpaduan.gov.my/index.php/bm/pejabat-setiausaha-bahagian-kanan-pengurusan/bahagian-khidmat-pengurusan",
         "https://www.perpaduan.gov.my/index.php/bm/pejabat-setiausaha-bahagian-kanan-pengurusan/bahagian-pengurusan-sumber-manusia",
         "https://www.perpaduan.gov.my/index.php/bm/pejabat-setiausaha-bahagian-kanan-pengurusan/bahagian-kewangan-dan-pembangunan",
-        "https://www.perpaduan.gov.my/index.php/bm/pejabat-setiausaha-bahagian-kanan-pengurusan/bahagian-akaun"
+        "https://www.perpaduan.gov.my/index.php/bm/pejabat-setiausaha-bahagian-kanan-pengurusan/bahagian-akaun",
     ]
-            
+    
+    bahagian_mapping = {
+        "pejabat-menteri": "Pejabat Menteri",
+        "pejabat-timbalan-menteri-3": "Pejabat Timbalan Menteri",
+        "pejabat-ketua-setiausaha-2": "Pejabat Ketua Setiausaha",
+        "pejabat-penasihat-undang-undang-2": "Pejabat Penasihat Undang Undang",
+        "unit-komunikasi-korporat": "Unit Komunikasi Korporat",
+        "seksyen-audit-1": "Seksyen Audit",
+        "unit-integriti": "Unit Integriti",
+        "pejabat-timbalan-ketua-setiausaha": "Pejabat Timbalan Ketua Setiausaha",
+        "bahagian-dasar-dan-hubungan-antarabangsa-1": "Bahagian Dasar Dan Hubungan Antarabangsa",
+        "bahagian-kesepaduan-nasional": "Bahagian Kesepaduan Nasional",
+        "bahagian-kolaborasi-strategik": "Bahagian Kolaborasi Strategik",
+        "pejabat-setiausaha-bahagian-kanan-pengurusan": "Pejabat Setiausaha Bahagian Kanan Pengurusan",
+        "bahagian-pengurusan-maklumat": "Bahagian Pengurusan Maklumat",
+        "bahagian-khidmat-pengurusan": "Bahagian Khidmat Pengurusan",
+        "bahagian-pengurusan-sumber-manusia": "Bahagian Pengurusan Sumber Manusia",
+        "bahagian-kewangan-dan-pembangunan": "Bahagian Kewangan Dan Pembangunan",
+        "bahagian-akaun": "Bahagian Akaun",
+    }
+    url_suffixes = [f"/bm/.*{url}$" for url in bahagian_mapping.keys()]
+    
     rules = (
-        Rule(LinkExtractor(allow=r"/bm/pejabat\-", deny=r"\?filter-match=any&start=(\d+)|/bm/direktori-pegawai-3"), callback='parse_item'),
-        Rule(LinkExtractor(allow=r"\?filter-match=any&start=(\d+)", deny=r"/bm/direktori-pegawai-3"), callback='parse_item'),
+        Rule(LinkExtractor(
+            allow=rf"{'|'.join(url_suffixes)}|\?filter-match=any&start=(\d+)",
+            deny=r"/bm/direktori-pegawai-3"), callback='parse_item'
+        ),
     )
 
     def parse_item(self, response):
-        print(response.url)
-        unit_regex = re.compile(r"Unit|Cawangan|Seksyen")
-        division_regex = re.compile(r"Pejabat|Bahagian")
+        unit_name = None
+        person_sort = 1
         
-        name_mappings = {
-            "agency": "agency",
-            "name": "person_name",
-            "division": "division",
-            "unit": "unit",
-            "phone": "person_phone",
-            "email": "person_email",
-            "position": "person_position"
-        }
-
-
-        def determine_team(string:str) -> str:
-            if re.match(string=string, pattern=unit_regex):
-                team_type = "unit"
-            elif re.match(string=string, pattern=division_regex):
-                team_type = "division"
-            else:
-                team_type = "missing"
-            return team_type
-
-        person_sort_order = 1
-        for item in response.css("div[class='personlist'] > div"):
-            if item.attrib["class"] == "heading-group":
-                current_team = item.css("span::text").get()
-                team_type = determine_team(item.css("span::text").get())
-                continue
+        division_name = [name for url, name in self.bahagian_mapping.items() if url in response.url][-1]
+        division_sort = [idx for idx, url in enumerate(self.start_urls) if response.url.startswith(url)]
+        css_filter = "div[class='personlist']  > *" + (":nth-child(n+2)" if re.findall(r"\D+$", response.url) else "")
+        page_number = int(page_num[0]) if (page_num := re.findall(r"\d+$", response.url)) else 0
+        
+        for row in response.css(css_filter):
+            if not division_sort:
+                break
+            if row.css("::attr(class)").get() == "heading-group":
+                unit_name = row.css("h3 > span::text").get()
             else:
                 person_data = {
-                    "agency": "Kementerian Perpaduan Negara", team_type: current_team,
-                    "person_sort_order": person_sort_order,
-                    "division_sort_order": [idx for idx, current_url in enumerate(self.start_urls) if str(response.url).startswith(current_url)][-1]
+                    "org_id": "KPN",
+                    "org_name": "Kementerian Perpaduan Negara",
+                    "org_sort": 22,
+                    "org_type": "ministry",
+                    "division_name": division_name,
+                    "division_sort": division_sort[-1]+1,
+                    "unit_name": unit_name,
+                    "person_position": row.css("span[aria-label='Position']::text").get(),
+                    "person_name": row.css("span[aria-label='Name']::text").get(),
+                    "person_email": row.css("span[aria-label='Email']::text").get(),
+                    "person_fax": "NULL",
+                    "person_phone": row.css("span[aria-label='Phone']::text").get(),
+                    "person_sort": page_number+person_sort
                 }
-                for data in item.css("div[class='personinfo'] > div > span"):
-                    if data_type := data.attrib.get("aria-label", None):
-                        person_data[name_mappings[data_type.lower()]] = data.css("span::text").get()
-                person_sort_order += 1
-
+                person_sort += 1
                 yield person_data
