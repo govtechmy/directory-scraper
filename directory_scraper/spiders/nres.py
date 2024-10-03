@@ -134,7 +134,7 @@ class NRESSpider(scrapy.Spider):
             person_name = row.xpath('td[1]/text()').get()
             bahagian = row.xpath('td[2]/text()').get()
             person_position = row.xpath('td[3]/text()').get()
-            person_email = row.xpath('td[4]/text()').get()  # Modify if email column exists
+            person_email = row.xpath('td[4]/text()').get()  # Modify if person_email column exists
             person_phone = row.xpath('td[5]/text()').get()  # Modify if phone column exists
 
             #clean and normalize the bahagian (not division_name)
@@ -150,10 +150,23 @@ class NRESSpider(scrapy.Spider):
             final_division_name = re.sub(r'\s+', ' ', division_name.replace('\xa0', ' ').replace('—', '').strip())
             final_division_name = re.sub(r'^•\s*', '', final_division_name).strip()
 
-            division_sort_order = self.division_sort_order_mapping.get(final_division_name, 999)
+            division_sort_order = self.division_sort_order_mapping.get(final_division_name, 999999)
 
             self.person_counter += 1
             person_sort_order = self.person_counter
+
+            if person_email:
+                person_email = person_email.replace('[at]', '@').replace('[dot]', '.').replace('[.]', '.').replace('[@]', '@')
+                person_email = person_email.replace('[com]', '.com').replace('[my]', '.my')
+
+                person_email = person_email.strip().replace(" ", "")
+
+                if person_email.startswith('@') or person_email == "" or person_email == "'-":
+                    person_email = None
+                elif "@" in person_email and "." in person_email.split("@")[-1]:
+                    pass
+                else:
+                    person_email = f"{person_email}@nres.gov.my"
 
 
             yield {
@@ -163,13 +176,13 @@ class NRESSpider(scrapy.Spider):
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,  # Use the mapped sort order
                 'person_sort_order': person_sort_order,  # Use the global person sort order
-                'division_name':  final_division_name, #re.sub(r'^•\s*', '', re.sub(r'\s+', ' ', division_name.replace('\xa0', ' ').replace('—', '').strip())).strip(), #division_name,#cleaned_division_name, #re.sub(r'^•\s*', '', cleaned_division_name).strip(),
+                'division_name':  final_division_name if final_division_name else None, #re.sub(r'^•\s*', '', re.sub(r'\s+', ' ', division_name.replace('\xa0', ' ').replace('—', '').strip())).strip(), #division_name,#cleaned_division_name, #re.sub(r'^•\s*', '', cleaned_division_name).strip(),
                 #'bahagian': bahagian,
-                'unit_name': unit_name,
-                'person_name': person_name,
-                'person_position': person_position,
-                'person_email': f"{person_email}@nres.gov.my",
-                'person_phone': person_phone,
+                'unit_name': unit_name if unit_name else None,
+                'person_name': person_name if person_name else None,
+                'person_position': person_position if person_position else None,
+                'person_email': person_email if person_email else None,
+                'person_phone': person_phone if person_phone else None,
                 'person_fax': None,  
                 'parent_org_id': None,  
 

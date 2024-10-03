@@ -1,4 +1,5 @@
 import scrapy
+import re
 
 class JPMSpider(scrapy.Spider):
     name = 'jpm'
@@ -87,9 +88,11 @@ class JPMSpider(scrapy.Spider):
                 email_list = contact.css('td.col-3::text').getall()
                 if email_list:
                     person_email_prefix = email_list[-1].strip()
+                    if person_email_prefix.lower() == 'timbalan setiausaha bahagian pembangunan (seksyen teknikal)': #specific case
+                        person_email_prefix = ''
                 else:
                     person_email_prefix = ''
-                person_email = f"{person_email_prefix}@jpm.gov.my" if person_email_prefix else ''
+                person_email = f"{person_email_prefix}@jpm.gov.my" if person_email_prefix else None
 
                 yield {
                     'org_sort': 1,

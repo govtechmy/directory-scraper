@@ -123,21 +123,22 @@ class KKDW_AnggotaSpider(scrapy.Spider):
             division_name = row[3] if row[3] else None
 
             #lookup the division_sort_order using the division name
-            division_sort_order = self.division_sort_mapping.get(division_name, 999)  #default to 999 if not found
+            division_sort_order = self.division_sort_mapping.get(division_name, 999999)  #default to 999 if not found
 
-            email = row[7] if row[7] else None
+            email = row[7].strip() if row[7] else None
 
             if email:
                 email = email.replace('[at]', '@').replace('[dot]', '.').replace('[.]', '.').replace('[@]', '@')
                 email = email.replace('[com]', '.com').replace('[my]', '.my')
 
-                if email.endswith("@gmail.com") or email.endswith("@jkr.gov.my") or email.endswith("@infra.gov.my"):
-                    pass  #valid email, no need concatenation with @rurallink.gov.my
-                elif "@" in email:
-                        pass  #extra check: valid email, no need concatenation with @rurallink.gov.my
+                email = email.strip().replace(" ", "")
+
+                if email.startswith('@'):
+                    email = None
+                elif "@" in email and "." in email.split("@")[-1]:
+                    pass
                 else:
                     email = f"{email}@rurallink.gov.my"
-
 
             yield {
                 'org_sort': 999,
@@ -146,12 +147,12 @@ class KKDW_AnggotaSpider(scrapy.Spider):
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,
                 'person_sort_order': self.person_sort_order,
-                'division_name': division_name,
+                'division_name': division_name.strip() if division_name else None,
                 'unit_name': None,
-                'person_name': row[4] if row[4] else None,
-                'person_position': row[5] if row[5] else None,
-                'person_phone': row[6] if row[6] else None,
-                'person_email': email,
+                'person_name': row[4].strip() if row[4] else None,
+                'person_position': row[5].strip() if row[5] else None,
+                'person_phone': row[6].strip() if row[6] else None,
+                'person_email': email.strip() if email else None,
                 'person_fax': None,
                 'parent_org_id': None, #is the parent
             }

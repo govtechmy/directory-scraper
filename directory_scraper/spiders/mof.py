@@ -105,6 +105,18 @@ class MOFSpider(scrapy.Spider):
             person_email = row.xpath('.//i[@class="fa fa-envelope"]/following-sibling::text()[1]').get(default='').strip()
             person_phone = row.xpath('.//i[@class="fa fa-phone-alt"]/following-sibling::text()[1]').get(default='').strip()
 
+            if person_email:
+                person_email = person_email.replace('[at]', '@').replace('[dot]', '.').replace('[.]', '.').replace('[@]', '@')
+
+                if "@" in person_email:
+                    if not person_email.endswith(".gov.my"): #person@mof
+                        person_email = f"{person_email}.gov.my" 
+                elif "@mof.gov.my" in person_email:
+                    pass
+                else:
+                    person_email = f"{person_email}@mof.gov.my"
+
+
             yield {
                 'org_sort': 999,
                 'org_id': "MOF",

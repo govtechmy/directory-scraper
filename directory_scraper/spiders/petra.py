@@ -102,9 +102,14 @@ class PetraSpider(scrapy.Spider):
             person_name = row.xpath("./td[2]/text()").get(default='').strip()
             division_or_unit = row.xpath("./td[3]/text()").get(default='').strip()
             person_position = row.xpath("./td[4]/text()").get(default='').strip()
-            person_email_prefix = row.xpath("./td[5]/text()").get(default='').strip()
+            person_email = row.xpath("./td[5]/text()").get(default='').strip()
             person_phone = row.xpath("./td[6]/text()").get(default='').strip()
-            person_email = f"{person_email_prefix}@petra.gov.my" if person_email_prefix else None
+
+            if person_email:
+                if "@" in person_email:
+                    pass
+                else:
+                    person_email = f"{person_email}@petra.gov.my"
 
             current_division = None
             unit = None

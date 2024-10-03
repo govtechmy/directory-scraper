@@ -86,8 +86,23 @@ class EKONOMISpider(scrapy.Spider):
                     person_email = row.css('td:nth-child(4)::text').get('').strip()
                     person_phone = row.css('td:nth-child(5)::text').get('').strip()
 
+                    # if person_email:
+                    #     if "@" in person_email:
+                    #         pass
+                    #     else:
+                    #         person_email = f"{person_email}@ekonomi.gov.my"
+
                     if person_email:
-                        if "@" in person_email:
+                        person_email = person_email.replace('[at]', '@').replace('[dot]', '.').replace('[.]', '.').replace('[@]', '@')
+                        person_email = person_email.replace('[com]', '.com').replace('[my]', '.my')
+
+                        person_email = person_email.strip().replace(" ", "")
+
+                        if person_email.startswith('@'):
+                            person_email = None
+                        elif "@" in person_email and "." in person_email.split("@")[-1]:
+                            pass
+                        elif "julianaj@jkr" in person_email: #JULIANA BINTI JAAFAR
                             pass
                         else:
                             person_email = f"{person_email}@ekonomi.gov.my"
