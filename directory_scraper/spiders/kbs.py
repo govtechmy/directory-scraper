@@ -25,14 +25,19 @@ class KBSSpider(scrapy.Spider):
         # directory_lst = list()
         for person_order, (name, data) in enumerate(zip(name_lst, data_lst)):
             person_dict = {
-                "agency": phone_lst[0] if (phone_lst := [string for string in data if re.match(r"^Kementerian", string)]) else "Kementerian Belia dan Sukan",
-                "person_name": name,
-                "person_sort_order": person_order+1,
-                "division_sort_order": self.start_urls.index(response.url)+1,
-                "division": div_lst[0] if (div_lst := [string for string in data if string.startswith("Bahagian")]) else None,
-                "unit": div_lst[0] if (div_lst := [string for string in data if re.match(unit_regex, string)]) else None,
+                "org_id": "KBS",
+                "org_name": "KEMENTERIAN BELIA DAN SUKAN",
+                "org_sort": 23,
+                "org_type": "ministry",
+                "division_name": div_lst[0] if (div_lst := [string for string in data if string.startswith("Bahagian")]) else "NULL",
+                "division_sort": self.start_urls.index(response.url)+1,
+                "unit_name": div_lst[0] if (div_lst := [string for string in data if re.match(unit_regex, string)]) else "NULL",
                 "person_position": data[0],
-                "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else None,
-                "person_email": email_lst[0] if (email_lst := [string.replace(" ", "") for string in data if re.match(email_regex, string)]) else None
+                "person_name": name,
+                "person_email": email_lst[0] if (email_lst := [string.replace(" ", "") for string in data if re.match(email_regex, string)]) else "NULL",
+                "person_fax": "NULL",
+                "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else "NULL",
+                "person_sort": person_order+1,
+                "parent_org_id": "NULL",
             }
             yield person_dict

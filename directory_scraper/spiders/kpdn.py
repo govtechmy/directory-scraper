@@ -5,8 +5,8 @@ import scrapy
 class KPDNSpider(scrapy.Spider):
     name = "kpdn"
     
-    none_handler = lambda self, condition: result.strip() if (result := condition) else None
-    email_handler = lambda self, condition: f"{result}@kpdn.gov.my" if (result := re.sub(r"/txt2img/", "", condition)) else None
+    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
+    email_handler = lambda self, condition: f"{result}@kpdn.gov.my" if (result := re.sub(r"/txt2img/", "", condition)) else "NULL"
     
     start_urls = [
         "https://insid.kpdn.gov.my/direktori/bahagian/92",
@@ -67,13 +67,35 @@ class KPDNSpider(scrapy.Spider):
         division_sort_order = self.start_urls.index(response.url)
         for row in response.css("tbody > tr"):
             person_data = {
-                "person_sort_order": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
+                "org_id": "KPDN",
+                "org_name": "KEMENTERIAN PERDAGANGAN DALAM NEGERI DAN KOS SARA HIDUP",
+                "org_sort": 25,
+                "org_type": "ministry",
+                "division_name": self.none_handler(row.css("td:nth-child(6)").css("::text").get().replace("-", "")),
+                "division_sort": division_sort_order,
+                "unit_name": self.none_handler(row.css("td:nth-child(7)").css("::text").get().replace("-", "")),
+                "person_position": self.none_handler(row.css("td:nth-child(4)").css("::text").get()),
                 "person_name": re.sub(r"[\n ]{2,}", " ",self.none_handler(row.css("td:nth-child(2)").css("::text").get())),
                 "person_email": self.email_handler(row.css("td:nth-child(3)").css("img::attr(src)").get()),
-                "person_position": self.none_handler(row.css("td:nth-child(4)").css("::text").get()),
+                "person_fax": "NULL",
                 "person_phone": self.none_handler(row.css("td:nth-child(5)").css("::text").get()),
-                "division": self.none_handler(row.css("td:nth-child(6)").css("::text").get()),
-                "division_sort_order": division_sort_order,
-                "unit": self.none_handler(row.css("td:nth-child(7)").css("::text").get()),
+                "person_sort": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
+                "parent_org_id": "NULL"
             }
             yield person_data
+{
+    "org_id": {"type": "keyword"},
+    "org_name": {"type": "keyword"},
+    "org_sort": {"type": "integer"},
+    "org_type": {"type": "keyword"},
+    "division_name": {"type": "keyword", "null_value": "NULL"},
+    "division_sort": {"type": "integer"},
+    "unit_name": {"type": "keyword", "null_value": "NULL"},
+    "person_position": {"type": "text"},
+    "person_name": {"type": "text"},
+    "person_email": {"type": "text", "null_value": "NULL"},
+    "person_fax": {"type": "keyword", "null_value": "NULL"},
+    "person_phone": {"type": "keyword", "null_value": "NULL"},
+    "person_sort": {"type": "integer"},
+    "parent_org_id": {"type": "keyword", "null_value": "NULL"}
+}

@@ -75,15 +75,20 @@ class MOTACSpider(CrawlSpider):
             phone = phone_str[0].strip() if (phone_str := re.findall(pattern=phone_regex, string=datapoint[-1])) else None
 
             person_data = {
-                "agency": "KEMENTERIAN PELANCONGAN, SENI DAN BUDAYA",
-                "person_name": name,
-                "person_sort_order": person_order+1,
-                "person_email": email+"@motac.gov.my",
-                "person_phone": phone,
+                "org_id": "MOTAC",
+                "org_name": "KEMENTERIAN PELANCONGAN, SENI DAN BUDAYA",
+                "org_sort": 19,
+                "org_type": "ministry",
+                "division_name": division,
+                "division_sort": self.url_lst.index(response.url)+1,
+                "unit_name": unit,
                 "person_position": position,
-                "unit": unit,
-                "division": division,
-                "division_sort_order": self.url_lst.index(response.url)+1
+                "person_name": name,
+                "person_email": email+"@motac.gov.my",
+                "person_fax": "NULL",
+                "person_phone": phone,
+                "person_sort": person_order+1,
+                "parent_org_id": "NULL"
             }
 
             yield person_data

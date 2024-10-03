@@ -6,8 +6,8 @@ class MOESpider(scrapy.Spider):
     allowed_domains = ["direktori.moe.gov.my"]
     start_urls = ["https://direktori.moe.gov.my/ajax/public/getdir.php?id=1&textsearch=&selectsearch="]
 
-    none_handler = lambda self, condition: result.strip() if (result := condition) else None
-    email_handler = lambda self, condition: f"{result}@moe.gov.my" if (result := condition) else None
+    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
+    email_handler = lambda self, condition: f"{result}@moe.gov.my" if (result := condition) else "NULL"
 
     division_mapping = [
         {"division_code": "120", "division": "PEJABAT MENTERI PENDIDIKAN", "page_id": 1},
@@ -125,14 +125,20 @@ class MOESpider(scrapy.Spider):
             
             for data_point in row.css("tbody > tr"):
                 person_data = {
-                    "division": division,
-                    "division_sort_order": division_sort_order,
-                    "unit": f"{current_unit} > {current_subunit}" if current_subunit else current_unit,
-                    "person_sort_order": person_sort_order,
-                    "person_name": self.none_handler(data_point.css("td:nth-child(2)::text").get()),
+                    "org_id": "MOE",
+                    "org_name": "KEMENTERIAN PENDIDIKAN",
+                    "org_sort": 21,
+                    "org_type": "ministry",
+                    "division_name": division,
+                    "division_sort": division_sort_order,
+                    "unit_name": f"{current_unit} > {current_subunit}" if current_subunit else current_unit,
                     "person_position": self.none_handler(data_point.css("td:nth-child(3)::text").get()),
+                    "person_name": self.none_handler(data_point.css("td:nth-child(2)::text").get()),
                     "person_email": self.email_handler(data_point.css("td:nth-child(4)::text").get()),
-                    "person_phone": self.none_handler(data_point.css("td:nth-child(5)::text").get())
+                    "person_fax": "NULL",
+                    "person_phone": self.none_handler(data_point.css("td:nth-child(5)::text").get()),
+                    "person_sort_order": person_sort_order,
+                    "parent_org_id": "NULL"
                 }
 
                 person_sort_order += 1

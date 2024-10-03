@@ -5,65 +5,81 @@ class KPKScraper(scrapy.Spider):
 
     start_urls = ["https://edirektori.kpk.gov.my/edirektori/index_webbm.php?s_pekerja_nama=&s_bahagian_id=1&s_unit_id=&s_seksyen_id1="]
 
-    bahagian_mapping = {
-        "Pejabat YB Menteri (YBM)": {"division": 1, "division_sort_order": 1,},
-        "Pejabat YB Timbalan Menteri (YBTM)": {"division": 2, "division_sort_order": 2,},
-        "Pejabat Ketua Setiausaha (KSU)": {"division": 3, "division_sort_order": 3,},
-        "Pejabat Tim. Ketua Setiausaha (Perladangan dan Komoditi) - TKSU(K)": {"division": 4, "division_sort_order": 4,},
-        "Pejabat Tim. Ketua Setiausaha (Perancangan Strategik & Pengurusan)-TKSU(P)": {"division": 5, "division_sort_order": 5,},
-        "Unit Komunikasi Korporat (UKK)": {"division": 6, "division_sort_order": 6,},
-        "Unit Undang-Undang (UUU)": {"division": 7, "division_sort_order": 7,},
-        "Unit Audit Dalam (UAD)": {"division": 8, "division_sort_order": 8,},
-        "Unit Integriti (UI)": {"division": 10, "division_sort_order": 9,},
-        "Bahagian Kemajuan Industri Sawit dan Sago (BISS)": {"division": 12, "division_sort_order": 10,},
-        "Bahagian Pembangunan Industri Getah (GET)": {"division": 14, "division_sort_order": 11,},
-        "Bahagian Kemajuan Industri Kayu Kayan, Tembakau dan Kenaf (KTK)": {"division": 13, "division_sort_order": 12,},
-        "Bahagian Pembangunan Industri Koko dan Lada (IKL)": {"division": 11, "division_sort_order": 13,},
-        "Bahagian Biojisim dan Biobahan Api (BBA)": {"division": 20, "division_sort_order": 14,},
-        "Bahagian Perancangan Strategik dan Antarabangsa (PSA)": {"division": 15, "division_sort_order": 15,},
-        "Bahagian Pengurusan Sumber Manusia (PSM)": {"division": 17, "division_sort_order": 16,},
-        "Bahagian Khidmat Pengurusan dan Pembangunan (BKPP)": {"division": 18, "division_sort_order": 17,},
-        "Bahagian Penggalakan Inovasi dan Modal Insan Industri (PIMI)": {"division": 16, "division_sort_order": 18,},
-        "Bahagian Akaun (BA)": {"division": 19, "division_sort_order": 19,},
-        "Bahagian Pengurusan Maklumat (BPM)": {"division": 21, "division_sort_order": 20,}
-    }
+    bahagian_mapping = [
+        {"division_name": "Pejabat YB Menteri (YBM)", "division_idx": 1, "division_sort": 1},
+        {"division_name": "Pejabat YB Timbalan Menteri (YBTM)", "division_idx": 2, "division_sort": 2},
+        {"division_name": "Pejabat Ketua Setiausaha (KSU)", "division_idx": 3, "division_sort": 3},
+        {"division_name": "Pejabat Tim. Ketua Setiausaha (Perladangan dan Komoditi) - TKSU(K)", "division_idx": 4, "division_sort": 4},
+        {"division_name": "Pejabat Tim. Ketua Setiausaha (Perancangan Strategik & Pengurusan)-TKSU(P)", "division_idx": 5, "division_sort": 5},
+        {"division_name": "Unit Komunikasi Korporat (UKK)", "division_idx": 6, "division_sort": 6},
+        {"division_name": "Unit Undang-Undang (UUU)", "division_idx": 7, "division_sort": 7},
+        {"division_name": "Unit Audit Dalam (UAD)", "division_idx": 8, "division_sort": 8},
+        {"division_name": "Unit Integriti (UI)", "division_idx": 10, "division_sort": 9},
+        {"division_name": "Bahagian Kemajuan Industri Sawit dan Sago (BISS)", "division_idx": 12, "division_sort": 10},
+        {"division_name": "Bahagian Pembangunan Industri Getah (GET)", "division_idx": 14, "division_sort": 11},
+        {"division_name": "Bahagian Kemajuan Industri Kayu Kayan, Tembakau dan Kenaf (KTK)", "division_idx": 13, "division_sort": 12},
+        {"division_name": "Bahagian Pembangunan Industri Koko dan Lada (IKL)", "division_idx": 11, "division_sort": 13},
+        {"division_name": "Bahagian Biojisim dan Biobahan Api (BBA)", "division_idx": 20, "division_sort": 14},
+        {"division_name": "Bahagian Perancangan Strategik dan Antarabangsa (PSA)", "division_idx": 15, "division_sort": 15},
+        {"division_name": "Bahagian Pengurusan Sumber Manusia (PSM)", "division_idx": 17, "division_sort": 16},
+        {"division_name": "Bahagian Khidmat Pengurusan dan Pembangunan (BKPP)", "division_idx": 18, "division_sort": 17},
+        {"division_name": "Bahagian Penggalakan Inovasi dan Modal Insan Industri (PIMI)", "division_idx": 16, "division_sort": 18},
+        {"division_name": "Bahagian Akaun (BA)", "division_idx": 19, "division_sort": 19},
+        {"division_name": "Bahagian Pengurusan Maklumat (BPM)", "division_idx": 21, "division_sort": 20},
+    ]
 
     def parse(self, response):
-        for bahagian_idx in range(1, 22):
-            if bahagian_idx != 9:
-                form_data = {
-                    "s_pekerja_name": "null",
-                    "s_bahagian_id": str(bahagian_idx),
-                    "s_unit_id": "null",
-                    "s_seksyen_id1": "null",
+        division_lst = [row["division_name"] for row in self.bahagian_mapping]
+        for row in self.bahagian_mapping:
+            division_name = row["division_name"]
+            division_idx = row["division_idx"]
+            division_sort = row["division_sort"]
+            form_data = {
+                "s_pekerja_name": "null",
+                "s_bahagian_id": str(division_idx),
+                "s_unit_id": "null",
+                "s_seksyen_id1": "null",
+            }
+            url = f"https://edirektori.kpk.gov.my/edirektori/index_webbm.php?s_pekerja_name=&s_bahagian_id={division_idx}&s_unit_id=&s_seksyen_id1="
+            yield scrapy.FormRequest(
+                url=url,
+                formdata=form_data,
+                callback=self.parse_form,
+                meta={
+                    "division_sort": division_sort,
+                    "division_name": division_name,
+                    "division_lst": division_lst,
                 }
-                url = f"https://edirektori.kpk.gov.my/edirektori/index_webbm.php?s_pekerja_name=&s_bahagian_id={bahagian_idx}&s_unit_id=&s_seksyen_id1="
-                yield scrapy.FormRequest(
-                    url=url,
-                    formdata=form_data,
-                    callback=self.parse_form,
-                )
+            )
 
     def parse_form(self, response):
         current_unit = None
-        current_division = None
+        current_division = response.meta["division_name"]
+        division_sort = response.meta["division_sort"]
+        division_lst = response.meta["division_lst"]
         sort_order = 1
         for row in response.css("table[class='GridBlueprint'] > tr"):
             if row.attrib["class"] == "GroupCaptionBlueprint":
-                current_division = unit if ((unit := row.css("p ::text").get()) and (unit in self.bahagian_mapping.keys())) else current_division
-                current_unit = unit if ((unit := row.css("p ::text").get()) and (unit not in self.bahagian_mapping.keys())) else current_unit
+                current_division = unit if ((unit := row.css("p ::text").get()) and (unit in division_lst)) else current_division
+                current_unit = unit if ((unit := row.css("p ::text").get()) and (unit not in division_lst)) else current_unit
             else:
                 data_lst = [txt.strip().replace("\xa0", " ") for txt in row.css("p::text").getall() if txt.strip()]
                 if not data_lst:
                     continue
                 person_data = {
-                    "division": current_division,
-                    "division_sort_order": self.bahagian_mapping[current_division]["division_sort_order"],
-                    "unit": current_unit,
-                    "person_name": data_lst[0],
-                    "person_sort_order": sort_order,
+                    "org_id": "KPK",
+                    "org_name": "KEMENTERIAN PERLADANGAN DAN KOMODITI",
+                    "org_sort": 26,
+                    "org_type": "ministry",
+                    "division_name": current_division,
+                    "division_sort": division_sort,
+                    "unit_name": current_unit,
                     "person_position": data_lst[1],
+                    "person_name": data_lst[0],
                     "person_email": data_lst[2],
-                    "person_phone": data_lst[3]
+                    "person_fax": "NULL",
+                    "person_phone": data_lst[3],
+                    "person_sort": sort_order,
+                    "parent_org_id": "NULL"
                 }
-                yield {"data": person_data}
+                yield person_data

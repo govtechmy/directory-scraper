@@ -86,10 +86,12 @@ class KPTSpider(CrawlSpider):
 
         for row_idx, row in enumerate(response.css("tbody > tr")):
             person_data = {
-                "agency": "Kementerian Pendidikan Tinggi",
-                "division": division,
-                "unit": default_unit,
-                "directory_sort_order": self.directory_urls.index(response.url)+1
+                "org_id": "KPT",
+                "org_name": "KEMENTERIAN PENDIDIKAN TINGGI",
+                "org_sort": 18,
+                "division_name": division,
+                "unit_name": default_unit,
+                "division_sort": self.directory_urls.index(response.url)+1
             }
             for idx, col in enumerate(row.css("td")):
                 if unit_name := col.css("b").getall():
@@ -105,8 +107,6 @@ class KPTSpider(CrawlSpider):
                     # print(col)
                     person_data.update({
                         "person_name": temp_col.pop(0) if temp_col else None,
-                        "person_position": temp_col.pop(0) if temp_col else None,
-                        "position_grade": temp_col.pop(0) if temp_col else None
                     })
                 elif idx == 2:
                     person_data.update({
@@ -122,4 +122,19 @@ class KPTSpider(CrawlSpider):
                             "person_phone": f"{temp_col.pop(0) if temp_col else None}" 
                         })
             if len(person_data) > 5:
-                yield person_data
+                yield {
+                    "org_id": person_data["org_id"],
+                    "org_name": person_data["org_name"],
+                    "org_sort": person_data["org_sort"], 
+                    "org_type": "ministry",
+                    "division_name": person_data["division_name"],
+                    "division_sort": person_data["division_sort"],
+                    "unit_name": person_data["unit_name"],
+                    "person_position": person_data["person_sort_order"],
+                    "person_name": person_data["person_name"],
+                    "person_email": person_data["person_email"],
+                    "person_fax": "NULL",
+                    "person_phone": person_data["person_phone"],
+                    "person_sort": person_data["person_sort_order"],
+                    "parent_org_id": "NULL"
+                }

@@ -5,9 +5,9 @@ from scrapy_playwright.page import PageMethod
 class MOHSpider(scrapy.Spider):
     name = "moh"
     allowed_domains = ["www.moh.gov.my"]
-    start_urls = ["https://www.moh.gov.my/index.php/edirectory/member_list/"]
+    start_urls = ["https://www.moh.gov.my/index.php/edirectory/member_list"]
     
-    none_handler = lambda self, condition: result if (result := condition) else None
+    none_handler = lambda self, condition: result if (result := condition) else "NULL"
     
     division_mapping = [
         {"division_name": "Bahagian Akaun", "division_code": "29", "division_sort_order": 39},
@@ -89,14 +89,20 @@ class MOHSpider(scrapy.Spider):
                 unit = self.none_handler(data_point.css("tbody > tr:nth-child(4)").css("td[class='data-label']::text").get())
                 
                 person_data = {
-                    "person_sort_order": 10*page_number + person_sort + 1,
-                    "person_name": name,
+                    "org_id": "MOH",
+                    "org_name": "KEMENTERIAN KESIHATAN",
+                    "org_sort":28,
+                    "org_type": "ministry",
+                    "division_name": division,
+                    "division_sort": division_sort_order,
+                    "unit_name": unit,
                     "person_position": position,
-                    "person_phone": phone,
+                    "person_name": name,
                     "person_email": email,
-                    "division": division,
-                    "division_sort_order": division_sort_order,
-                    "unit": unit
+                    "person_fax": "NULL",
+                    "person_phone": phone,
+                    "person_sort": 10*page_number + person_sort + 1,
+                    "parent_org_id": "NULL"
                 }
 
                 yield person_data

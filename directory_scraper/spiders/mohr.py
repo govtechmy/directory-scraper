@@ -11,6 +11,9 @@ class MOHRScraper(scrapy.Spider):
     }
 
     start_urls = ["https://app1.mohr.gov.my/staff/staff_name.php?department="]
+    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
+    email_handler = lambda self, condition: f"{result}@mohr.gov.my" if (result := condition) else "NULL"
+
     
     division_mapping = {
         "00010": "PEJABAT MENTERI ",
@@ -62,6 +65,8 @@ class MOHRScraper(scrapy.Spider):
                 )
     
     def parse(self, response):
+        with open("/Users/mydigital/Desktop/KD Work/directory-scraper/a.html", "w") as f:
+            f.write(response.text)
         code = response.meta["code"]
         name = response.meta["name"]
         division_sort = response.meta["division_sort"]
@@ -77,16 +82,20 @@ class MOHRScraper(scrapy.Spider):
             current_unit = None
 
         for person_sort, row in enumerate(response.css("tbody > tr")):
-            row_data = [txt.strip() for txt in row.css("td ::text").getall() if txt.strip()]
             person_data = {
-                "division_sort_order": division_sort+1,
-                "division": current_division,
-                "person_sort_order": person_sort+1,
-                "person_name": row_data[0],
-                "person_position": row_data[1],
-                "unit": current_unit,
-                "person_phone": row_data[4],
-                "person_email": f"{row_data[5]}@mohr.gov.my"
+                "org_id": "MORH",
+                "org_name": "KEMENTERIAN SUMBER MANUSIA",
+                "org_sort": 29,
+                "org_type": "ministry",
+                "division_name": current_division,
+                "division_sort": division_sort+1,
+                "unit_name": current_unit,
+                "person_position": self.none_handler(row.xpath("td[2]/text()").get()),
+                "person_name": self.none_handler(row.xpath("td[1]/text()").get()),
+                "person_email": self.email_handler(row.xpath("td[5]/a/text()").get()),
+                "person_fax": "NULL",
+                "person_phone": self.none_handler(row.xpath("td[5]/text()").get()),
+                "person_sort": person_sort+1,
+                "parent_org_id": "NULL",
             }
-
             yield(person_data)
