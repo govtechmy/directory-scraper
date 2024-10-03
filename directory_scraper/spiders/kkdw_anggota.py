@@ -129,6 +129,7 @@ class KKDW_AnggotaSpider(scrapy.Spider):
 
             if email:
                 email = email.replace('[at]', '@').replace('[dot]', '.').replace('[.]', '.').replace('[@]', '@')
+                email = email.replace('[com]', '.com').replace('[my]', '.my')
 
                 if email.endswith("@gmail.com") or email.endswith("@jkr.gov.my") or email.endswith("@infra.gov.my"):
                     pass  #valid email, no need concatenation with @rurallink.gov.my
