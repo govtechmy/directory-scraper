@@ -83,8 +83,14 @@ class EKONOMISpider(scrapy.Spider):
                     person_name = row.css('td:nth-child(2) p::text').get('').strip()
                     person_position = row.css('td:nth-child(2) p::text').getall()[-1].strip()
                     division_name = row.css('td:nth-child(3)::text').get('').strip()
-                    person_email = row.css('td:nth-child(4)::text').get('').strip() + '@ekonomi.gov.my'
+                    person_email = row.css('td:nth-child(4)::text').get('').strip()
                     person_phone = row.css('td:nth-child(5)::text').get('').strip()
+
+                    if person_email:
+                        if "@" in person_email:
+                            pass
+                        else:
+                            person_email = f"{person_email}@ekonomi.gov.my"
 
                     #increment person_sort_order for each person
                     self.person_sort_order += 1
@@ -109,12 +115,12 @@ class EKONOMISpider(scrapy.Spider):
                         'org_type': 'ministry',
                         'division_sort': self.division_tracker[division_name],
                         'person_sort_order': self.person_sort_order,
-                        'division_name': division_name,
-                        'unit_name': unit_name,
-                        'person_name': person_name,
-                        'person_position': person_position,
-                        'person_email': person_email,
-                        'person_phone': person_phone,
+                        'division_name': division_name if division_name else None,
+                        'unit_name': unit_name if unit_name else None,
+                        'person_name': person_name if person_name else None,
+                        'person_position': person_position if person_position else None,
+                        'person_email': person_email if person_email else None,
+                        'person_phone': person_phone if person_phone else None,
                         'person_fax': None,
                         'parent_org_id': None, #is the parent
                         #'page': response.meta['page']
