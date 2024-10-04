@@ -83,19 +83,3 @@ class KPDNSpider(scrapy.Spider):
                 "parent_org_id": "NULL"
             }
             yield person_data
-{
-    "org_id": {"type": "keyword"},
-    "org_name": {"type": "keyword"},
-    "org_sort": {"type": "integer"},
-    "org_type": {"type": "keyword"},
-    "division_name": {"type": "keyword", "null_value": "NULL"},
-    "division_sort": {"type": "integer"},
-    "unit_name": {"type": "keyword", "null_value": "NULL"},
-    "person_position": {"type": "text"},
-    "person_name": {"type": "text"},
-    "person_email": {"type": "text", "null_value": "NULL"},
-    "person_fax": {"type": "keyword", "null_value": "NULL"},
-    "person_phone": {"type": "keyword", "null_value": "NULL"},
-    "person_sort": {"type": "integer"},
-    "parent_org_id": {"type": "keyword", "null_value": "NULL"}
-}
