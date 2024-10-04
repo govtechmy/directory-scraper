@@ -134,8 +134,9 @@ class NRESSpider(scrapy.Spider):
             person_name = row.xpath('td[1]/text()').get()
             bahagian = row.xpath('td[2]/text()').get()
             person_position = row.xpath('td[3]/text()').get()
-            person_email = row.xpath('td[4]/text()').get()  # Modify if person_email column exists
-            person_phone = row.xpath('td[5]/text()').get()  # Modify if phone column exists
+            person_email = row.xpath('td[4]/text()').get()
+            person_location = row.xpath('td[5]/text()').get()
+            person_phone = row.xpath('td[6]/text()').get()
 
             #clean and normalize the bahagian (not division_name)
             cleaned_bahagian = re.sub(r'\s+', ' ', bahagian.replace('\xa0', ' ').replace('—', '').strip())
