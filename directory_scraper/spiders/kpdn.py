@@ -66,14 +66,27 @@ class KPDNSpider(scrapy.Spider):
     def parse(self, response):
         division_sort_order = self.start_urls.index(response.url)
         for row in response.css("tbody > tr"):
+            division = self.none_handler(response.xpath("//h4/text()").getall()[-1])
+            unit = row.css("td:nth-child(7)").css("::text").get().replace("-", "")
+            subunit = row.css("td:nth-child(6)").css("::text").get().replace("-", "")
+
+            if unit and subunit:
+                unit_name = f"{unit} > {subunit}"
+            elif unit and not subunit:
+                unit_name = unit
+            elif not unit and subunit:
+                unit_name = subunit
+            else:
+                unit_name = "NULL"
+
             person_data = {
                 "org_id": "KPDN",
                 "org_name": "KEMENTERIAN PERDAGANGAN DALAM NEGERI DAN KOS SARA HIDUP",
                 "org_sort": 25,
                 "org_type": "ministry",
-                "division_name": self.none_handler(row.css("td:nth-child(6)").css("::text").get().replace("-", "")),
+                "division_name": division,
                 "division_sort": division_sort_order,
-                "unit_name": self.none_handler(row.css("td:nth-child(7)").css("::text").get().replace("-", "")),
+                "unit_name": unit_name,
                 "person_position": self.none_handler(row.css("td:nth-child(4)").css("::text").get()),
                 "person_name": re.sub(r"[\n ]{2,}", " ",self.none_handler(row.css("td:nth-child(2)").css("::text").get())),
                 "person_email": self.email_handler(row.css("td:nth-child(3)").css("img::attr(src)").get()),
