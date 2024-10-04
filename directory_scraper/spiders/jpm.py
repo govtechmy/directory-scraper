@@ -83,8 +83,12 @@ class JPMSpider(scrapy.Spider):
                 person_name = contact.css('td.col-4 b::text').get(default='').strip()
                 person_position = contact.css('td.col-3::text').get(default='').strip()
                 person_phone_prefix = contact.css('td.col-2::text').get(default='').strip()
-                person_phone = f"03-{person_phone_prefix}" if person_phone_prefix else ''
-                
+
+                if person_phone_prefix:
+                    person_phone = person_phone_prefix if person_phone_prefix.startswith("03") or person_phone_prefix.startswith("01") else f"03-{person_phone_prefix}"
+                else:
+                    person_phone = ''
+
                 email_list = contact.css('td.col-3::text').getall()
                 if email_list:
                     person_email_prefix = email_list[-1].strip()
