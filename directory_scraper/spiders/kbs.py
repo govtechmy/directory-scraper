@@ -21,15 +21,19 @@ class KBSSpider(scrapy.Spider):
             for block
             in response.css("div[class^='sppb-person-introtext']").getall()
         ]
-
-        # directory_lst = list()
+            
         for person_order, (name, data) in enumerate(zip(name_lst, data_lst)):
+            division_name = [
+                "Pengurusan Tertinggi",
+                div_lst[0] if (div_lst := [string for string in data if string.startswith("Bahagian")]) else "NULL",
+                "NULL"
+            ]
             person_dict = {
                 "org_id": "KBS",
                 "org_name": "KEMENTERIAN BELIA DAN SUKAN",
                 "org_sort": 23,
                 "org_type": "ministry",
-                "division_name": div_lst[0] if (div_lst := [string for string in data if string.startswith("Bahagian")]) else "NULL",
+                "division_name": division_name.pop(self.start_urls.index(response.url)),
                 "division_sort": self.start_urls.index(response.url)+1,
                 "unit_name": div_lst[0] if (div_lst := [string for string in data if re.match(unit_regex, string)]) else "NULL",
                 "person_position": data[0],

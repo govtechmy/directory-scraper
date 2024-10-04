@@ -107,41 +107,88 @@ class MOESpider(scrapy.Spider):
             )
 
     async def parse_item(self, response):
+
         page = response.meta["playwright_page"]
+        # yield {"data": response.text}
         division = response.meta["division"]
         division_sort_order = response.meta["division_sort_order"]
         
         await page.click("input[type='checkbox']")
+        person_sort_order = 1
         current_unit = None
         current_subunit = None
-        person_sort_order = 1
+        for table in response.css("div[class='panel panel-default']"):
+            if unit_name := table.xpath("div[@class='panel-heading']/text()").getall()[-1].strip():
+                current_unit = unit_name
+            if table.xpath("div[@class='panel-heading']").attrib.get("href"):
+                for top_row in table.css(f"div > div > table[class='table table-striped table-bordered table-hover table-responsive']:nth-child(1)").css("tbody > tr"):
+                    if not top_row.css("td:nth-child(2)::text"):
+                        continue
+                    yield {
+                        "org_id": "MOE",
+                        "org_name": "KEMENTERIAN PENDIDIKAN",
+                        "org_sort": 21,
+                        "org_type": "ministry",
+                        "division_name": division,
+                        "division_sort": division_sort_order,
+                        "unit_name": current_unit,
+                        "person_position": self.none_handler(top_row.css("td:nth-child(3)::text").get()),
+                        "person_name": self.none_handler(top_row.css("td:nth-child(2)::text").get()),
+                        "person_email": self.email_handler(top_row.css("td:nth-child(4)::text").get()),
+                        "person_fax": "NULL",
+                        "person_phone": self.none_handler(top_row.css("td:nth-child(5)::text").get()),
+                        "person_sort": person_sort_order,
+                        "parent_org_id": "NULL"
+                    }
+            for row in table.css("div[class='row'] > div > div > div[class='panel panel-default']"):
+                if subunit_name := row.css("h4 > a::text").get().strip():
+                    current_subunit = subunit_name
+                for data_row in row.css("table > tbody > tr"):
+                    yield {
+                        "org_id": "MOE",
+                        "org_name": "KEMENTERIAN PENDIDIKAN",
+                        "org_sort": 21,
+                        "org_type": "ministry",
+                        "division_name": division,
+                        "division_sort": division_sort_order,
+                        "unit_name": f"{current_unit} > {current_subunit}",
+                        "person_position": self.none_handler(data_row.css("td:nth-child(3)::text").get()),
+                        "person_name": self.none_handler(data_row.css("td:nth-child(2)::text").get()),
+                        "person_email": self.email_handler(data_row.css("td:nth-child(4)::text").get()),
+                        "person_fax": "NULL",
+                        "person_phone": self.none_handler(data_row.css("td:nth-child(5)::text").get()),
+                        "person_sort": person_sort_order,
+                        "parent_org_id": "NULL"
+                    }
+        # current_unit = None
+        # current_subunit = None
         
-        for row in response.css("div[class='panel panel-default']"):
-            if unit := row.css("div[class='panel-heading']::text").getall()[-1].strip():
-                current_unit = unit
-                current_subunit = None
-            elif subunit := row.css("h4 ::text").getall()[1].strip():
-                current_subunit = subunit
+        # for row in response.css("div[class='panel panel-default']"):
+        #     if unit := row.css("div[class='panel-heading']::text").getall()[-1].strip():
+        #         current_unit = unit
+        #         current_subunit = None
+        #     elif subunit := row.css("h4 ::text").getall()[1].strip():
+        #         current_subunit = subunit
             
-            for data_point in row.css("tbody > tr"):
-                person_data = {
-                    "org_id": "MOE",
-                    "org_name": "KEMENTERIAN PENDIDIKAN",
-                    "org_sort": 21,
-                    "org_type": "ministry",
-                    "division_name": division,
-                    "division_sort": division_sort_order,
-                    "unit_name": f"{current_unit} > {current_subunit}" if current_subunit else current_unit,
-                    "person_position": self.none_handler(data_point.css("td:nth-child(3)::text").get()),
-                    "person_name": self.none_handler(data_point.css("td:nth-child(2)::text").get()),
-                    "person_email": self.email_handler(data_point.css("td:nth-child(4)::text").get()),
-                    "person_fax": "NULL",
-                    "person_phone": self.none_handler(data_point.css("td:nth-child(5)::text").get()),
-                    "person_sort_order": person_sort_order,
-                    "parent_org_id": "NULL"
-                }
+        #     for data_point in row.css("tbody > tr"):
+        #         person_data = {
+        #             "org_id": "MOE",
+        #             "org_name": "KEMENTERIAN PENDIDIKAN",
+        #             "org_sort": 21,
+        #             "org_type": "ministry",
+        #             "division_name": division,
+        #             "division_sort": division_sort_order,
+        #             "unit_name": f"{current_unit} > {current_subunit}" if current_subunit else current_unit,
+        #             "person_position": self.none_handler(data_point.css("td:nth-child(3)::text").get()),
+        #             "person_name": self.none_handler(data_point.css("td:nth-child(2)::text").get()),
+        #             "person_email": self.email_handler(data_point.css("td:nth-child(4)::text").get()),
+        #             "person_fax": "NULL",
+        #             "person_phone": self.none_handler(data_point.css("td:nth-child(5)::text").get()),
+        #             "person_sort_order": person_sort_order,
+        #             "parent_org_id": "NULL"
+        #         }
 
-                person_sort_order += 1
-                yield person_data
+        #         person_sort_order += 1
+        #         yield person_data
         
         await page.close()
