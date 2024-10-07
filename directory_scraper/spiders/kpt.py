@@ -94,8 +94,9 @@ class KPTSpider(CrawlSpider):
                 "division_sort": self.directory_urls.index(response.url)+1
             }
             for idx, col in enumerate(row.css("td")):
-                if unit_name := col.css("b").getall():
-                    default_unit = clean_html(unit_name[0])
+                if col.attrib.get("colspan") and col.attrib.get("valign"):
+                    default_unit = clean_html(col.css("b::text").get())
+                    print(default_unit)
                     continue
 
                 temp_col = [i for i in clean_html(col.getall()[0]).split("\n") if len(i) > 1]
@@ -123,18 +124,18 @@ class KPTSpider(CrawlSpider):
                         })
             if len(person_data) > 5:
                 yield {
-                    "org_id": person_data["org_id"],
-                    "org_name": person_data["org_name"],
-                    "org_sort": person_data["org_sort"], 
+                    "org_id": person_data.get("org_id"),
+                    "org_name": person_data.get("org_name"),
+                    "org_sort": person_data.get("org_sort"), 
                     "org_type": "ministry",
-                    "division_name": person_data["division_name"],
-                    "division_sort": person_data["division_sort"],
-                    "unit_name": person_data["unit_name"],
-                    "person_position": person_data["person_sort_order"],
-                    "person_name": person_data["person_name"],
-                    "person_email": person_data["person_email"],
-                    "person_fax": "NULL",
-                    "person_phone": person_data["person_phone"],
-                    "person_sort": person_data["person_sort_order"],
-                    "parent_org_id": "NULL"
+                    "division_name": person_data.get("division_name"),
+                    "division_sort": person_data.get("division_sort"),
+                    "unit_name": person_data.get("unit_name"),
+                    "person_position": person_data.get("person_sort_order"),
+                    "person_name": person_data.get("person_name"),
+                    "person_email": person_data.get("person_email"),
+                    "person_fax": None,
+                    "person_phone": person_data.get("person_phone"),
+                    "person_sort": person_data.get("person_sort_order"),
+                    "parent_org_id": None
                 }
