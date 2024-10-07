@@ -50,6 +50,7 @@ class KPWKMSpider(scrapy.Spider):
                         "org_id": "KPWKM",
                         "org_name": "Kementerian Pembangunan Wanita, Keluarga dan Masyarakat",
                         "org_sort": 15,
+                        "org_type": "ministry",
                         "division_name": division_name,
                         "division_sort": division_sort,
                         "unit_name": current_unit,
