@@ -68,7 +68,8 @@ class KPTSpider(CrawlSpider):
         "https://app.mohe.gov.my/direktori/jabatan/JPPKK/76",
         "https://app.mohe.gov.my/direktori/jabatan/JPPKK/149",
         "https://app.mohe.gov.my/direktori/jabatan/JPPKK/2",
-        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/160"
+        "https://app.mohe.gov.my/direktori/jabatan/JPPKK/160",
+        "https://app.mohe.gov.my/direktori/jabatan/AKEPT/161"
     ]
 
     rules = (
@@ -76,12 +77,11 @@ class KPTSpider(CrawlSpider):
     )
 
     def parse_item(self, response):
-        print(response.url)
         clean_html = lambda string: re.sub(r"<.+?>|[\r\t\n]{2,}", "", string)
         extract_number = lambda string: re.findall(pattern=r"03[\d\- ]+\d", string=string)
         division = [text.strip() for line in response.css("div[class='card-body'] > div > div[class='col'] > b::text").getall() for text in line.split("\n") if text][0]
         email_extension = clean_html(response.css("thead > tr > td > b").getall()[2]).split()[1]
-        department_number = extract_number(clean_html(response.css("div[class='alert alert-warning']").getall()[0]))
+        department_number = extract_number(clean_html(response.css("div[class='alert alert-warning']").get()[0]))
         default_unit = None
 
         for row_idx, row in enumerate(response.css("tbody > tr")):
@@ -115,8 +115,10 @@ class KPTSpider(CrawlSpider):
                     })
                 elif idx == 3:
                     if department_number:
+                        extension_number = (f" ext {temp_col.pop(0).replace('*', '')}" if temp_col else "")
+                        phone_number = department_number + (extension_number or "")
                         person_data.update({
-                            "person_phone": f"{department_number[0]} ext {temp_col.pop(0) if temp_col else None}" 
+                            "person_phone": phone_number
                         })
                     else:
                         person_data.update({
