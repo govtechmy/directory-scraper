@@ -56,10 +56,10 @@ class KPWKMSpider(scrapy.Spider):
                         "person_position": data_point.xpath("*[3]/text()").get(),
                         "person_name": data_point.xpath("*[2]//a/text()").get(),
                         "person_email": data_point.xpath("*[4]/text()").get(),
-                        "person_fax": "NULL",
+                        "person_fax": None,
                         "person_phone": data_point.xpath("*[5]/text()").get(),
                         "person_sort": person_sort,
-                        "parent_org_id": "NULL",
+                        "parent_org_id": None,
                     }
                     yield person_data
                     person_sort += 1

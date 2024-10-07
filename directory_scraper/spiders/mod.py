@@ -235,13 +235,13 @@ class MODSpider(scrapy.Spider):
                 "division_name": current_division,
                 "division_sort": division_sort,
                 "unit_name": unit_name if (unit_name := " > ".join(unit_lst)) else "",
-                "person_position": position.strip() if (position := data_card.css("div:not([class])::text").get()) else "NULL",
-                "person_name": name.strip() if (name := data_card.css("h2::text").get()) else "NULL",
+                "person_position": position.strip() if (position := data_card.css("div:not([class])::text").get()) else None,
+                "person_name": name.strip() if (name := data_card.css("h2::text").get()) else None,
                 "person_email": data_card.css("joomla-hidden-mail::text").get(),
-                "person_fax": fax[0] if (fax := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Faks" in txt]) else "NULL",
-                "person_phone": phone[0] if (phone := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Telefon" in txt]) else "NULL",
+                "person_fax": fax[0] if (fax := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Faks" in txt]) else None,
+                "person_phone": phone[0] if (phone := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Telefon" in txt]) else None,
                 "person_sort": 10*(page_number-1) + sort_order,
-                "parent_org_id": "NULL"
+                "parent_org_id": None
             }
             yield data
 

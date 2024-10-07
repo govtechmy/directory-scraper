@@ -6,8 +6,8 @@ class MOSTISpider(scrapy.Spider):
     allowed_domains = ["direktori.mosti.gov.my"]
     start_urls = ["https://direktori.mosti.gov.my/directorystaff/list.php"]
     
-    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
-    email_handler = lambda self, condition: f"{result}@mosti.gov.my" if (result := condition) else "NULL"
+    none_handler = lambda self, condition: result.strip() if (result := condition) else None
+    email_handler = lambda self, condition: f"{result}@mosti.gov.my" if (result := condition) else None
 
 
     bahagian_mapping = [
@@ -71,10 +71,10 @@ class MOSTISpider(scrapy.Spider):
                         "person_position": self.none_handler(row.xpath("td[not(*)][3]/text()").get()),
                         "person_name": self.none_handler(row.xpath("td[not(*)][2]/text()").get()),
                         "person_email": self.email_handler(row.xpath("td[not(*)][5]/text()").get()),
-                        "person_fax": "NULL",
+                        "person_fax": None,
                         "person_phone": self.none_handler(row.xpath("td[not(*)][4]/text()").get()),
                         "person_sort": person_sort,
-                        "parent_prg_id": "NULL"
+                        "parent_prg_id": None
                     }
                     person_sort += 1
                     yield person_data

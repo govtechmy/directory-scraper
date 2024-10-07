@@ -6,8 +6,8 @@ class MOESpider(scrapy.Spider):
     allowed_domains = ["direktori.moe.gov.my"]
     start_urls = ["https://direktori.moe.gov.my/ajax/public/getdir.php?id=1&textsearch=&selectsearch="]
 
-    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
-    email_handler = lambda self, condition: f"{result}@moe.gov.my" if (result := condition) else "NULL"
+    none_handler = lambda self, condition: result.strip() if (result := condition) else None
+    email_handler = lambda self, condition: f"{result}@moe.gov.my" if (result := condition) else None
 
     division_mapping = [
         {"division_code": "120", "division": "PEJABAT MENTERI PENDIDIKAN", "page_id": 1},
@@ -135,60 +135,31 @@ class MOESpider(scrapy.Spider):
                         "person_position": self.none_handler(top_row.css("td:nth-child(3)::text").get()),
                         "person_name": self.none_handler(top_row.css("td:nth-child(2)::text").get()),
                         "person_email": self.email_handler(top_row.css("td:nth-child(4)::text").get()),
-                        "person_fax": "NULL",
+                        "person_fax": None,
                         "person_phone": self.none_handler(top_row.css("td:nth-child(5)::text").get()),
                         "person_sort": person_sort_order,
-                        "parent_org_id": "NULL"
+                        "parent_org_id": None
                     }
-            for row in table.css("div[class='row'] > div > div > div[class='panel panel-default']"):
-                if subunit_name := row.css("h4 > a::text").get().strip():
-                    current_subunit = subunit_name
-                for data_row in row.css("table > tbody > tr"):
-                    yield {
-                        "org_id": "MOE",
-                        "org_name": "KEMENTERIAN PENDIDIKAN",
-                        "org_sort": 21,
-                        "org_type": "ministry",
-                        "division_name": division,
-                        "division_sort": division_sort_order,
-                        "unit_name": f"{current_unit} > {current_subunit}",
-                        "person_position": self.none_handler(data_row.css("td:nth-child(3)::text").get()),
-                        "person_name": self.none_handler(data_row.css("td:nth-child(2)::text").get()),
-                        "person_email": self.email_handler(data_row.css("td:nth-child(4)::text").get()),
-                        "person_fax": "NULL",
-                        "person_phone": self.none_handler(data_row.css("td:nth-child(5)::text").get()),
-                        "person_sort": person_sort_order,
-                        "parent_org_id": "NULL"
-                    }
-        # current_unit = None
-        # current_subunit = None
-        
-        # for row in response.css("div[class='panel panel-default']"):
-        #     if unit := row.css("div[class='panel-heading']::text").getall()[-1].strip():
-        #         current_unit = unit
-        #         current_subunit = None
-        #     elif subunit := row.css("h4 ::text").getall()[1].strip():
-        #         current_subunit = subunit
-            
-        #     for data_point in row.css("tbody > tr"):
-        #         person_data = {
-        #             "org_id": "MOE",
-        #             "org_name": "KEMENTERIAN PENDIDIKAN",
-        #             "org_sort": 21,
-        #             "org_type": "ministry",
-        #             "division_name": division,
-        #             "division_sort": division_sort_order,
-        #             "unit_name": f"{current_unit} > {current_subunit}" if current_subunit else current_unit,
-        #             "person_position": self.none_handler(data_point.css("td:nth-child(3)::text").get()),
-        #             "person_name": self.none_handler(data_point.css("td:nth-child(2)::text").get()),
-        #             "person_email": self.email_handler(data_point.css("td:nth-child(4)::text").get()),
-        #             "person_fax": "NULL",
-        #             "person_phone": self.none_handler(data_point.css("td:nth-child(5)::text").get()),
-        #             "person_sort_order": person_sort_order,
-        #             "parent_org_id": "NULL"
-        #         }
+            else:
+                for row in table.css("div[class='row'] > div > div > div[class='panel panel-default']"):
+                    if subunit_name := row.css("h4 > a::text").get().strip():
+                        current_subunit = subunit_name
+                    for data_row in row.css("table > tbody > tr"):
+                        yield {
+                            "org_id": "MOE",
+                            "org_name": "KEMENTERIAN PENDIDIKAN",
+                            "org_sort": 21,
+                            "org_type": "ministry",
+                            "division_name": division,
+                            "division_sort": division_sort_order,
+                            "unit_name": f"{current_unit} > {current_subunit}",
+                            "person_position": self.none_handler(data_row.css("td:nth-child(3)::text").get()),
+                            "person_name": self.none_handler(data_row.css("td:nth-child(2)::text").get()),
+                            "person_email": self.email_handler(data_row.css("td:nth-child(4)::text").get()),
+                            "person_fax": None,
+                            "person_phone": self.none_handler(data_row.css("td:nth-child(5)::text").get()),
+                            "person_sort": person_sort_order,
+                            "parent_org_id": None
+                        }
 
-        #         person_sort_order += 1
-        #         yield person_data
-        
         await page.close()

@@ -85,10 +85,10 @@ class MOTACSpider(CrawlSpider):
                 "person_position": position,
                 "person_name": name,
                 "person_email": email+"@motac.gov.my",
-                "person_fax": "NULL",
+                "person_fax": None,
                 "person_phone": phone,
                 "person_sort": person_order+1,
-                "parent_org_id": "NULL"
+                "parent_org_id": None
             }
 
             yield person_data

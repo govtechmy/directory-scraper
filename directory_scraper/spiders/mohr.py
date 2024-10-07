@@ -11,8 +11,8 @@ class MOHRScraper(scrapy.Spider):
     }
 
     start_urls = ["https://app1.mohr.gov.my/staff/staff_name.php?department="]
-    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
-    email_handler = lambda self, condition: f"{result}@mohr.gov.my" if (result := condition) else "NULL"
+    none_handler = lambda self, condition: result.strip() if (result := condition) else None
+    email_handler = lambda self, condition: f"{result}@mohr.gov.my" if (result := condition) else None
 
     
     division_mapping = {
@@ -93,9 +93,9 @@ class MOHRScraper(scrapy.Spider):
                 "person_position": self.none_handler(row.xpath("td[2]/text()").get()),
                 "person_name": self.none_handler(row.xpath("td[1]/text()").get()),
                 "person_email": self.email_handler(row.xpath("td[5]/a/text()").get()),
-                "person_fax": "NULL",
+                "person_fax": None,
                 "person_phone": self.none_handler(row.xpath("td[5]/text()").get()),
                 "person_sort": person_sort+1,
-                "parent_org_id": "NULL",
+                "parent_org_id": None,
             }
             yield(person_data)
