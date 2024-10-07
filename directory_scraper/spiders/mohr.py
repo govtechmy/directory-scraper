@@ -83,7 +83,7 @@ class MOHRScraper(scrapy.Spider):
 
         for person_sort, row in enumerate(response.css("tbody > tr")):
             person_data = {
-                "org_id": "MORH",
+                "org_id": "MOHR",
                 "org_name": "KEMENTERIAN SUMBER MANUSIA",
                 "org_sort": 29,
                 "org_type": "ministry",
