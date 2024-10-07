@@ -65,6 +65,7 @@ class MOSTISpider(scrapy.Spider):
                         "org_id": "MOSTI",
                         "org_name": "KEMENTERIAN SAINS, TEKNOLOGI DAN INOVASI",
                         "org_sort": 14,
+                        "org_type": "ministry",
                         "division_name": division_name,
                         "division_sort": division_sort,
                         "unit_name": unit_name,
