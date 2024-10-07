@@ -47,7 +47,7 @@ class KPWKMSpider(scrapy.Spider):
             if table := row.css("div[id='direktori-staf-grid']").css("tbody > tr"):
                 for data_point in table:
                     person_data = {
-                        "org_id": "kpwkm",
+                        "org_id": "KPWKM",
                         "org_name": "Kementerian Pembangunan Wanita, Keluarga dan Masyarakat",
                         "org_sort": 15,
                         "division_name": division_name,
