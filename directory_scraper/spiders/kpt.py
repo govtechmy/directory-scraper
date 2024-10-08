@@ -1,6 +1,4 @@
 import re
-import json
-import scrapy
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 
@@ -81,17 +79,11 @@ class KPTSpider(CrawlSpider):
     sort_handler = lambda self, condition: result.strip()[:-1] if (result := condition) else None
 
     def parse_item(self, response):
-        # clean_html = lambda string: re.sub(r"<.+?>|[\r\t\n]{2,}", "", string)
-        # extract_number = lambda string: re.findall(pattern=r"03[\d\- ]+\d", string=string)
-        # division = [text.strip() for line in response.css("div[class='card-body'] > div > div[class='col'] > b::text").getall() for text in line.split("\n") if text][0]
-        # email_extension = clean_html(response.css("thead > tr > td > b").getall()[2]).split()[1]
-        # department_number = extract_number(clean_html(response.css("div[class='alert alert-warning']").get()[0]))
-        # default_unit = None
 
         current_unit = None
         division = self.none_handler(response.css("div[class='col'] > b::text").get())
         department_number = " ".join(response.css("div[class='alert alert-warning']::text").getall())
-        department_number = number[0] if (number := re.findall(r"0[\d -]+", department_number)) else None
+        department_number = number[0] if (number := re.findall(r"0[\d /-]+", department_number)) else None
         email_extension = re.findall(r"@.*", response.xpath("//thead/tr/td[3]/b/text()").get())[0]
         email_handler = lambda condition: f"{result}{email_extension}" if (result := condition) else None
 
@@ -102,6 +94,10 @@ class KPTSpider(CrawlSpider):
                 current_unit = unit
             else:
                 phone_extension = self.none_handler(row.xpath("td[4]/text()").get())
+                if re.match(r'\d{4}', phone_extension) and department_number:
+                    phone_number = f"{department_number} ext {phone_extension}"
+                else:
+                    phone_number = phone_extension
                 person_data = {
                     "org_id": "KPT",
                     "org_name": "KEMENTERIAN PENDIDIKAN TINGGI",
@@ -114,7 +110,7 @@ class KPTSpider(CrawlSpider):
                     "person_name": self.none_handler(row.xpath("td[2]/text()").get()),
                     "person_email": email_handler(row.xpath("td[3]/text()").get()),
                     "person_fax": None,
-                    "person_phone": self.none_handler((f"{department_number} " or "") + (f" ext {phone_extension}" or "")),
+                    "person_phone": phone_number,
                     "person_sort": self.sort_handler(row.xpath("td[1]/text()").get()),
                     "parent_org_id": None
                 }

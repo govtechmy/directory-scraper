@@ -7,7 +7,7 @@ class MOSTISpider(scrapy.Spider):
     start_urls = ["https://direktori.mosti.gov.my/directorystaff/list.php"]
     
     none_handler = lambda self, condition: result.strip() if (result := condition) else None
-    email_handler = lambda self, condition: f"{result}@mosti.gov.my" if (result := condition) else None
+    email_handler = lambda self, condition: f"{result.split('@')[0]}@mosti.gov.my" if (result := condition) else None
 
 
     bahagian_mapping = [
@@ -75,7 +75,7 @@ class MOSTISpider(scrapy.Spider):
                         "person_fax": None,
                         "person_phone": self.none_handler(row.xpath("td[not(*)][4]/text()").get()),
                         "person_sort": person_sort,
-                        "parent_prg_id": None
+                        "parent_org_id": None
                     }
                     person_sort += 1
                     yield person_data
