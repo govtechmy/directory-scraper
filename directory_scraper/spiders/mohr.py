@@ -82,6 +82,7 @@ class MOHRScraper(scrapy.Spider):
             current_unit = None
 
         for person_sort, row in enumerate(response.css("tbody > tr")):
+            phone = self.none_handler(row.xpath("td[5]/text()").get())
             person_data = {
                 "org_id": "MOHR",
                 "org_name": "KEMENTERIAN SUMBER MANUSIA",
@@ -94,7 +95,7 @@ class MOHRScraper(scrapy.Spider):
                 "person_name": self.none_handler(row.xpath("td[1]/text()").get()),
                 "person_email": self.email_handler(row.xpath("td[5]/a/text()").get()),
                 "person_fax": None,
-                "person_phone": self.none_handler(row.xpath("td[5]/text()").get()),
+                "person_phone": phone if (phone and phone != "N/A") else None,
                 "person_sort": person_sort+1,
                 "parent_org_id": None,
             }
