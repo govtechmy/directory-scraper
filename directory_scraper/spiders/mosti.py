@@ -75,7 +75,7 @@ class MOSTISpider(scrapy.Spider):
                         "person_fax": None,
                         "person_phone": self.none_handler(row.xpath("td[not(*)][4]/text()").get()),
                         "person_sort": person_sort,
-                        "parent_prg_id": None
+                        "parent_org_id": None
                     }
                     person_sort += 1
                     yield person_data
