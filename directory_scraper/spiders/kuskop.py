@@ -1,7 +1,7 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
-from scrapy import FormRequest
 import asyncio
+from scrapy.selector import Selector
 
 class KuskopcsrfSpider(scrapy.Spider):
     name = 'kuskop'
@@ -15,11 +15,11 @@ class KuskopcsrfSpider(scrapy.Spider):
             'https': 'scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler',
         },
         'TWISTED_REACTOR': 'twisted.internet.asyncioreactor.AsyncioSelectorReactor',
-        'PLAYWRIGHT_LAUNCH_OPTIONS': {'headless': False},
-        
+        'PLAYWRIGHT_LAUNCH_OPTIONS': {'headless': True},
     }
 
     def parse(self, response):
+        self.logger.info("Starting the parsing process with the initial request.")
         yield scrapy.Request(
             response.url,
             meta={
@@ -34,77 +34,71 @@ class KuskopcsrfSpider(scrapy.Spider):
 
     async def interact_with_page(self, response):
         page = response.meta['playwright_page']
-
+        self.logger.info("Routing requests to block Google Analytics.")
         await page.route("**/*", lambda route, request: route.abort() if "google-analytics.com" in request.url else route.continue_())
 
-        # Select an option from the "bahagian" dropdown
-        await page.select_option('#pilihbahagian', '1')
-        self.logger.info("Bahagian option selected: '1'")
+        self.logger.info("Selecting option '19' from '#pilihbahagian'.")
+        await page.select_option('#pilihbahagian', '19')
 
+        self.logger.info("Waiting for network idle state after selecting option.")
         await page.wait_for_load_state('networkidle')
-
         await asyncio.sleep(2)
 
-        # Wait for the "seksyen" dropdown to appear and select an option
-        await page.wait_for_selector('#pilihseksyen')
-
-        #await page.select_option('#pilihseksyen', '37')
-        #self.logger.info("Seksyen option selected: '37'")
-
-        await page.wait_for_load_state('networkidle')
-
-        await asyncio.sleep(5)
-
-        # Click the search button after selecting the dropdown option
+        self.logger.info("Clicking the search button.")
         await page.click('button.btn-default[type="submit"]:has-text("CARI")')
-        self.logger.info("Search button clicked")
 
-        await asyncio.sleep(5)
-
-        # Wait for the network requests to complete after clicking
+        self.logger.info("Waiting for network idle state after clicking the search button.")
         await page.wait_for_load_state('networkidle')
-        
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
 
-        # Extract cookies after the button click
-        cookies = await page.context.cookies()
-        csrf_token = None
-        for cookie in cookies:
-            if cookie['name'] == '_csrf':
-                csrf_token = cookie['value']
-                break
-
-        if not csrf_token:
-            self.logger.error("CSRF token not found in cookies after button click. Aborting.")
-            await page.close()
-            return
-
-        self.logger.info(f"CSRF token found: {csrf_token}")
-
-        # Take a snapshot of the page after clicking the button
+        self.logger.info("Taking a snapshot of the page content.")
         content = await page.content()
 
-        # Save the content to a file for debugging
+        #save as a file for debugging
         with open('response_content.html', 'w', encoding='utf-8') as file:
             file.write(content)
 
-        # Replace the response body with the updated content
-        self.parse_results(response.replace(body=content))
+        #create a Selector object directly from the page content
+        self.logger.info("Parsing the content directly.")
+        selector = Selector(text=content)
 
-        # Close the page to release resources
-        await page.close()
+        # Locate all panels containing staff information
+        panels = selector.xpath('//div[@class="col-sm-6 col-md-8"]')
+        panel_count = len(panels)
+        self.logger.info(f"Found {panel_count} panels matching the structure.")
 
-    def parse_results(self, response):
-        for row in response.xpath('//div[contains(@class, "row record")]'):
+        if panel_count == 0:
+            self.logger.warning("No panels found. Please check the HTML structure or XPath.")
+            return
+
+        for index, panel in enumerate(panels, start=1):
+            # Extract fields using XPath and convert them to strings
+            name = panel.xpath('.//h5/text()').get()
+            position = panel.xpath('.//small[1]/text()').get()
+            division_unit = panel.xpath('.//span/small/text()').getall()
+            phone = panel.xpath('.//i[contains(@class, "fa-phone")]/following-sibling::text()[1]').get()
+            fax = panel.xpath('.//i[contains(@class, "fa-fax")]/following-sibling::text()[1]').get()
+            email = panel.xpath('.//i[contains(@class, "fa-envelope")]/following-sibling::text()[1]').get()
+
+            #separate division and unit if both are present
+            division, unit = (division_unit[0], division_unit[1]) if len(division_unit) > 1 else (division_unit[0], None)
+
             item = {
-                'name': row.xpath('.//div[contains(@class, "col-md-4")]/p/strong/text()').get(),
-                'position': row.xpath('.//div[contains(@class, "col-md-2")][1]/p/text()').get(),
-                'office': row.xpath('.//div[contains(@class, "col-md-2")][2]/p/italic/text()').get(),
-                'phone': row.xpath('.//div[contains(@class, "col-md-2")][3]/p//text()').getall(),
-                'email': row.xpath('.//div[contains(@class, "col-md-2")][4]/p/text()').get(),
+                'person_name': name.strip() if name else None,
+                'person_position': position.strip() if position else None,
+                'division_name': division.strip() if division else None,
+                'unit_name': unit.strip() if unit else None,
+                'person_phone': phone.strip() if phone else None,
+                'person_fax': fax.strip() if fax else None,
+                'person_email': (email.strip() + '@kuskop.gov.my') if email else None
             }
-            self.logger.info(f"Extracted item: {item}")
+
+            self.logger.info(f"Parsed panel {index}/{panel_count}: {item['name']} - {item['position']}")
+
             yield item
+        
+        self.logger.info("Finished parsing all panels.")
+        await page.close()
 
     def handle_error(self, failure):
         response = failure.value.response
