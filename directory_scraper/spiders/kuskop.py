@@ -8,6 +8,8 @@ class KuskopcsrfSpider(scrapy.Spider):
     allowed_domains = ['kuskop.gov.my']
     start_urls = ['https://www.kuskop.gov.my/index.php?id=11&page_id=27']
 
+    person_sort_order = 1
+
     custom_settings = {
         'PLAYWRIGHT_BROWSER_TYPE': 'chromium',
         'DOWNLOAD_HANDLERS': {
@@ -100,6 +102,8 @@ class KuskopcsrfSpider(scrapy.Spider):
                 'org_id': "KUSKOP",
                 'org_name': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
                 'org_type': 'ministry',
+                'division_sort': option_value,
+                'person_sort_order': self.person_sort_order,
                 'division_name': division.strip() if division else None,
                 'unit_name': unit.strip() if unit else None,
                 'person_name': name.strip() if name else None,
@@ -107,8 +111,9 @@ class KuskopcsrfSpider(scrapy.Spider):
                 'person_phone': phone.strip() if phone else None,
                 'person_email': (email.strip() + '@kuskop.gov.my') if email else None,
                 'person_fax': fax.strip() if fax else None,
-                'bahagian_option': option_value
             }
+
+            self.person_sort_order += 1
 
             self.logger.info(f"Parsed panel {index}/{panel_count} for option '{option_value}': {item['person_name']} - {item['person_position']}")
 
