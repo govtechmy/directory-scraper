@@ -35,6 +35,8 @@ class KuskopcsrfSpider(scrapy.Spider):
     async def interact_with_page(self, response):
         page = response.meta['playwright_page']
 
+        await page.route("**/*", lambda route, request: route.abort() if "google-analytics.com" in request.url else route.continue_())
+
         # Select an option from the "bahagian" dropdown
         await page.select_option('#pilihbahagian', '1')
         self.logger.info("Bahagian option selected: '1'")
@@ -46,8 +48,8 @@ class KuskopcsrfSpider(scrapy.Spider):
         # Wait for the "seksyen" dropdown to appear and select an option
         await page.wait_for_selector('#pilihseksyen')
 
-        await page.select_option('#pilihseksyen', '')
-        self.logger.info("Seksyen option selected: ''")
+        #await page.select_option('#pilihseksyen', '37')
+        #self.logger.info("Seksyen option selected: '37'")
 
         await page.wait_for_load_state('networkidle')
 
