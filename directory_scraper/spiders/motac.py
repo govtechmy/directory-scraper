@@ -14,6 +14,10 @@ class MOTACSpider(CrawlSpider):
         Rule(LinkExtractor(allow="direktori"), callback='parse_item'),
     )
     
+    none_handler = lambda self, condition: result.strip() if (result := condition) else None
+    email_handler = lambda self, condition: f"{result}@motac.gov.my" if (result := condition) else None
+    clean_list = lambda self, lst: [elem.strip() for elem in lst if elem.strip()]
+    
     url_lst = [
         "https://www.motac.gov.my/direktori/menteri",
         "https://www.motac.gov.my/direktori/timbalan-menteri",
@@ -60,20 +64,12 @@ class MOTACSpider(CrawlSpider):
 
     def parse_item(self, response):
         division = response.css("h1::text").get()
-        phone_regex = re.compile(r"03[\d\- ]+\d")
-
-        directory_data = [
-            [data for data in re.split(r"[\r\t\n]{2,}", re.sub(r"<.+?>", "", person_data))[1:-1] if data]
-            for person_data in response.css("td[class='uk-width-7-10']").getall()
-        ]
-
-        for person_order, datapoint in enumerate(directory_data):
-            name = datapoint[0].strip()
-            position = datapoint[1].strip()
-            unit = datapoint[2].strip() if len(datapoint) > 3 else None
-            email = email_str.strip() if (email_str := re.sub(pattern=phone_regex, repl="", string=datapoint[-1])) else None
-            phone = phone_str[0].strip() if (phone_str := re.findall(pattern=phone_regex, string=datapoint[-1])) else None
-
+        
+        for sort_order, row in enumerate(response.css("tbody > tr")):
+            contact_details = {
+                data_type: text
+                for data_type, text in zip(row.xpath("td[2]/i/@class"), self.clean_list(row.xpath("td[2]/text()")))
+            }
             person_data = {
                 "org_id": "MOTAC",
                 "org_name": "KEMENTERIAN PELANCONGAN, SENI DAN BUDAYA",
@@ -81,14 +77,13 @@ class MOTACSpider(CrawlSpider):
                 "org_type": "ministry",
                 "division_name": division,
                 "division_sort": self.url_lst.index(response.url)+1,
-                "unit_name": unit,
-                "person_position": position,
-                "person_name": name,
-                "person_email": email+"@motac.gov.my",
-                "person_fax": "NULL",
-                "person_phone": phone,
-                "person_sort": person_order+1,
-                "parent_org_id": "NULL"
+                "unit_name": self.none_handler(row.xpath("td[1]/small/text()").get()),
+                "person_position": self.none_handler(row.xpath("td[1]/text()[2]").get()),
+                "person_name": self.none_handler(row.xpath("td[1]/strong/text()").get()),
+                "person_email": contact_details.get("uk-icon-envelope-square"),
+                "person_fax": None,
+                "person_phone": contact_details.get("uk-icon-phone-square"),
+                "person_sort": sort_order+1,
+                "parent_org_id": None,
             }
-
             yield person_data

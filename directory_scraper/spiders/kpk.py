@@ -53,7 +53,7 @@ class KPKScraper(scrapy.Spider):
             )
 
     def parse_form(self, response):
-        current_unit = "NULL"
+        current_unit = None
         current_division = response.meta["division_name"]
         division_sort = response.meta["division_sort"]
         division_lst = response.meta["division_lst"]
@@ -77,10 +77,10 @@ class KPKScraper(scrapy.Spider):
                     "person_position": data_lst[1],
                     "person_name": data_lst[0],
                     "person_email": data_lst[2],
-                    "person_fax": "NULL",
+                    "person_fax": None,
                     "person_phone": data_lst[3],
                     "person_sort": sort_order,
-                    "parent_org_id": "NULL"
+                    "parent_org_id": None
                 }
                 sort_order += 1
                 yield person_data

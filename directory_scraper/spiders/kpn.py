@@ -47,7 +47,7 @@ class KPNSpider(CrawlSpider):
         "bahagian-akaun": "Bahagian Akaun",
     }
     url_suffixes = [f"/bm/.*{url}$" for url in bahagian_mapping.keys()]
-    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
+    none_handler = lambda self, condition: result.strip() if (result := condition) else None
     
     rules = (
         Rule(LinkExtractor(
@@ -57,7 +57,7 @@ class KPNSpider(CrawlSpider):
     )
 
     def parse_item(self, response):
-        unit_name = "NULL"
+        unit_name = None
         person_sort = 1
         
         division_name = [name for url, name in self.bahagian_mapping.items() if url in response.url][-1]
@@ -82,9 +82,10 @@ class KPNSpider(CrawlSpider):
                     "person_position": row.css("span[aria-label='Position']::text").get(),
                     "person_name": row.css("span[aria-label='Name']::text").get(),
                     "person_email": self.none_handler(row.css("span[aria-label='Email']::text").get()),
-                    "person_fax": "NULL",
+                    "person_fax": None,
                     "person_phone": row.css("span[aria-label='Phone']::text").get(),
-                    "person_sort": page_number+person_sort
+                    "person_sort": page_number+person_sort,
+                    "parent_org_id": None
                 }
                 person_sort += 1
                 yield person_data

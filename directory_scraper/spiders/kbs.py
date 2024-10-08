@@ -25,8 +25,8 @@ class KBSSpider(scrapy.Spider):
         for person_order, (name, data) in enumerate(zip(name_lst, data_lst)):
             division_name = [
                 "Pengurusan Tertinggi",
-                div_lst[0] if (div_lst := [string for string in data if string.startswith("Bahagian")]) else "NULL",
-                "NULL"
+                div_lst[0] if (div_lst := [string for string in data if string.startswith("Bahagian")]) else None,
+                None
             ]
             person_dict = {
                 "org_id": "KBS",
@@ -35,13 +35,13 @@ class KBSSpider(scrapy.Spider):
                 "org_type": "ministry",
                 "division_name": division_name.pop(self.start_urls.index(response.url)),
                 "division_sort": self.start_urls.index(response.url)+1,
-                "unit_name": div_lst[0] if (div_lst := [string for string in data if re.match(unit_regex, string)]) else "NULL",
+                "unit_name": div_lst[0] if (div_lst := [string for string in data if re.match(unit_regex, string)]) else None,
                 "person_position": data[0],
                 "person_name": name,
-                "person_email": email_lst[0] if (email_lst := [string.replace(" ", "") for string in data if re.match(email_regex, string)]) else "NULL",
-                "person_fax": "NULL",
-                "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else "NULL",
+                "person_email": email_lst[0] if (email_lst := [string.replace(" ", "") for string in data if re.match(email_regex, string)]) else None,
+                "person_fax": None,
+                "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else None,
                 "person_sort": person_order+1,
-                "parent_org_id": "NULL",
+                "parent_org_id": None,
             }
             yield person_dict

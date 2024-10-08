@@ -5,8 +5,8 @@ import scrapy
 class KPDNSpider(scrapy.Spider):
     name = "kpdn"
     
-    none_handler = lambda self, condition: result.strip() if (result := condition) else "NULL"
-    email_handler = lambda self, condition: f"{result}@kpdn.gov.my" if (result := re.sub(r"/txt2img/", "", condition)) else "NULL"
+    none_handler = lambda self, condition: result.strip() if (result := condition) else None
+    email_handler = lambda self, condition: f"{result}@kpdn.gov.my" if (result := re.sub(r"/txt2img/", "", condition)) else None
     
     start_urls = [
         "https://insid.kpdn.gov.my/direktori/bahagian/92",
@@ -77,7 +77,7 @@ class KPDNSpider(scrapy.Spider):
             elif not unit and subunit:
                 unit_name = subunit
             else:
-                unit_name = "NULL"
+                unit_name = None
 
             person_data = {
                 "org_id": "KPDN",
@@ -90,9 +90,9 @@ class KPDNSpider(scrapy.Spider):
                 "person_position": self.none_handler(row.css("td:nth-child(4)").css("::text").get()),
                 "person_name": re.sub(r"[\n ]{2,}", " ",self.none_handler(row.css("td:nth-child(2)").css("::text").get())),
                 "person_email": self.email_handler(row.css("td:nth-child(3)").css("img::attr(src)").get()),
-                "person_fax": "NULL",
+                "person_fax": None,
                 "person_phone": self.none_handler(row.css("td:nth-child(5)").css("::text").get()),
                 "person_sort": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
-                "parent_org_id": "NULL"
+                "parent_org_id": None
             }
             yield person_data

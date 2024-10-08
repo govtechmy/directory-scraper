@@ -46,20 +46,25 @@ class KPWKMSpider(scrapy.Spider):
         for row in response.css("div[class='dataTables_wrapper form-inline no-footer'] > *"):
             if table := row.css("div[id='direktori-staf-grid']").css("tbody > tr"):
                 for data_point in table:
+                    email = data_point.xpath("*[4]/text()").get()
+                    person_email = f"{email}@kpwkm.gov.my" if (email or email != "-") else None
+                    phone = data_point.xpath("*[5]/text()").get()
+                    person_phone = phone if (phone and phone != "--") else None
                     person_data = {
-                        "org_id": "kpwkm",
+                        "org_id": "KPWKM",
                         "org_name": "Kementerian Pembangunan Wanita, Keluarga dan Masyarakat",
                         "org_sort": 15,
+                        "org_type": "ministry",
                         "division_name": division_name,
                         "division_sort": division_sort,
                         "unit_name": current_unit,
                         "person_position": data_point.xpath("*[3]/text()").get(),
                         "person_name": data_point.xpath("*[2]//a/text()").get(),
-                        "person_email": data_point.xpath("*[4]/text()").get(),
-                        "person_fax": "NULL",
-                        "person_phone": data_point.xpath("*[5]/text()").get(),
+                        "person_email": person_email,
+                        "person_fax": None,
+                        "person_phone": person_phone,
                         "person_sort": person_sort,
-                        "parent_org_id": "NULL",
+                        "parent_org_id": None,
                     }
                     yield person_data
                     person_sort += 1
