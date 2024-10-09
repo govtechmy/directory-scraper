@@ -99,10 +99,11 @@ class KuskopcsrfSpider(scrapy.Spider):
             division, unit = (division_unit[0], division_unit[1]) if len(division_unit) > 1 else (division_unit[0], None)
 
             item = {
+                'org_sort': 999,
                 'org_id': "KUSKOP",
                 'org_name': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
                 'org_type': 'ministry',
-                'division_sort': option_value,
+                'division_sort': int(option_value),
                 'person_sort_order': self.person_sort_order,
                 'division_name': division.strip() if division else None,
                 'unit_name': unit.strip() if unit else None,
@@ -111,6 +112,7 @@ class KuskopcsrfSpider(scrapy.Spider):
                 'person_phone': phone.strip() if phone else None,
                 'person_email': (email.strip() + '@kuskop.gov.my') if email else None,
                 'person_fax': fax.strip() if fax else None,
+                'parent_org_id': None, #is ministry
             }
 
             self.person_sort_order += 1
