@@ -7,7 +7,7 @@ class KOMUNIKASIpider(scrapy.Spider):
     start_urls = ["https://www.komunikasi.gov.my/hubungi-kami/direktori-kementerian"]
 
     none_handler = lambda self, condition: result.replace("\xa0", "").strip() if (result := condition) else None
-    email_handler = lambda self, condition: result.replace("[@]", "@").replace("[.]", ".") if (result := condition) else None
+    email_handler = lambda self, condition: result.replace("[@]", "@").replace("[.]", ".").replace("[]", "") if (result := condition) else None
 
     def start_requests(self):
         for division_order, url in enumerate(self.start_urls):
