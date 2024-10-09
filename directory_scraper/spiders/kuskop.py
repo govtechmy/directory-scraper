@@ -101,7 +101,7 @@ class KuskopcsrfSpider(scrapy.Spider):
             item = {
                 'org_sort': 999,
                 'org_id': "KUSKOP",
-                'org_name': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
+                'org_name': "KEMENTERIAN PEMBANGUNAN USAHAWAN DAN KOPERASI",
                 'org_type': 'ministry',
                 'division_sort': int(option_value),
                 'person_sort_order': self.person_sort_order,
