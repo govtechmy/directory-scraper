@@ -109,7 +109,6 @@ class MOESpider(scrapy.Spider):
     async def parse_item(self, response):
 
         page = response.meta["playwright_page"]
-        # yield {"data": response.text}
         division = response.meta["division"]
         division_sort_order = response.meta["division_sort_order"]
         
