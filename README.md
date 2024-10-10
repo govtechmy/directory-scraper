@@ -53,3 +53,28 @@ Example:
 ```bash
 scrapy crawl mof -o output.json
 ```
+
+-------------
+
+## Installation of Tesseract OCR
+
+To run this project, you will need to have Tesseract OCR installed on your system. Specifically, for running:
+- spiders/kpkt.py
+
+### 1. macOS
+
+#### Steps:
+1. Install Tesseract via **Homebrew** :
+   ```bash
+   brew install tesseract
+   ```
+2. Verify the installation by running:
+   ```bash
+   tesseract --version
+   ```
+3. Check path (this will be the path to .env TESSERACT_PATH):
+   ```bash
+   which tesseract
+   ```
+
+
