@@ -117,12 +117,15 @@ class KPKTSpider(scrapy.Spider):
                         person_email = person_email.replace("_", "")
                         person_email = person_email.replace(",", "")
                     
-                    if division_name and unit_name and division_name == unit_name:
-                        formatted_unit_name = None
-                    elif division_name and (main_division != unit_name) and (main_division != division_name):
-                        formatted_unit_name = f"{division_name} > {unit_name}"
-                    else:
+                    if division_name and unit_name and division_name == unit_name: # PEJABAT WILAYAH > PEJABAT WILAYAH
                         formatted_unit_name = unit_name
+                    elif division_name and (main_division != unit_name) and (main_division != division_name):
+                        if division_name == unit_name:
+                            formatted_unit_name = unit_name
+                        else:
+                            formatted_unit_name = f"{division_name} > {unit_name}"
+                    else:
+                        formatted_unit_name = None
 
                     self.person_sort_order += 1
 
