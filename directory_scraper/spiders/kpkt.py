@@ -112,6 +112,17 @@ class KPKTSpider(scrapy.Spider):
                             person_email = pytesseract.image_to_string(img).strip()
                         except Exception as e:
                             self.logger.error(f"Error decoding email image: {e}")
+                    
+                    if person_email:
+                        person_email = person_email.replace("_", "")
+                        person_email = person_email.replace(",", "")
+                    
+                    if division_name and unit_name and division_name == unit_name:
+                        formatted_unit_name = None
+                    elif division_name and (main_division != unit_name) and (main_division != division_name):
+                        formatted_unit_name = f"{division_name} > {unit_name}"
+                    else:
+                        formatted_unit_name = unit_name
 
                     self.person_sort_order += 1
 
@@ -123,7 +134,7 @@ class KPKTSpider(scrapy.Spider):
                         'division_sort': self.division_sort[main_division],
                         'person_sort_order': self.person_sort_order,
                         'division_name': main_division,
-                        'unit_name': f"{division_name} > {unit_name}" if division_name and (main_division != unit_name) else None,
+                        'unit_name': formatted_unit_name,
                         'person_position': person_position,
                         'person_name': person_name,
                         'person_phone': person_phone,
