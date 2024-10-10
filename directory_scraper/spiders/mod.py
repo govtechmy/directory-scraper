@@ -19,7 +19,7 @@ class MODSpider(scrapy.Spider):
         'CONCURRENT_REQUESTS_PER_DOMAIN': 2,
         'LOG_LEVEL': 'ERROR',  # Use 'DEBUG' for more detailed logs
     }
-
+    
     start_urls = [
         "https://direktori.mod.gov.my/index.php/mindef/category/pejabat-menteri-pertahanan",
         "https://direktori.mod.gov.my/index.php/mindef/category/pejabat-menteri-pertahanan/2",
@@ -234,8 +234,8 @@ class MODSpider(scrapy.Spider):
                 "org_type": "ministry",
                 "division_name": current_division,
                 "division_sort": division_sort,
-                "unit_name": unit_name if (unit_name := " > ".join(unit_lst)) else "",
-                "person_position": position.strip() if (position := data_card.css("div:not([class])::text").get()) else None,
+                "subdivision_name": unit_name if (unit_name := " > ".join(unit_lst)) else "",
+                "position_name": position.strip() if (position := data_card.css("div:not([class])::text").get()) else None,
                 "person_name": name.strip() if (name := data_card.css("h2::text").get()) else None,
                 "person_email": data_card.css("joomla-hidden-mail::text").get(),
                 "person_fax": fax[0] if (fax := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Faks" in txt]) else None,
