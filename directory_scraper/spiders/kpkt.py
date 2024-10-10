@@ -1,18 +1,24 @@
 import scrapy
 import re
+import base64
+from io import BytesIO
+from PIL import Image
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
 
 class KPKTSpider(scrapy.Spider):
     name = "kpkt"
     start_urls = ['https://edirektori.kpkt.gov.my/edirektori/']
 
-    person_sort_order = 0  #init
-    division_sort = {}  #dictionary to store division_name sort order based on "grid number"
+    person_sort_order = 0  # init
+    division_sort = {}  # dictionary to store division_name sort order based on "grid number"
 
     def parse(self, response):
-        #follow the url links using regex for the 'grid' pattern
+        # follow the url links using regex for the 'grid' pattern
         grid_links = response.css('a::attr(href)').re(r'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/\d+')
 
-        #exclude these Jabatan for now. (bcs the structure of their division_name & unit_name is different than KPKT)
+        # exclude these Jabatan for now. (bcs the structure of their division_name & unit_name is different than KPKT)
         excluded_links = [
             'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/25',
             'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/26',
@@ -20,13 +26,13 @@ class KPKTSpider(scrapy.Spider):
             'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/28',
             'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/29',
             'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/30'
-            ]
+        ]
         
         filtered_grid_links = [link for link in grid_links if link not in excluded_links]
 
-        #loop thru each extracted grid link & visit each grid page to extract main_division
+        # loop thru each extracted grid link & visit each grid page to extract main_division
         for link in filtered_grid_links:
-            grid_number = int(re.search(r'/grid/(\d+)', link).group(1))  #extract the grid number. to set as value for priority
+            grid_number = int(re.search(r'/grid/(\d+)', link).group(1))  # extract the grid number. to set as value for priority
             yield scrapy.Request(
                 url=link,
                 callback=self.parse_grid_page,
@@ -35,7 +41,6 @@ class KPKTSpider(scrapy.Spider):
             )
 
     def parse_grid_page(self, response):
-        # Extract the main_division from the static HTML page
         main_division = response.css('#detailjab strong::text').get()
         if main_division:
             main_division = main_division.strip()
@@ -45,7 +50,7 @@ class KPKTSpider(scrapy.Spider):
 
         grid_number = response.meta['grid_number']
         if main_division not in self.division_sort:
-            self.division_sort[main_division] = grid_number #division_sort=grid number
+            self.division_sort[main_division] = grid_number  # division_sort=grid number
 
         grid_url = response.meta['grid_url']
         grid_id = re.search(r'/grid/(\d+)', grid_url).group(1)
@@ -54,7 +59,7 @@ class KPKTSpider(scrapy.Spider):
             'id': grid_id
         }
 
-        #send the AJAX request
+        # send the AJAX request
         yield scrapy.FormRequest(
             url='https://edirektori.kpkt.gov.my/edirektori/index.php/home/ajx_dbah/',
             formdata=form_data,
@@ -67,14 +72,13 @@ class KPKTSpider(scrapy.Spider):
                 'Referer': f'https://edirektori.kpkt.gov.my/edirektori/index.php/home/grid/{grid_id}',
             },
             callback=self.parse_ajx_response,
-            meta={'grid_id': grid_id, 'grid_url': grid_url, 'main_division': main_division}  #to later pass main_division to the callback
+            meta={'grid_id': grid_id, 'grid_url': grid_url, 'main_division': main_division}  # to later pass main_division to the callback
         )
 
     def parse_ajx_response(self, response):
         main_division = response.meta['main_division']
         grid_url = response.meta['grid_url']
 
-        #loop thru all division_name and unit_name panels
         division_panels = response.css('.panel.panel-primary')
 
         for division_panel in division_panels:
@@ -85,10 +89,6 @@ class KPKTSpider(scrapy.Spider):
             for unit_panel in unit_panels:
                 unit_name = unit_panel.css('h5.panel-title a::text').get().strip()
 
-                #set unit_name to None if unit_name==division_name. redundency
-                #if division_name == main_division:
-                #    division_name = None
-
                 rows = unit_panel.css('table tbody tr')
                 for row in rows:
                     person_name_raw = row.css('td:nth-child(3)').xpath('normalize-space(strong/text())').get()
@@ -98,7 +98,17 @@ class KPKTSpider(scrapy.Spider):
                     person_phone = row.css('td:nth-child(6)::text').get()
                     person_fax = row.css('td:nth-child(7)::text').get()
 
-                    self.person_sort_order += 1 #increment globally
+                    email_img_b64 = row.css('td:nth-child(3) img::attr(src)').re_first(r'data:image/png;base64,(.*)')
+                    person_email = None
+                    if email_img_b64:
+                        try:
+                            img_data = base64.b64decode(email_img_b64)
+                            img = Image.open(BytesIO(img_data))
+                            person_email = pytesseract.image_to_string(img).strip()
+                        except Exception as e:
+                            self.logger.error(f"Error decoding email image: {e}")
+
+                    self.person_sort_order += 1
 
                     yield {
                         'org_sort': 4,
@@ -107,14 +117,12 @@ class KPKTSpider(scrapy.Spider):
                         'org_type': 'ministry',
                         'division_sort': self.division_sort[main_division],
                         'person_sort_order': self.person_sort_order,
-                        #'main_division': main_division,
                         'division_name': main_division,
-                        'unit_name': f"{division_name} > {unit_name}" if division_name and (main_division != unit_name) else None,  # combine division_name + unit_detailed as one string.(only if 'division_name' exists, & division_name != unit_name)
+                        'unit_name': f"{division_name} > {unit_name}" if division_name and (main_division != unit_name) else None,
                         'person_position': person_position,
                         'person_name': person_name,
                         'person_phone': person_phone,
-                        'person_email': None,  #email is stored as image. to solve later.
+                        'person_email': person_email,
                         'person_fax': person_fax,
-                        'parent_org_id': None, #is the parent
-                        #'url': grid_url 
+                        'parent_org_id': None,
                     }
