@@ -116,16 +116,24 @@ class KPKTSpider(scrapy.Spider):
                     if person_email:
                         person_email = person_email.replace("_", "")
                         person_email = person_email.replace(",", "")
-                    
-                    if division_name and unit_name and division_name == unit_name: # PEJABAT WILAYAH > PEJABAT WILAYAH
-                        formatted_unit_name = unit_name
-                    elif division_name and (main_division != unit_name) and (main_division != division_name):
-                        if division_name == unit_name:
-                            formatted_unit_name = unit_name
-                        else:
-                            formatted_unit_name = f"{division_name} > {unit_name}"
-                    else:
+
+                    formatted_unit_name = None 
+
+                    if not unit_name:
                         formatted_unit_name = None
+                    else:
+                        if division_name and (main_division == division_name):
+                            if unit_name == division_name and unit_name == main_division : # e.g Pejabat Menteri
+                                formatted_unit_name = None
+                            else:
+                                formatted_unit_name = unit_name # common cases
+                        elif division_name and (main_division != division_name): 
+                            if unit_name != division_name:
+                                formatted_unit_name = f"{division_name} > {unit_name}" # common cases
+                            else:
+                                formatted_unit_name = unit_name # e.g BAHAGIAN PELAKSANAAN DAN PERKHIDMATAN KEJURUTERAAN -> Pejabat Wilayah
+                        else:
+                            formatted_unit_name = unit_name
 
                     self.person_sort_order += 1
 
