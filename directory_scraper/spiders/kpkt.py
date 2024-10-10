@@ -4,8 +4,13 @@ import base64
 from io import BytesIO
 from PIL import Image
 import pytesseract
+import os
+from dotenv import load_dotenv
 
-pytesseract.pytesseract.tesseract_cmd = r'/opt/homebrew/bin/tesseract'
+load_dotenv()
+TESSERACT_PATH = os.getenv('TESSERACT_PATH')
+
+pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 class KPKTSpider(scrapy.Spider):
     name = "kpkt"

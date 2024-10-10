@@ -39,3 +39,7 @@ typing_extensions==4.12.2
 urllib3==2.2.2
 w3lib==2.2.1
 zope.interface==7.0.3
+python-dotenv==1.0.1
+pytesseract==0.3.13
+pillow==10.4.0
+
