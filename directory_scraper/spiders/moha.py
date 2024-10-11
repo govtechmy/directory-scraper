@@ -5,14 +5,14 @@ import re
 from urllib.parse import urlparse, parse_qs
 import time
 import random
-
+from html import unescape  # Import to decode HTML entities
 
 class MohaSpider(CrawlSpider):
     name = 'moha'
     allowed_domains = ['www.moha.gov.my']
     start_urls = ['https://www.moha.gov.my/index.php/ms/kdn1/dir-kdn']
 
-    #custom settings for this spider (moha website will close connection if no delay when scraping)
+    # custom settings for this spider (moha website will close connection if no delay when scraping)
     custom_settings = {
         'DOWNLOAD_DELAY': 3,
         'AUTOTHROTTLE_ENABLED': True,
@@ -24,12 +24,6 @@ class MohaSpider(CrawlSpider):
         'DOWNLOAD_TIMEOUT': 30,
         'CONCURRENT_REQUESTS': 8,
         'CONCURRENT_REQUESTS_PER_DOMAIN': 2,
-        # 'DOWNLOADER_MIDDLEWARES': {
-        #     'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
-        #     'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 600,
-        #     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-        #     'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
-        # },
         'LOG_LEVEL': 'ERROR',  # Use 'DEBUG' for more detailed logs
     }
 
@@ -97,6 +91,25 @@ class MohaSpider(CrawlSpider):
                 return match.group(1).strip()
         return ''
 
+    def parse_email(self, hidden_email):
+        """Parse and decode the email using html unescape"""
+        prefix = re.search(r"var prefix = '(.*?)';", hidden_email) #mailto:
+        part1 = re.search(r"var addy\w+ = '(.*?)';", hidden_email) #before @
+        part2 = re.search(r"addy\w+ = addy\w+ \+ '(.*?)';", hidden_email) # after @
+
+        if part1 and part2:
+            part1 = unescape(part1.group(1))
+            part2 = unescape(part2.group(1))
+
+            part1_clean = part1.replace("'", "").replace("+", "").strip()
+            part2_clean = part2.replace("'", "").replace("+", "").strip()
+
+            email = part1_clean + part2_clean
+            email = email.replace(" ","").strip()
+
+            return email
+        return None
+
     def parse_item(self, response):
         time.sleep(random.uniform(1, 3))  # Delay between 1 to 3 seconds
         page_number = self.extract_page(response.url)
@@ -121,6 +134,9 @@ class MohaSpider(CrawlSpider):
             person_phone_text = item.css('div.span3::text').get()
             person_phone = self.extract_phone(person_phone_text)
 
+            hidden_email = item.css('script::text').get()
+            person_email = self.parse_email(hidden_email) if hidden_email else None
+
             yield {
                 'org_sort': 999,
                 'org_id': 'MOHA',
@@ -133,7 +149,7 @@ class MohaSpider(CrawlSpider):
                 'person_name': person_name if person_name else None,
                 'person_position': person_position if person_position else None,
                 'person_phone': person_phone if person_phone else None,
-                'person_email': None, #person_email #to fix,
+                'person_email': person_email if person_email else None,
                 'person_fax': None,
                 'parent_org_id': None,  # is the parent
                 #'url': response.url,
@@ -145,7 +161,7 @@ class MohaSpider(CrawlSpider):
         priority = 100  # Default priority for unknown divisions
         division_name = None
 
-        #check if the URL matches the custom division mapping for priority
+        # check if the URL matches the custom division mapping for priority
         for division, sort_order in self.division_sort_map.items():
             if division.lower().replace(" ", "-") in url.lower():
                 priority = 100 - sort_order  # higher sort_order -> Lower priority value
