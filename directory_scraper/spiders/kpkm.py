@@ -151,6 +151,8 @@ class KPKMSpider(scrapy.Spider):
                             item['unit_name'] = f"{item['ext_division_name']} > {item['unit_name']}"                            
                     else:
                         item['unit_name'] = item['unit_name']
+                else:
+                    item['unit_name'] = item['unit_name']
 
                 # remove 'ext_division_name' from the item before yielding
                 item.pop('ext_division_name', None)
