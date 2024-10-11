@@ -1,4 +1,6 @@
+import os
 import re
+import json
 import scrapy
 from scrapy_playwright.page import PageMethod
 
@@ -19,6 +21,8 @@ class MODSpider(scrapy.Spider):
         'CONCURRENT_REQUESTS_PER_DOMAIN': 2,
         'LOG_LEVEL': 'ERROR',  # Use 'DEBUG' for more detailed logs
     }
+    
+    upper_all = lambda self, lst: [txt.upper() for txt in lst if txt]
     
     start_urls = [
         "https://direktori.mod.gov.my/index.php/mindef/category/pejabat-menteri-pertahanan",
@@ -196,6 +200,9 @@ class MODSpider(scrapy.Spider):
         "https://direktori.mod.gov.my/index.php/mindef/category/mindef-sarawak"
     ]
     
+    with open("src/utils/mindef_units.json", "r") as f:
+        mindef_units = json.loads(f.read())
+    
     def start_requests(self):
         for url in self.start_urls:
             try_count = 1
@@ -221,12 +228,22 @@ class MODSpider(scrapy.Spider):
     async def parse_item(self, response):
         page = response.meta["playwright_page"]
 
-        current_division = response.css("h1 ::text").get()
+        current_division = response.css("h1 ::text").get().strip()
         division_sort = min([idx for idx, base_url in enumerate(self.directory_lst) if base_url in response.url])+1
 
         for sort_order, data_card in enumerate(response.css("div[class='uk-overflow-hidden']")):
             page_number = int(page_number[0]) if (page_number := re.findall(r"\d+$", response.url)) else 1
             unit_lst = [elem for elem in data_card.css("a[href^='/index.php']::text").getall() if elem != current_division]
+
+            possible_unit_path = []
+            unit_path_length = 0
+            # Identifying unit path
+            for unit_path in self.mindef_units[current_division]:
+                if (unit_path
+                    and set(self.upper_all(unit_path)).intersection(set(self.upper_all(unit_lst)))
+                    and len(unit_path) > unit_path_length):
+                            possible_unit_path = unit_path
+            
             data = {
                 "org_id": "MOD",
                 "org_name": "Kementerian Pertahanan",
@@ -234,7 +251,7 @@ class MODSpider(scrapy.Spider):
                 "org_type": "ministry",
                 "division_name": current_division,
                 "division_sort": division_sort,
-                "subdivision_name": unit_name if (unit_name := " > ".join(unit_lst)) else "",
+                "subdivision_name": unit_name if (unit_name := " > ".join(possible_unit_path)) else None,
                 "position_name": position.strip() if (position := data_card.css("div:not([class])::text").get()) else None,
                 "person_name": name.strip() if (name := data_card.css("h2::text").get()) else None,
                 "person_email": data_card.css("joomla-hidden-mail::text").get(),
