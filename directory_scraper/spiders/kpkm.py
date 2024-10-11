@@ -115,7 +115,6 @@ class KPKMSpider(scrapy.Spider):
                 email_element = person.xpath('.//div[contains(@class, "fieldemail")]//joomla-hidden-mail')
                 person_email = self.extract_email(email_element)
 
-                #increment person_sort_order for each person
                 self.person_sort_order += 1
 
                 item = {
@@ -133,8 +132,28 @@ class KPKMSpider(scrapy.Spider):
                     'person_email': person_email if person_email else None,
                     'person_fax': None,
                     'parent_org_id': None, #is the parent
+                    'ext_division_name': None  # Temporary field for processing
 
                 }
+
+                if division and " > " in division:
+                    parts = division.split(" > ", 1)
+                    item['division_name'] = parts[0].strip()
+                    item['ext_division_name'] = parts[1].strip()
+                else:                        
+                    item['division_name'] = division if division else None
+                    item['ext_division_name'] = None
+
+                #if 'ext_division_name' exists, append it to 'unit_name'
+                if item['ext_division_name']:
+                    if item['unit_name']:
+                        if item['unit_name'] != item['ext_division_name']:
+                            item['unit_name'] = f"{item['ext_division_name']} > {item['unit_name']}"                            
+                    else:
+                        item['unit_name'] = item['unit_name']
+
+                # remove 'ext_division_name' from the item before yielding
+                item.pop('ext_division_name', None)
 
                 # Check duplicates without person_sort_order and division_sort_order
                 item_tuple = (person_name, person_position, person_phone, person_email, division, unit)
