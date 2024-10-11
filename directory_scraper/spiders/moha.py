@@ -106,6 +106,9 @@ class MohaSpider(CrawlSpider):
 
             email = part1_clean + part2_clean
             email = email.replace(" ","").strip()
+        
+            if not email.endswith(".gov.my"):
+                email = f"{email}.gov.my"
 
             return email
         return None
