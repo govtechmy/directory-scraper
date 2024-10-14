@@ -257,7 +257,7 @@ class MODSpider(scrapy.Spider):
                 "person_email": data_card.css("joomla-hidden-mail::text").get(),
                 "person_fax": fax[0] if (fax := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Faks" in txt]) else None,
                 "person_phone": phone[0] if (phone := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Telefon" in txt]) else None,
-                "person_sort": 10*(page_number-1) + sort_order,
+                "person_sort": 10*(page_number-1) + sort_order + 1,
                 "parent_org_id": None
             }
             yield data
