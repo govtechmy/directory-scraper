@@ -157,7 +157,7 @@ class MOESpider(scrapy.Spider):
                             "person_email": self.email_handler(data_row.css("td:nth-child(4)::text").get()),
                             "person_fax": None,
                             "person_phone": self.none_handler(data_row.css("td:nth-child(5)::text").get()),
-                            "person_sort": person_sort_order,
+                            "position_sort": person_sort_order,
                             "parent_org_id": None
                         }
 

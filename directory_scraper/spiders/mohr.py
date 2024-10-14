@@ -96,7 +96,7 @@ class MOHRScraper(scrapy.Spider):
                 "person_email": self.email_handler(row.xpath("td[5]/a/text()").get()),
                 "person_fax": None,
                 "person_phone": phone if (phone and phone != "N/A") else None,
-                "person_sort": person_sort+1,
+                "position_sort": person_sort+1,
                 "parent_org_id": None,
             }
             yield(person_data)

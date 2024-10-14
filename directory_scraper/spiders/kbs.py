@@ -41,7 +41,7 @@ class KBSSpider(scrapy.Spider):
                 "person_email": email_lst[0] if (email_lst := [string.replace(" ", "") for string in data if re.match(email_regex, string)]) else None,
                 "person_fax": None,
                 "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else None,
-                "person_sort": person_order+1,
+                "position_sort": person_order+1,
                 "parent_org_id": None,
             }
             yield person_dict
