@@ -143,7 +143,7 @@ class KPKTSpider(scrapy.Spider):
                         'org_name': 'KEMENTERIAN PERUMAHAN DAN KERAJAAN TEMPATAN',
                         'org_type': 'ministry',
                         'division_sort': self.division_sort[main_division],
-                        'person_sort_order': self.person_sort_order,
+                        'position_sort': self.person_sort_order,
                         'division_name': main_division,
                         'subdivision_name': formatted_unit_name,
                         'position_name': person_position,

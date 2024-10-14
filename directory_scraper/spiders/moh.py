@@ -101,7 +101,7 @@ class MOHSpider(scrapy.Spider):
                     "person_email": email,
                     "person_fax": None,
                     "person_phone": phone,
-                    "person_sort": 10*page_number + person_sort + 1,
+                    "position_sort": 10*page_number + person_sort + 1,
                     "parent_org_id": None
                 }
 

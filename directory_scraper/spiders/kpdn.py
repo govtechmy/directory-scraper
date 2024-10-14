@@ -92,7 +92,7 @@ class KPDNSpider(scrapy.Spider):
                 "person_email": self.email_handler(row.css("td:nth-child(3)").css("img::attr(src)").get()),
                 "person_fax": None,
                 "person_phone": self.none_handler(row.css("td:nth-child(5)").css("::text").get()),
-                "person_sort": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
+                "position_sort": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
                 "parent_org_id": None
             }
             yield person_data

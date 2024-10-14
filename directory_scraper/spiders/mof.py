@@ -123,7 +123,7 @@ class MOFSpider(scrapy.Spider):
                 'org_name': "KEMENTERIAN KEWANGAN MALAYSIA",
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,
-                'person_sort_order': self.person_sort_order,
+                'position_sort': self.person_sort_order,
                 'division_name': division if division else None,
                 #'division_address': division_address if division_address else None,
                 #'division_phone': division_phone if division_phone else None,

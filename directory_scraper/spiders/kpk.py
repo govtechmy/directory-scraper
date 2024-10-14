@@ -79,7 +79,7 @@ class KPKScraper(scrapy.Spider):
                     "person_email": data_lst[2],
                     "person_fax": None,
                     "person_phone": data_lst[3],
-                    "person_sort": sort_order,
+                    "position_sort": sort_order,
                     "parent_org_id": None
                 }
                 sort_order += 1
