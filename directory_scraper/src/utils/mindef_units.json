@@ -1,0 +1,1237 @@
+{
+    "Pejabat Menteri Pertahanan": [
+        null
+    ],
+    "Pejabat Ketua Setiausaha": [
+        null
+    ],
+    "Pejabat Timbalan Ketua Setiausaha (Dasar)": [
+        null
+    ],
+    "Bahagian Kewangan": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Inspektorat (CI)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Inspektorat (CI)",
+            "Unit Pengurusan Audit, AP59 & Hapus Kira"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Inspektorat (CI)",
+            "Unit Siasatan Pertahanan Darat & AP308,309"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Inspektorat (CI)",
+            "Unit Siasatan Pengurusan Kementerian, JHEV & Maritim"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Inspektorat (CI)",
+            "Unit Siasatan Pertahanan Udara & Bantuan Bersama, MyGPIS, ePerolehan"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Inspektorat (CI)",
+            "E-Kereta"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Cawangan Kelulusan Kewangan (CKK)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Kelulusan Kewangan Aktiviti Bantuan Bersama (Dalam Negara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Kelulusan Kewangan Aktiviti Pengurusan Am (Dalam Negara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Kelulusan Kewangan Aktiviti Pengurusan Am & Malawakil (Luar Negara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Pendahuluan & Penetapan Kuasa"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Kelulusan Kewangan Aktiviti Bantuan Bersama (Luar Negara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Kelulusan Kewangan Aktiviti Pertahanan Udara (Luar & Dalam Negara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Kelulusan Kewangan Aktiviti Pertahanan Maritim (Luar & Dalam Negara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Kelulusan Kewangan Aktiviti Pertahanan Darat (Luar & Dalam Negara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Elaun, Tuntutan & Kemudahan"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB A)",
+            "Cawangan Kelulusan Kewangan (CKK)",
+            "Unit Tadbir"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Belanjawan (CB)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Belanjawan (CB)",
+            "Unit Pentadbiran"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Belanjawan (CB)",
+            "Unit Bajet 1 (Bantuan Bersama/Udara)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Belanjawan (CB)",
+            "Unit Bajet 2 (Pengurusan Am/JHEV/Maritim)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Belanjawan (CB)",
+            "Unit Bajet 3 (Darat/Dasar)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Belanjawan (CB)",
+            "Unit Selaras/ Laporan"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Pengurusan Kewangan (CPK)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Pengurusan Kewangan (CPK)",
+            "Unit Penyelarasan Program PK1"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Pengurusan Kewangan (CPK)",
+            "Unit Pentadbiran & Pengurusan Sumber Manusia"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB B)",
+            "Cawangan Pengurusan Kewangan (CPK)",
+            "Unit Kewangan Am & Gaji"
+        ]
+    ],
+    "Bahagian Dasar & Perancangan Strategik": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Unit Pengurusan & Kewangan"
+        ],
+        [
+            "Cawangan Perancangan Strategik"
+        ],
+        [
+            "Cawangan Perancangan Strategik",
+            "Unit Koordinasi Strategik Nasional (NSCU)"
+        ],
+        [
+            "Cawangan Perancangan Strategik",
+            "Unit Penyelidikan & Pengurusan Strategik - S"
+        ],
+        [
+            "Cawangan Perancangan Strategik",
+            "Unit Inovasi (I)"
+        ],
+        [
+            "Cawangan Perancangan Strategik",
+            "Unit Urusetia Mesyuarat (U)"
+        ],
+        [
+            "Cawangan Perancangan Strategik",
+            "Unit Parlimen & Kabinet (P & K)"
+        ],
+        [
+            "Cawangan Perancangan Strategik",
+            "Unit KPI"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Perancangan Dasar"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Perancangan Dasar",
+            "Unit Penggubalan dan Kajian Semula Dasar (D1)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Organisasi Antarabangsa & Isu Keselamatan"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Organisasi Antarabangsa & Isu Keselamatan",
+            "Unit Keselamatan Maritim (D2)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Organisasi Antarabangsa & Isu Keselamatan",
+            "Unit Keselamatan Ruang Udara & Angkasa (D3)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Organisasi Antarabangsa & Isu Keselamatan",
+            "Unit Keselamatan Bukan Tradisional (D4)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Organisasi Antarabangsa & Isu Keselamatan",
+            "Unit Triti dan Perhubungan Antarabangsa (D5)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Pelbagai Hala"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Pelbagai Hala",
+            "ASEAN (D6)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Pelbagai Hala",
+            "FPDA (D7)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Hubungan Dua Hala"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Hubungan Dua Hala",
+            "Asia Tenggara (D8)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Hubungan Dua Hala",
+            "Asia Timur, Australasia & Kepulauan Pasifik (D9)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Hubungan Dua Hala",
+            "Asia Tengah, Asia Selatan, Asia Barat & Afrika (D10)"
+        ],
+        [
+            "Cawangan Dasar & Hubungan Antarabangsa",
+            "Unit Hubungan Dua Hala",
+            "Amerika Utara, Amerika Selatan & Eropah (D11)"
+        ]
+    ],
+    "Bahagian Khidmat Pengurusan": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian"
+        ],
+        [
+            "Cawangan Logistik"
+        ],
+        [
+            "Cawangan Logistik",
+            "Unit Tadbir"
+        ],
+        [
+            "Cawangan Logistik",
+            "Unit Sewaan"
+        ],
+        [
+            "Cawangan Logistik",
+            "Unit Pengurusan Kuarters"
+        ],
+        [
+            "Cawangan Logistik",
+            "Unit Protokol & Pengurusan Acara"
+        ],
+        [
+            "Cawangan Logistik",
+            "Unit Bekal & Cetak"
+        ],
+        [
+            "Cawangan Logistik",
+            "Unit Pengurusan Kontrak"
+        ],
+        [
+            "Cawangan Logistik",
+            "Unit Pengurusan Kenderaan"
+        ],
+        [
+            "Cawangan Penyelenggaraan Bangunan"
+        ],
+        [
+            "Cawangan Penyelenggaraan Bangunan",
+            "Unit Kejuruteraan Mekanikal"
+        ],
+        [
+            "Cawangan Penyelenggaraan Bangunan",
+            "Unit Kejuruteraan Awam"
+        ],
+        [
+            "Cawangan Penyelenggaraan Bangunan",
+            "Unit Kejuruteraan Elektrik & Elektronik"
+        ],
+        [
+            "Seksyen Pengurusan Rekod"
+        ],
+        [
+            "Seksyen Pengurusan Rekod",
+            "Unit Rekod & Arkib"
+        ],
+        [
+            "Seksyen Pengurusan Rekod",
+            "Unit Pos & Pendaftaran"
+        ],
+        [
+            "Cawangan Belanjawan & Kewangan"
+        ],
+        [
+            "Cawangan Belanjawan & Kewangan",
+            "Unit Pengurusan Kewangan"
+        ],
+        [
+            "Cawangan Belanjawan & Kewangan",
+            "Unit Kewangan & Hasil"
+        ],
+        [
+            "Cawangan Belanjawan & Kewangan",
+            "Unit Aset"
+        ],
+        [
+            "Cawangan Belanjawan & Kewangan",
+            "Unit Gaji & Pusat Kos"
+        ],
+        [
+            "Cawangan Pengurusan Aset"
+        ],
+        [
+            "Cawangan Pengurusan Aset",
+            "Unit Pelupusan"
+        ],
+        [
+            "Cawangan Pengurusan Aset",
+            "Unit Verifikasi Stok"
+        ],
+        [
+            "Cawangan Pengurusan Aset",
+            "Unit Hapuskira"
+        ]
+    ],
+    "Unit Komunikasi Strategik": [
+        null,
+        [
+            "Pejabat Ketua Komunikasi Strategik"
+        ],
+        [
+            "Pejabat Timbalan Ketua Komunikasi Strategik"
+        ],
+        [
+            "Seksyen Pentadbiran"
+        ],
+        [
+            "Seksyen Pentadbiran",
+            "Sel Tadbir"
+        ],
+        [
+            "Seksyen Pentadbiran",
+            "Sel Penerbitan Korporat"
+        ],
+        [
+            "Seksyen Perhubungan Awam"
+        ],
+        [
+            "Seksyen Perhubungan Awam",
+            "Sel Media"
+        ],
+        [
+            "Seksyen Perhubungan Awam",
+            "Sel Publisiti & Promosi"
+        ],
+        [
+            "Seksyen Media Sosial"
+        ],
+        [
+            "Seksyen Khidmat Pelanggan"
+        ]
+    ],
+    "Jabatan Hal Ehwal Veteran (JHEV)": [
+        null,
+        [
+            "Pejabat Ketua Pengarah"
+        ],
+        [
+            "Pejabat Timbalan Ketua Pengarah"
+        ],
+        [
+            "Pengarah Bahagian"
+        ],
+        [
+            "Unit Komunikasi Korporat"
+        ],
+        [
+            "Bahagian Dasar"
+        ],
+        [
+            "Bahagian Kerjaya & Sosioekonomi"
+        ],
+        [
+            "Bahagian Kebajikan"
+        ],
+        [
+            "Bahagian Khidmat Pengurusan"
+        ],
+        [
+            "Bahagian Pengurusan Maklumat"
+        ],
+        [
+            "Bahagian Kewangan & Akaun"
+        ],
+        [
+            "Bahagian Pencen"
+        ],
+        [
+            "Yayasan Veteran ATM"
+        ]
+    ],
+    "Depot Simpanan Pertahanan": [
+        null,
+        [
+            "Pejabat Pengarah"
+        ],
+        [
+            "Pejabat Timbalan Pengarah (Logistik)"
+        ],
+        [
+            "Pejabat Timbalan Pengarah (Operasi)"
+        ],
+        [
+            "Cawangan Pentadbiran Am"
+        ],
+        [
+            "Cawangan Woksyop"
+        ],
+        [
+            "Cawangan Perbekalan Kawalan & Akaun"
+        ],
+        [
+            "Elemen Tentera"
+        ],
+        [
+            "Depot Tindak Balas Kemanusiaan Negara"
+        ],
+        [
+            "Unit Urusan Depot"
+        ]
+    ],
+    "Urusetia Majlis Angkatan Tentera": [
+        null,
+        [
+            "Urusetia MAT"
+        ],
+        [
+            "Unit Logistik & Pentadbiran"
+        ],
+        [
+            "Unit ICT & Teknologi Maklumat"
+        ],
+        [
+            "Unit Keurusetiaan"
+        ]
+    ],
+    "Bahagian Audit Dalam Pertahanan": [
+        null,
+        [
+            "Pejabat Ketua Audit Dalam"
+        ],
+        [
+            "Pejabat Timbalan Ketua Audit Dalam"
+        ],
+        [
+            "Pejabat Timbalan Ketua Audit Dalam",
+            "Unit Pentadbiran Seksyen Audit Kewangan"
+        ],
+        [
+            "Seksyen Audit Prestasi"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Seksyen Audit Prestasi 1 / ICT"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Seksyen Audit Prestasi 1 / ICT",
+            "Tim 1"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Seksyen Audit Prestasi 1 / ICT",
+            "Tim 2/Audit ICT"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Seksyen Prestasi Bersama"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Seksyen Prestasi Udara"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Seksyen Prestasi Darat"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Seksyen Prestasi Laut"
+        ],
+        [
+            "Seksyen Audit Prestasi",
+            "Unit Pentadbiran Seksyen Audit Prestasi"
+        ],
+        [
+            "Seksyen Audit Kewangan 1"
+        ],
+        [
+            "Seksyen Audit Kewangan 1",
+            "Unit Akruan/Pematuhan"
+        ],
+        [
+            "Seksyen Audit Kewangan 1",
+            "Unit Akruan/AIMS"
+        ],
+        [
+            "Seksyen Audit Kewangan 1",
+            "Unit Sabah"
+        ],
+        [
+            "Seksyen Audit Kewangan 1",
+            "Unit Sarawak"
+        ],
+        [
+            "Seksyen Audit Kewangan 2"
+        ],
+        [
+            "Seksyen Audit Kewangan 2",
+            "Unit Akruan/Pematuhan"
+        ],
+        [
+            "Seksyen Audit Kewangan 2",
+            "Akruan Pematuhan"
+        ],
+        [
+            "Seksyen Audit Kewangan 2",
+            "Unit Melaka/Negeri Sembilan"
+        ],
+        [
+            "Seksyen Audit Kewangan 2",
+            "Unit Perak"
+        ],
+        [
+            "Seksyen Audit Kewangan 3"
+        ],
+        [
+            "Seksyen Audit Kewangan 3",
+            "Unit Akruan/Pematuhan"
+        ],
+        [
+            "Seksyen Audit Kewangan 3",
+            "Unit Pahang/Kelantan/Terengganu"
+        ],
+        [
+            "Seksyen Audit Kewangan 3",
+            "Unit Kedah/Pulau Pinang/Perlis"
+        ],
+        [
+            "Seksyen Audit Kewangan 3",
+            "Unit Johor"
+        ],
+        [
+            "Seksyen Pentadbiran Dan Kewangan"
+        ],
+        [
+            "Seksyen Pentadbiran Dan Kewangan",
+            "Kewangan"
+        ],
+        [
+            "Seksyen Pentadbiran Dan Kewangan",
+            "Tadbir"
+        ]
+    ],
+    "Pejabat Timbalan Ketua Setiausaha (Pembangunan)": [
+        null
+    ],
+    "Bahagian Pembangunan": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Cawangan Perancangan & Pelaksanaan"
+        ],
+        [
+            "Cawangan Perancangan & Pelaksanaan",
+            "Unit Perumahan"
+        ],
+        [
+            "Cawangan Perancangan & Pelaksanaan",
+            "Unit Pengurusan Tanah"
+        ],
+        [
+            "Cawangan Perancangan & Pelaksanaan",
+            "Unit Belanjawan & Penswastaan"
+        ],
+        [
+            "Cawangan Pemantauan Projek"
+        ],
+        [
+            "Cawangan Pemantauan Projek",
+            "Unit Darat"
+        ],
+        [
+            "Cawangan Pemantauan Projek",
+            "Unit Laut"
+        ],
+        [
+            "Cawangan Pemantauan Projek",
+            "Unit Udara"
+        ],
+        [
+            "Cawangan Pemantauan Projek",
+            "Unit Awam/3 Khidmat"
+        ],
+        [
+            "Cawangan Pengurusan"
+        ],
+        [
+            "Cawangan Pengurusan",
+            "Unit Sekretariat, Penyelidikan & Pembangunan"
+        ],
+        [
+            "Cawangan Pengurusan",
+            "Unit Pengurusan Kewangan"
+        ],
+        [
+            "Cawangan Khidmat Teknikal"
+        ],
+        [
+            "Cawangan Khidmat Teknikal",
+            "Unit Kejuruteraan Awam"
+        ],
+        [
+            "Cawangan Khidmat Teknikal",
+            "Unit Pentadbiran Teknikal"
+        ],
+        [
+            "Cawangan Khidmat Teknikal",
+            "Unit Kejuruteraan Elektrik"
+        ],
+        [
+            "Cawangan Khidmat Teknikal",
+            "Unit Kejuruteraan Mekanikal"
+        ],
+        [
+            "Cawangan Khidmat Teknikal",
+            "Unit Arkitek"
+        ],
+        [
+            "Cawangan Khidmat Teknikal",
+            "Unit Ukur Bahan"
+        ]
+    ],
+    "Bahagian Akaun": [
+        null,
+        [
+            "Pejabat Ketua Akauntan"
+        ],
+        [
+            "Sektor Pengurusan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pentadbiran & Kewangan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pentadbiran & Perkhidmatan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Kewangan & Pungutan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Tengah"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Selatan - Kluang"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Utara 1 - Taiping"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Utara 1 - Lumut"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Utara 2 - Sungai Petani"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Barat - Melaka"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Timur - Kuantan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Timur - Kota Bharu"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Sabah - Kota Kinabalu"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pentadbiran, Kewangan & Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti",
+            "Unit Pengurusan Utiliti Zon Sarawak - Kuching"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Perakaunan Pengurusan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pemantauan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pemantauan",
+            "Unit Naziran PTJ & Verifikasi Aset"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Pemantauan",
+            "Unit Naziran Terimaan"
+        ],
+        [
+            "Sektor Pengurusan",
+            "Seksyen Perundingan"
+        ],
+        [
+            "Sektor Operasi"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Aset, Bayaran & Terimaan"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Aset, Bayaran & Terimaan",
+            "Unit Perakaunan Aset & Inventori"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Aset, Bayaran & Terimaan",
+            "Unit Bayaran & Terimaan"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Aset, Bayaran & Terimaan",
+            "Unit Gaji"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Akaun & Teknologi Maklumat"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Akaun & Teknologi Maklumat",
+            "Unit Pelaporan Penyata Kewangan"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Akaun & Teknologi Maklumat",
+            "Unit Amanah"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Akaun & Teknologi Maklumat",
+            "Unit Panjar"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Akaun & Teknologi Maklumat",
+            "Unit Subsidiari & Deposit"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Akaun & Teknologi Maklumat",
+            "Unit Dana"
+        ],
+        [
+            "Sektor Operasi",
+            "Seksyen Akaun & Teknologi Maklumat",
+            "Unit Teknologi Maklumat"
+        ]
+    ],
+    "Bahagian Perolehan": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB) A"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (TSUB) B"
+        ],
+        [
+            "Cawangan Teknik & Pemeriksaan (CT&P)"
+        ],
+        [
+            "Unit Pero 1 (Darat)"
+        ],
+        [
+            "Unit Pero 2 (Laut)"
+        ],
+        [
+            "Unit Pero 3 (Udara)"
+        ],
+        [
+            "Unit Pero 4 (Gunasama 1)"
+        ],
+        [
+            "Unit Pero 5 (Gunasama 2)"
+        ],
+        [
+            "Unit Pero 6 (Gunasama 3)"
+        ],
+        [
+            "Unit Pero 7 (Penyelidikan & Urusetia )"
+        ],
+        [
+            "Unit Pero 8 (Pentadbiran & Kewangan)"
+        ]
+    ],
+    "Jabatan Ketua Hakim Peguam": [
+        null
+    ],
+    "Unit Integriti": [
+        null,
+        [
+            "Pejabat Ketua Unit"
+        ],
+        [
+            "Seksyen Pematuhan"
+        ],
+        [
+            "Seksyen Tatatertib"
+        ],
+        [
+            "Seksyen Tadbir Urus"
+        ],
+        [
+            "Seksyen Pengukuhan Integriti"
+        ],
+        [
+            "Seksyen Pengurusan Aduan"
+        ],
+        [
+            "Seksyen Pengesahan & Pengesanan"
+        ]
+    ],
+    "Institut Penyelidikan Sains & Teknologi Pertahanan (STRIDE)": [
+        null,
+        [
+            "Pejabat Ketua Pengarah"
+        ],
+        [
+            "Pejabat Timbalan Ketua Pengarah (Pembangunan & Inovasi)"
+        ],
+        [
+            "Pejabat Timbalan Ketua Pengarah (Penyelidikan Pertahanan)"
+        ],
+        [
+            "Bahagian Khidmat Pengurusan"
+        ],
+        [
+            "Bahagian Teknologi Elektronik & Komunikasi"
+        ],
+        [
+            "Bahagian Teknologi Prestasi Angkatan"
+        ],
+        [
+            "Bahagian Teknologi Pertahanan Kimia & Biologi"
+        ],
+        [
+            "Bahagian Teknologi Siber"
+        ],
+        [
+            "Bahagian Teknologi Robotik & Kecerdasan Buatan"
+        ],
+        [
+            "Bahagian Teknologi SABER"
+        ],
+        [
+            "Bahagian Teknologi Maritim"
+        ],
+        [
+            "Bahagian Teknologi Aeroangkasa"
+        ],
+        [
+            "Bahagian Teknologi Automotif & Mekanikal"
+        ],
+        [
+            "Bahagian Teknologi Roket & Misil"
+        ],
+        [
+            "Bahagian Perancangan Strategik & Pengurusan Teknologi"
+        ]
+    ],
+    "MinDef Sabah": [
+        null,
+        [
+            "Pejabat Pengarah"
+        ],
+        [
+            "Bahagian Khidmat Pengurusan"
+        ],
+        [
+            "Bahagian Khidmat Pengurusan",
+            "Unit Pengurusan Aset"
+        ],
+        [
+            "Bahagian Kewangan"
+        ]
+    ],
+    "Pejabat Timbalan Menteri Pertahanan": [
+        null
+    ],
+    "Pejabat Timbalan Ketua Setiausaha (Pengurusan)": [
+        null
+    ],
+    "Bahagian Pengurusan Maklumat": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Cawangan Pengurusan Strategik ICT"
+        ],
+        [
+            "Cawangan Pengurusan Operasi ICT"
+        ],
+        [
+            "Cawangan Pengurusan Operasi ICT",
+            "Unit Keselamatan, Khidmat Teknikal & Multimedia"
+        ],
+        [
+            "Cawangan Pengurusan Operasi ICT",
+            "Unit Operasi, Pusat Data & Rangkaian"
+        ],
+        [
+            "Cawangan Pengurusan Sistem Maklumat"
+        ],
+        [
+            "Cawangan Pengurusan Sistem Maklumat",
+            "Unit Aplikasi Gunasama & Portal"
+        ],
+        [
+            "Cawangan Pengurusan Sistem Maklumat",
+            "Unit Aplikasi Sokongan"
+        ]
+    ],
+    "Bahagian Pengurusan Sumber Manusia": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perjawatan)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perjawatan)",
+            "Cawangan Perjawatan"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perjawatan)",
+            "Cawangan Khidmat Tentera"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Sel Ka 1"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Sel Ka 2"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Sel Ka 3"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Sel Ka 4"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Sel Ka 5"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Sel Ka 6 @ Unit Pengambilan & Persaraan"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Sel Ka 7"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Unit Tadbir"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "HRMIS"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Khidmat Awam",
+            "Unit Naik Pangkat & Prestasi"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Perkhidmatan)",
+            "Cawangan Pengurusan Psikologi"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Latihan)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Latihan)",
+            "Cawangan Latihan (Bangunan Zetro)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Latihan)",
+            "Pusat Latihan (Platih)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Latihan)",
+            "Cawangan Pembangunan Kompetensi (Bangunan Zetro)"
+        ],
+        [
+            "Pejabat Timbalan Setiausaha Bahagian (Latihan)",
+            "Cawangan Tadbir"
+        ]
+    ],
+    "Bahagian Undang-Undang": [
+        null,
+        [
+            "Pejabat Penasihat Undang-Undang"
+        ],
+        [
+            "Unit Pentadbiran"
+        ],
+        [
+            "Unit Kontrak Pembangunan/ Penswastaan/ Penyewaan"
+        ],
+        [
+            "Unit Gubalan/ Kemalangan"
+        ],
+        [
+            "Unit Kontrak Perolehan"
+        ],
+        [
+            "Unit Guaman & Nasihat Am"
+        ],
+        [
+            "Biasiswa/Pinjaman Pelajaran & MOU"
+        ]
+    ],
+    "Bahagian Industri Pertahanan": [
+        null,
+        [
+            "Pejabat Setiausaha Bahagian"
+        ],
+        [
+            "Unit Dasar & Pembangunan Industri Pertahanan"
+        ],
+        [
+            "Unit Hubungan Antarabangsa & Pentadbiran"
+        ],
+        [
+            "Unit Pameran Antarabangsa, Penswastaan & Badan Berkanun"
+        ],
+        [
+            "Unit ICP (Darat / Laut)"
+        ],
+        [
+            "Unit ICP (Udara / Markas ATM)"
+        ]
+    ],
+    "Penguasa Katalog ATM (MAFCA)": [
+        null,
+        [
+            "Cawangan Perkhidmatan"
+        ],
+        [
+            "Cawangan Teknologi Maklumat"
+        ],
+        [
+            "Cawangan Operasi"
+        ],
+        [
+            "Cawangan Rancang, Projek & Latih"
+        ]
+    ],
+    "Institut Pertahanan & Keselamatan Malaysia (MiDAS)": [
+        null,
+        [
+            "Pejabat Ketua Eksekutif"
+        ],
+        [
+            "Comprehensive Defence"
+        ],
+        [
+            "Comprehensive Defence",
+            "Policy Studies"
+        ],
+        [
+            "Comprehensive Defence",
+            "Regional Affairs"
+        ],
+        [
+            "Comprehensive Security"
+        ],
+        [
+            "Comprehensive Security",
+            "Comparative Technology"
+        ],
+        [
+            "Comprehensive Security",
+            "Contemporary Security"
+        ],
+        [
+            "Comprehensive Security",
+            "Maritime Security"
+        ],
+        [
+            "Admin, Finance & Development Centre"
+        ]
+    ],
+    "MinDef Sarawak": [
+        null,
+        [
+            "Pejabat Pengarah"
+        ],
+        [
+            "Pejabat Timbalan Pengarah"
+        ],
+        [
+            "Pejabat Ketua Audit"
+        ],
+        [
+            "Unit Kewangan"
+        ],
+        [
+            "Unit Pentadbiran"
+        ]
+    ]
+}
