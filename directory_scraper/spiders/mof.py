@@ -128,11 +128,11 @@ class MOFSpider(scrapy.Spider):
                 #'division_address': division_address if division_address else None,
                 #'division_phone': division_phone if division_phone else None,
                 #'division_fax': division_fax if division_fax else None,
-                'unit_name': current_unit if current_unit else None,
+                'subdivision_name': current_unit if current_unit else None,
                 #'unit_address': unit_address if unit_address else None,
                 'person_name': person_name if person_name else None,
                 'person_phone': person_phone if person_phone else None,
-                'person_position': person_position if person_position else None,
+                'position_name': person_position if person_position else None,
                 'person_email': person_email if person_email else None,
                 'person_fax': None,
                 'parent_org_id': None, #is the parent

@@ -112,9 +112,9 @@ class KLNSpider(scrapy.Spider):
                 'division_sort': self.division_tracker[division_name],
                 'person_sort_order': self.person_sort_order,
                 'division_name': division_name if division_name else None,
-                'unit_name': subdivision_name if division_name != subdivision_name else None, 
+                'subdivision_name': subdivision_name if division_name != subdivision_name else None, 
                 'person_name': person_name if person_name else None,
-                'person_position': person_position if person_position else None,
+                'position_name': person_position if person_position else None,
                 'person_phone': person_phone if person_phone else None,
                 'person_email': person_email if person_email else None,
                 'person_fax': None,
@@ -146,16 +146,20 @@ class KLNSpider(scrapy.Spider):
                 self.person_sort_order += 1
 
                 yield {
-                    'agency_id': 'KLN',
-                    'agency': 'KEMENTERIAN LUAR NEGERI',
-                    'division_sort_order': self.division_tracker[division_name],
+                    'org_sort': 999,
+                    'org_id': 'KLN',
+                    'org_name': 'KEMENTERIAN LUAR NEGERI',
+                    #'org_type': 'ministry',
+                    'division_sort': self.division_tracker[division_name],
                     'person_sort_order': self.person_sort_order,
                     'person_name': person_name if person_name else None,
-                    'division': division_name if division_name else None,
-                    'unit': subdivision_name if division_name != subdivision_name else None,
-                    'person_position': person_position if person_position else None,
+                    'division_name': division_name if division_name else None,
+                    'subdivision_name': subdivision_name if division_name != subdivision_name else None,
+                    'position_name': person_position if person_position else None,
                     'person_phone': person_phone if person_phone else None,
                     'person_email': person_email if person_email else None,
+                    'person_fax': None,
+                    #'parent_org_id': None, 
                     #'image_url': image_url if image_url else None,
                     #'url': response.url
                 }

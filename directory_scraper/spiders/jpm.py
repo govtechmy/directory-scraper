@@ -108,11 +108,11 @@ class JPMSpider(scrapy.Spider):
                     'division_name': division_name if division_name else None,
                     #'division_address': division_address,
                     #'division_phone': division_phone,
-                    'unit_name': unit_full if unit_full else None,
+                    'subdivision_name': unit_full if unit_full else None,
                     #'main_unit': main_unit, #debugging
                     #'detailed_unit': detailed_unit, #debugging
                     'person_name': person_name if person_name else None,
-                    'person_position': person_position if person_position else None,
+                    'position_name': person_position if person_position else None,
                     'person_phone': person_phone if person_phone else None,
                     'person_email': person_email if person_email else None,
                     'person_fax': None,

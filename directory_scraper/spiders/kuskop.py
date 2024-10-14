@@ -106,9 +106,9 @@ class KuskopcsrfSpider(scrapy.Spider):
                 'division_sort': int(option_value),
                 'person_sort_order': self.person_sort_order,
                 'division_name': division.strip() if division else None,
-                'unit_name': unit.strip() if unit else None,
+                'subdivision_name': unit.strip() if unit else None,
                 'person_name': name.strip() if name else None,
-                'person_position': position.strip() if position else None,
+                'position_name': position.strip() if position else None,
                 'person_phone': phone.strip() if phone else None,
                 'person_email': (email.strip() + '@kuskop.gov.my') if email else None,
                 'person_fax': fax.strip() if fax else None,
@@ -117,7 +117,7 @@ class KuskopcsrfSpider(scrapy.Spider):
 
             self.person_sort_order += 1
 
-            self.logger.info(f"Parsed panel {index}/{panel_count} for option '{option_value}': {item['person_name']} - {item['person_position']}")
+            #self.logger.info(f"Parsed panel {index}/{panel_count} for option '{option_value}': {item['person_name']} - {item['position_name']}")
 
             yield item
         

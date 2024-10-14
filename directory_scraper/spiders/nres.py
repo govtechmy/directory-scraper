@@ -179,9 +179,9 @@ class NRESSpider(scrapy.Spider):
                 'person_sort_order': person_sort_order,  # Use the global person sort order
                 'division_name':  final_division_name if final_division_name else None, #re.sub(r'^•\s*', '', re.sub(r'\s+', ' ', division_name.replace('\xa0', ' ').replace('—', '').strip())).strip(), #division_name,#cleaned_division_name, #re.sub(r'^•\s*', '', cleaned_division_name).strip(),
                 #'bahagian': bahagian,
-                'unit_name': unit_name if unit_name else None,
+                'subdivision_name': unit_name if unit_name else None,
                 'person_name': person_name if person_name else None,
-                'person_position': person_position if person_position else None,
+                'position_name': person_position if person_position else None,
                 'person_email': person_email if person_email else None,
                 'person_phone': person_phone if person_phone else None,
                 'person_fax': None,  

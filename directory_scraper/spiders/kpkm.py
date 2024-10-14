@@ -125,9 +125,9 @@ class KPKMSpider(scrapy.Spider):
                     'division_sort': self.division_sort_order,
                     'person_sort_order': self.person_sort_order,
                     'division_name': division if division else None,
-                    'unit_name': unit if unit else None,
+                    'subdivision_name': unit if unit else None,
                     'person_name': person_name if person_name else None,
-                    'person_position': person_position if person_position else None,
+                    'position_name': person_position if person_position else None,
                     'person_phone': person_phone if person_phone else None,
                     'person_email': person_email if person_email else None,
                     'person_fax': None,
@@ -146,13 +146,13 @@ class KPKMSpider(scrapy.Spider):
 
                 #if 'ext_division_name' exists, append it to 'unit_name'
                 if item['ext_division_name']:
-                    if item['unit_name']:
-                        if item['unit_name'] != item['ext_division_name']:
-                            item['unit_name'] = f"{item['ext_division_name']} > {item['unit_name']}"                            
+                    if item['subdivision_name']:
+                        if item['subdivision_name'] != item['ext_division_name']:
+                            item['subdivision_name'] = f"{item['ext_division_name']} > {item['subdivision_name']}"                            
                     else:
-                        item['unit_name'] = item['unit_name']
+                        item['subdivision_name'] = item['subdivision_name']
                 else:
-                    item['unit_name'] = item['unit_name']
+                    item['subdivision_name'] = item['subdivision_name']
 
                 # remove 'ext_division_name' from the item before yielding
                 item.pop('ext_division_name', None)
