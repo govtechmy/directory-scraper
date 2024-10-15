@@ -146,7 +146,7 @@ class KKDW_AnggotaSpider(scrapy.Spider):
                 'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,
-                'position_sort': self.person_sort_order,
+                'position_sort_order': self.person_sort_order,
                 'division_name': division_name.strip() if division_name else None,
                 'subdivision_name': None,
                 'person_name': row[4].strip() if row[4] else None,

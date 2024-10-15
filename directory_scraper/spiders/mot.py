@@ -61,7 +61,7 @@ class MotSpider(scrapy.Spider):
                 'org_name': 'KEMENTERIAN PENGANGKUTAN',
                 'org_type': 'ministry',
                 'division_sort': division_sort,  #based on "start_urls" sequence
-                'position_sort': self.person_sort_order,  #global
+                'position_sort_order': self.person_sort_order,  #global
                 'division_name': division if division else None,  #first element of the division list
                 'subdivision_name': unit if unit else None,  #second element of the division_name list (if exists)
                 'person_name': person_name if person_name else None,

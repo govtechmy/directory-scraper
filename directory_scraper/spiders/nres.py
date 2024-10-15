@@ -176,7 +176,7 @@ class NRESSpider(scrapy.Spider):
                 'org_name': 'KEMENTERIAN SUMBER ASLI DAN KELESTARIAN ALAM',
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,  # Use the mapped sort order
-                'position_sort': person_sort_order,  # Use the global person sort order
+                'position_sort_order': person_sort_order,  # Use the global person sort order
                 'division_name':  final_division_name if final_division_name else None, #re.sub(r'^•\s*', '', re.sub(r'\s+', ' ', division_name.replace('\xa0', ' ').replace('—', '').strip())).strip(), #division_name,#cleaned_division_name, #re.sub(r'^•\s*', '', cleaned_division_name).strip(),
                 #'bahagian': bahagian,
                 'subdivision_name': unit_name if unit_name else None,

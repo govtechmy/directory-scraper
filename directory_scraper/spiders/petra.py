@@ -129,7 +129,7 @@ class PetraSpider(scrapy.Spider):
                 'org_name': 'KEMENTERIAN PERALIHAN TENAGA DAN TRANSFORMASI AIR',
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,  #sort based on department sequence
-                'position_sort': self.person_sort_order,
+                'position_sort_order': self.person_sort_order,
                 #'department': dept,
                 'division_name': current_division if current_division else None,
                 'subdivision_name': unit if unit else None,

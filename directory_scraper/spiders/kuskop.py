@@ -104,7 +104,7 @@ class KuskopcsrfSpider(scrapy.Spider):
                 'org_name': "KEMENTERIAN PEMBANGUNAN USAHAWAN DAN KOPERASI",
                 'org_type': 'ministry',
                 'division_sort': int(option_value),
-                'position_sort': self.person_sort_order,
+                'position_sort_order': self.person_sort_order,
                 'division_name': division.strip() if division else None,
                 'subdivision_name': unit.strip() if unit else None,
                 'person_name': name.strip() if name else None,

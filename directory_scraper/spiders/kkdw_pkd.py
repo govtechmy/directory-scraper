@@ -112,7 +112,7 @@ class KKDW_PKDSpider(scrapy.Spider):
                 'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,
-                'position_sort': self.person_sort_order,
+                'position_sort_order': self.person_sort_order,
                 #'no': row[0],
                 #'wdt_ID': row[1],
                 'division_name': f"Pusat Komuniti Desa {row[2]}" if row[2] else f"Pusat Komuniti Desa",

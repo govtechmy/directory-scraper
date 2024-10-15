@@ -43,7 +43,7 @@ class KKRSpider(scrapy.Spider):
                     'org_name': 'KEMENTERIAN KERJA RAYA',
                     'org_type': 'ministry',
                     'division_sort': self.division_counter,
-                    'position_sort': self.person_counter,
+                    'position_sort_order': self.person_counter,
                     'division_name': division if division else None,
                     'subdivision_name': unit if unit else None,
                     'person_name': person_name if person_name else None,

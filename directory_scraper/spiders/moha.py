@@ -146,7 +146,7 @@ class MohaSpider(CrawlSpider):
                 'org_name': 'KEMENTERIAN DALAM NEGERI',
                 'org_type': 'ministry',
                 'division_sort': division_sort_order,
-                'position_sort': self.person_sort_order,
+                'position_sort_order': self.person_sort_order,
                 'division_name': division if division else None,
                 'subdivision_name': None,
                 'person_name': person_name if person_name else None,

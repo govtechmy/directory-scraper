@@ -87,7 +87,7 @@ class MitiSpider(scrapy.Spider):
                 'org_name': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
                 'org_type': 'ministry',
                 'division_sort': self.division_sort_order,
-                'position_sort': self.person_sort_order,
+                'position_sort_order': self.person_sort_order,
                 'division_name': division if division else None,
                 'subdivision_name': section if section else None,
                 'person_name': person_name if person_name else None,

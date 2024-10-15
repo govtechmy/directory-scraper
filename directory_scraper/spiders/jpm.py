@@ -104,7 +104,7 @@ class JPMSpider(scrapy.Spider):
                     'org_name': 'JABATAN PERDANA MENTERI',
                     'org_type': 'ministry',
                     'division_sort': division_sort,
-                    'position_sort': self.person_sort_order,
+                    'position_sort_order': self.person_sort_order,
                     'division_name': division_name if division_name else None,
                     #'division_address': division_address,
                     #'division_phone': division_phone,
