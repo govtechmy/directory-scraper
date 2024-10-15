@@ -12,6 +12,8 @@ venv/
 
 output/
 archived/
+*.egg-info/
+
 
 # Scrapy-specific files
 .scrapy/

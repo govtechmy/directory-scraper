@@ -41,6 +41,20 @@ Make sure you have the following installed:
     pip install -r requirements.txt
     ```
 
+5. Install the project setup.py 
+The project is organized as a Python package. 
+
+To install it in editable mode (development):
+- -e (editable mode): This allows you to make changes to the project source code, and those changes will be immediately reflected without needing to reinstall the package.
+    ```bash
+    pip install -e .
+    ```
+To install it in non-editable mode
+    ```bash
+    pip install .
+    ```  
+    You will be able to import the project’s internal modules (e.g utils.file_utils) without needing to modify sys.path.
+
 ### Running the Spider
 
 To run an individual spider & produce an output, use the following command:
