@@ -2,8 +2,8 @@ import scrapy
 import json
 from scrapy_playwright.page import PageMethod
 
-class KKDW_AnggotaSpider(scrapy.Spider):
-    name = "kkdw_anggota"
+class RURALLINK_AnggotaSpider(scrapy.Spider):
+    name = "rurallink_anggota"
 
     #manual mapping of division names to sort order as seen on website (unknown division will be set as 999)
     division_sort_mapping = {
