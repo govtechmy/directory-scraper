@@ -41,7 +41,7 @@ class KOMUNIKASIpider(scrapy.Spider):
                 "person_email": self.email_handler(self.none_handler(contact_details[1])),
                 "person_fax": None,
                 "person_phone": self.none_handler(contact_details[0]),
-                "position_sort": person_sort+1,
+                "position_sort_order": person_sort+1,
                 "parent_org_id": None,
             }
             yield person_data

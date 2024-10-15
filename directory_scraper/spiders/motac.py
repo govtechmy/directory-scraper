@@ -83,7 +83,7 @@ class MOTACSpider(CrawlSpider):
                 "person_email": contact_details.get("uk-icon-envelope-square"),
                 "person_fax": None,
                 "person_phone": contact_details.get("uk-icon-phone-square"),
-                "position_sort": sort_order+1,
+                "position_sort_order": sort_order+1,
                 "parent_org_id": None,
             }
             yield person_data

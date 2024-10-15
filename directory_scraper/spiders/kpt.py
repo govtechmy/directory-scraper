@@ -111,7 +111,7 @@ class KPTSpider(CrawlSpider):
                     "person_email": email_handler(row.xpath("td[3]/text()").get()),
                     "person_fax": None,
                     "person_phone": phone_number,
-                    "position_sort": self.sort_handler(row.xpath("td[1]/text()").get()),
+                    "position_sort_order": self.sort_handler(row.xpath("td[1]/text()").get()),
                     "parent_org_id": None
                 }
                 yield person_data

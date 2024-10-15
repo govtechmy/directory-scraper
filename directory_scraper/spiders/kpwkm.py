@@ -63,7 +63,7 @@ class KPWKMSpider(scrapy.Spider):
                         "person_email": person_email,
                         "person_fax": None,
                         "person_phone": person_phone,
-                        "position_sort": person_sort,
+                        "position_sort_order": person_sort,
                         "parent_org_id": None,
                     }
                     yield person_data
