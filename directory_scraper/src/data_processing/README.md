@@ -1,5 +1,5 @@
-### 1st: cleaning script
-- cleaning data
+### 1st: process_data.py
+- cleaning and processing data
 - sort by division_sort & person_sort
 - return clean json files
 
@@ -16,7 +16,7 @@ flowchart TD
     G[validate person_email]
     H[validate person_phone]
     I[capitalize values]
-    J[add UUID]
+    J[standardize_position_sort_key
     end
 
     B --> C
@@ -31,24 +31,22 @@ flowchart TD
     J --> K{Sort by division_sort & person_sort}
     K -- Reset person_sort by division --> L[Sort by Division]
     K -- Do not reset person_sort by each division --> M[Sort by Organisation]
-    L --> N[return clean data]
-    M --> N[return clean data]
+    L --> N[remove_keys & reorder_keys]
+    M --> N[remove_keys & reorder_keys]
     N --> O[write to output folder]
 ```
 ### 2nd: compiling script
 - compile the cleaned data
 - sort by org_id, division_sort, person_sort
-- remove key (person_sort_order)
 - return compiled data
 ```mermaid
 flowchart TD
     G1 --> A
     A[Start] --> B[compile JSON files]
     B --> C[sort data by org_id]
-    C --> D[remove unnecessary keys]
-    D --> E[return output file]
+    C --> D[return output file]
     %% This part connects the previous flowchart to the new one
     subgraph Previous Pipeline Output
-        G1[Clean Data]
+        G1[Processed Data]
     end
 ```

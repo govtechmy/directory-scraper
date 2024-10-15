@@ -1,5 +1,8 @@
 import json
 import os
+import logging
+
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 DATA_SCHEMA = {
     #"id": {"type": str, "nullable": False},
@@ -10,6 +13,7 @@ DATA_SCHEMA = {
     "division_sort": {"type": int, "nullable": False},
     "division_name": {"type": str, "nullable": True},
     "subdivision_name": {"type": str, "nullable": True},
+    "position_sort": {"type": int, "nullable": False},
     "person_name": {"type": str, "nullable": True},
     "position_name": {"type": str, "nullable": True},
     "person_phone": {"type": str, "nullable": True},
@@ -22,20 +26,10 @@ def validate_required_keys(record, json_file):
     """Function to validate required keys"""
     for key, meta in DATA_SCHEMA.items():
         if key not in record:
-            print(f"Missing '{key}' in {json_file}, setting default value.")
+            logging.warning(f"Missing '{key}' in {json_file}, setting default value.")
             record[key] = None  # specify default value for missing fields
 
     return record
-
-def remove_keys(data):
-    """Function to remove specified keys from all records"""
-    keys_to_remove = ['person_sort_order']  # specify the keys to remove
-    for record in data:
-        for key in keys_to_remove:
-            if key in record:
-                del record[key]
-    return data
-
 
 def compile_json_files(input_folder):
     """Function to compile all JSON files from a folder into one list"""
@@ -54,7 +48,7 @@ def compile_json_files(input_folder):
 
 def sort_data(data):
     """Function to sort the compiled data"""
-    return sorted(data, key=lambda x: (x['org_sort'], x['division_sort'], x['person_sort']))
+    return sorted(data, key=lambda x: (x['org_sort'], x['division_sort'], x['position_sort']))
 
 def write_json_file(file_path, data):
     """Function to write data back to a JSON file"""
@@ -86,10 +80,10 @@ def data_compiling_pipeline(input_folder, output_file):
     """Main pipeline function"""
     compiled_data = compile_json_files(input_folder)
     sorted_data = sort_data(compiled_data)
-    sorted_data = remove_keys(sorted_data)
     write_json_file_row_by_row(output_file, sorted_data)
     
-    print(f"Successful! {output_file}")
+    logging.info(f"Successfully compiled! Saved as {output_file}")
+
 
 if __name__ == "__main__":
     input_folder = 'data/output'

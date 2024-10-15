@@ -5,7 +5,7 @@ import uuid
 import shutil
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 DATA_SCHEMA = {
     "org_sort": {"type": int, "nullable": False},
@@ -21,7 +21,7 @@ DATA_SCHEMA = {
     "person_email": {"type": str, "nullable": True},
     "person_fax": {"type": str, "nullable": True},
     "parent_org_id": {"type": str, "nullable": True},
-    #"person_sort_order": {"type": int, "nullable": False}
+    #"position_sort_order": {"type": int, "nullable": False}
 }
 
 UPPERCASE_KEYS = ["org_name", "division_name", "subdivision_name", "person_name","position_name"]
@@ -302,60 +302,93 @@ def capitalize_values(record):
     
     return record
 
-def standardize_person_sort_key(record):
+def standardize_position_sort_key(record):
     """
-    Ensures the sorting key is standardized to 'person_sort_order'.
-    If 'person_sort' is found, it is renamed to 'person_sort_order'.
+    Ensures the sorting key is standardized to 'position_sort_order'.
+    If 'position_sort' is found, it is renamed to 'position_sort_order'.
     """
-    if 'person_sort' in record:
-        record['person_sort_order'] = record.pop('person_sort')
+    if 'position_sort' in record:
+        record['position_sort_order'] = record.pop('position_sort')
     return record
 
 def sort_person_by_organisation(data):
-    """Option 1: person_sort does not reset for each division (global sorting)"""
+    """Option 1: position_sort does not reset for each division (global sorting)"""
     # First standardize the keys
-    data = [standardize_person_sort_key(record) for record in data]
+    data = [standardize_position_sort_key(record) for record in data]
 
-    sorted_data = sorted(data, key=lambda x: (x['division_sort'], x['person_sort_order']))
+    sorted_data = sorted(data, key=lambda x: (x['division_sort'], x['position_sort_order']))
     
-    # Assign global person_sort
+    # Assign global position_sort
     for idx, record in enumerate(sorted_data):
-        record.update({'person_sort': idx + 1})
+        record.update({'position_sort': idx + 1})
     return sorted_data
 
 def sort_person_by_division(data):
-    """Option 2: person_sort resets for each division"""
+    """Option 2: position_sort resets for each division"""
     # First standardize the keys
-    data = [standardize_person_sort_key(record) for record in data]
+    data = [standardize_position_sort_key(record) for record in data]
     
-    # Sort by division_sort and person_sort_order
-    sorted_data = sorted(data, key=lambda x: (x['division_sort'], x['person_sort_order']))
+    # Sort by division_sort and position_sort_order
+    sorted_data = sorted(data, key=lambda x: (x['division_sort'], x['position_sort_order']))
     
     current_division = None
-    person_sort_counter = 0
+    position_sort_counter = 0
 
     for record in sorted_data:
-        #check if the division has changed and reset the person_sort_counter
+        #check if the division has changed and reset the position_sort_counter
         if record['division_sort'] != current_division:
             current_division = record['division_sort']
-            person_sort_counter = 1  # Reset for a new division
+            position_sort_counter = 1  # Reset for a new division
         else:
-            person_sort_counter += 1
+            position_sort_counter += 1
 
-        record.update({'person_sort': person_sort_counter})  # Set person_sort for the current division
+        record.update({'position_sort': position_sort_counter})  # Set position_sort for the current division
     return sorted_data
+
+def reorder_keys(record):
+    """
+    Reorders the keys in the record.
+    """
+    # Create a new ordered dictionary with the desired order
+    new_record = {}
+
+    # Add keys in the desired order
+    new_record['org_id'] = record.get('org_id')
+    new_record['org_name'] = record.get('org_name')
+    new_record['org_sort'] = record.get('org_sort')
+    new_record['org_type'] = record.get('org_type')
+    new_record['division_name'] = record.get('division_name')
+    new_record['division_sort'] = record.get('division_sort')
+    new_record['subdivision_name'] = record.get('subdivision_name')
+    new_record['position_sort'] = record.get('position_sort')
+    new_record['position_name'] = record.get('position_name')
+    new_record['person_name'] = record.get('person_name')
+    new_record['person_email'] = record.get('person_email')
+    new_record['person_fax'] = record.get('person_fax')
+    new_record['person_phone'] = record.get('person_phone')
+    new_record['parent_org_id'] = record.get('parent_org_id')
+
+    return new_record
+
+def remove_keys(record):
+    """Function to remove specified keys from a single record"""
+    keys_to_remove = ['position_sort_order']  # specify the keys to remove
+    for key in keys_to_remove:
+        if key in record:
+            del record[key]
+    return record
 
 def sort_division_person(data, reset_per_division=True):
     """
     Combined function that lets you choose the sorting option.
-    Sort records based on 'division_sort' and 'person_sort_order' or 'person_sort'. 
-    If reset_per_division is True, person_sort is reset for each division.
-    Otherwise, person_sort is globally assigned across the organisation.
+    Sort records based on 'division_sort' and 'position_sort_order' or 'position_sort'. 
+    If reset_per_division is True, position_sort is reset for each division.
+    Otherwise, position_sort is globally assigned across the organisation.
     """
     if reset_per_division:
-        return sort_person_by_division(data)  # Option 1: Reset person_sort for each division
+        return sort_person_by_division(data)  # Option 1: Reset position_sort for each division
     else:
-        return sort_person_by_organisation(data)  # Option 2: Global person_sort
+        return sort_person_by_organisation(data)  # Option 2: Global position_sort by organisation
 
 def data_processing_pipeline(data):
     """
@@ -371,11 +404,17 @@ def data_processing_pipeline(data):
         validate_person_email(record)
         validate_person_phone(record)
         capitalize_values(record)
-        #add_uuid(record)
-    
+        standardize_position_sort_key(record)
+
     # Step 2: Sort the data
     reset_per_division = True  # change to False if you want global sorting
     data = sort_division_person(data, reset_per_division)  # Comment out this line to skip sorting
+    
+    # Step 3: Remove unecessary key. Then, reorder the keys by creating a new data, after final processing and sorting.
+    for idx, record in enumerate(data):
+        remove_keys(record)
+        reordered_record = reorder_keys(record)
+        data[idx] = reordered_record  # Replace the original record with the reordered one
     
     return data
 
