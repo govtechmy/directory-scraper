@@ -7,7 +7,7 @@ class MOESpider(scrapy.Spider):
     start_urls = ["https://direktori.moe.gov.my/ajax/public/getdir.php?id=1&textsearch=&selectsearch="]
 
     none_handler = lambda self, condition: result.strip() if (result := condition) else None
-    email_handler = lambda self, condition: f"{result}@moe.gov.my" if (result := condition) else None
+    email_handler = lambda self, condition: (result if ("@" in result) else f"{result}@moe.gov.my") if (result := condition) else None
 
     division_mapping = [
         {"division_code": "120", "division": "PEJABAT MENTERI PENDIDIKAN", "page_id": 1},
