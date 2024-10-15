@@ -16,7 +16,7 @@ flowchart TD
     G[validate person_email]
     H[validate person_phone]
     I[capitalize values]
-    J[standardize_position_sort_key
+    J[standardize_position_sort_key]
     end
 
     B --> C
