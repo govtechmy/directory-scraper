@@ -208,7 +208,7 @@ def validate_person_phone(record):
         phone = phone.replace("--", "-")
         phone = phone.replace("..", ".")
         phone = phone.replace(" ", "")
-        phone = re.sub(r'^telefon.*?(?=[06\(]|\+\d|-$)|-$', "", phone)
+        phone = re.sub(r'^Telefon.*?(?=[06\(]|\+\d|-$)|-$', "", phone)
         phone = re.sub(r'\s+', "", phone)  # Removes all spaces, tabs, newlines inside the string
         phone = re.sub(r'\)(?!.*\()', "", phone)  # Remove misplaced closing parenthesis e.g "03-29358989-ext.205)" or "03-29358989-ext.205)/03-88836407"
         phone = re.sub(r'\((?!.*\))', "", phone)  # Remove misplaced opening parenthesis e.g '(+410227994044' or '09-5163251(128'
