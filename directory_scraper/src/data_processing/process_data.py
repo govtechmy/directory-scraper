@@ -4,6 +4,7 @@ import re
 import uuid
 import shutil
 import logging
+from utils.file_utils import load_org_mapping
 
 #logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -150,15 +151,10 @@ def add_uuid(record):
 
 def map_org_id_to_org_sort(record):
     """Map org_id to org_sort for each record using org_mapping.json"""
-    org_mapping_file = 'org_mapping.json'
-    try:
-        with open(org_mapping_file, 'r', encoding='utf-8') as file:
-            org_mapping = json.load(file)
-    except FileNotFoundError:
-        logging.error(f"Error: Mapping file '{org_mapping_file}' not found.")
-        return
-    except json.JSONDecodeError:
-        logging.error(f"Error: Could not decode JSON in '{org_mapping_file}'.")
+    org_mapping = load_org_mapping()  # oad org_mapping from file_utils.json
+
+    if org_mapping is None:
+        logging.error("Error: Could not load org_mapping.")
         return
 
     org_id = record.get('org_id')
