@@ -130,13 +130,13 @@ class MOESpider(scrapy.Spider):
                         "org_type": "ministry",
                         "division_name": division,
                         "division_sort": division_sort_order,
-                        "unit_name": current_unit,
-                        "person_position": self.none_handler(top_row.css("td:nth-child(3)::text").get()),
+                        "subdivision_name": current_unit,
+                        "position_name": self.none_handler(top_row.css("td:nth-child(3)::text").get()),
                         "person_name": self.none_handler(top_row.css("td:nth-child(2)::text").get()),
                         "person_email": self.email_handler(top_row.css("td:nth-child(4)::text").get()),
                         "person_fax": None,
                         "person_phone": self.none_handler(top_row.css("td:nth-child(5)::text").get()),
-                        "person_sort": person_sort_order,
+                        "position_sort_order": person_sort_order,
                         "parent_org_id": None
                     }
             else:
