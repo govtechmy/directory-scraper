@@ -84,7 +84,7 @@ class KPNSpider(CrawlSpider):
                     "person_email": self.none_handler(row.css("span[aria-label='Email']::text").get()),
                     "person_fax": None,
                     "person_phone": row.css("span[aria-label='Phone']::text").get(),
-                    "position_sort": page_number+person_sort,
+                    "position_sort_order": page_number+person_sort,
                     "parent_org_id": None
                 }
                 person_sort += 1

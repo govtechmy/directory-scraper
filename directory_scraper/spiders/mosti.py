@@ -74,7 +74,7 @@ class MOSTISpider(scrapy.Spider):
                         "person_email": self.email_handler(row.xpath("td[not(*)][5]/text()").get()),
                         "person_fax": None,
                         "person_phone": self.none_handler(row.xpath("td[not(*)][4]/text()").get()),
-                        "position_sort": person_sort,
+                        "position_sort_order": person_sort,
                         "parent_org_id": None
                     }
                     person_sort += 1
