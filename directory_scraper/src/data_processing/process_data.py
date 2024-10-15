@@ -349,21 +349,21 @@ def reorder_keys(record):
     """
     # Create a new ordered dictionary with the desired order
     new_record = {}
-
+    
     # Add keys in the desired order
+    new_record['org_sort'] = record.get('org_sort')
     new_record['org_id'] = record.get('org_id')
     new_record['org_name'] = record.get('org_name')
-    new_record['org_sort'] = record.get('org_sort')
     new_record['org_type'] = record.get('org_type')
-    new_record['division_name'] = record.get('division_name')
     new_record['division_sort'] = record.get('division_sort')
+    new_record['division_name'] = record.get('division_name')
     new_record['subdivision_name'] = record.get('subdivision_name')
     new_record['position_sort'] = record.get('position_sort')
     new_record['position_name'] = record.get('position_name')
     new_record['person_name'] = record.get('person_name')
     new_record['person_email'] = record.get('person_email')
-    new_record['person_fax'] = record.get('person_fax')
     new_record['person_phone'] = record.get('person_phone')
+    new_record['person_fax'] = record.get('person_fax')
     new_record['parent_org_id'] = record.get('parent_org_id')
 
     return new_record
