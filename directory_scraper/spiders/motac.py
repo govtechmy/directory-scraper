@@ -68,7 +68,7 @@ class MOTACSpider(CrawlSpider):
         for sort_order, row in enumerate(response.css("tbody > tr")):
             contact_details = {
                 data_type: text
-                for data_type, text in zip(row.xpath("td[2]/i/@class"), self.clean_list(row.xpath("td[2]/text()")))
+                for data_type, text in zip(row.xpath("td[2]/i/@class"), self.clean_list(row.xpath("td[2]/text()").getall()))
             }
             person_data = {
                 "org_id": "MOTAC",
