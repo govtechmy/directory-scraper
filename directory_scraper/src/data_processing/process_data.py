@@ -6,7 +6,8 @@ import shutil
 import logging
 from utils.file_utils import load_org_mapping
 
-#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="process_data.log", filemode="w", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 DATA_SCHEMA = {
     "org_sort": {"type": int, "nullable": False},
@@ -79,7 +80,7 @@ VALID_PHONE_REGEX = [
     r'^62-\d{9,10}$',             # 62-215224962 (Indonesian number starting with country code 62)
     r'^\(\+62\)\d{7,}-ext\.\d{4}/\(\+62\)\d{3}-\d{4}-\d{4}$',  # (+62)215224947-ext.3105/(+62)811-8881-0247 (Multiple Indonesian numbers with extension)
     r'^03-\d{9}$',                # 03-0388721901 (Malaysian number with extra digits)
-    r'^03-\d{8}sa?mb\.?\d{1,4}$',   # 03-55106922Samb.10 (Malaysian number with "Samb.", "Samb", "samb" and "smb" extension)
+    r'^0[35]-\d{6,8}sa?mb\.?\d{1,4}$',   # 03-55106922Samb.10 (Malaysian number with "Samb.", "Samb", "samb" and "smb" extension)
     r'^\d{2}-\d{7}\(\d{3}\)$',    # 088-254317(117) (Malaysian fixed-line with extension in parentheses)
     r'^\d{2}-\d{8}$',             # 04-73149579 (Malaysian fixed-line number with 8 digits)
     r'^\d{2}-\d{7}\(\d{3}\)$',    # 088-254317(133) (Malaysian number with extension)
@@ -201,12 +202,13 @@ def validate_person_phone(record):
         
         # Normalize phone number
         phone = phone.strip()
-        phone = re.sub(r'\([a-zA-Z ]*\)$|\((?=ext.)|(?<=\d{4})\)', " ", phone) # Cleaning parentheses, keeps extension but removes text
+        phone = re.sub(r"^-\+", "+", phone)
+        phone = re.sub(r'\([a-zA-Z ]*\)$|\((?=ext.)|(?<=\d{4})\)', " ", phone, flags=re.IGNORECASE) # Cleaning parentheses, keeps extension but removes text
         phone = re.sub(r'ext(\.\s{0,1}|\s*:\s*){0,1}', "-ext.", phone)
         phone = phone.replace("--", "-")
         phone = phone.replace("..", ".")
         phone = phone.replace(" ", "")
-        phone = re.sub(r'^Telefon.*?(?=[06\(]|\+\d|-$)|-$', "", phone)
+        phone = re.sub(r'^telefon.*?(?=[06\(]|\+\d|-$)|-$', "", phone)
         phone = re.sub(r'\s+', "", phone)  # Removes all spaces, tabs, newlines inside the string
         phone = re.sub(r'\)(?!.*\()', "", phone)  # Remove misplaced closing parenthesis e.g "03-29358989-ext.205)" or "03-29358989-ext.205)/03-88836407"
         phone = re.sub(r'\((?!.*\))', "", phone)  # Remove misplaced opening parenthesis e.g '(+410227994044' or '09-5163251(128'
@@ -260,7 +262,7 @@ def validate_required_keys(record):
     """
     for key, meta in DATA_SCHEMA.items():
         if key not in record:
-            logging.warning(f"'{key}' missing in record, adding with default value None.")
+            logging.warning(f"'{key}' missing in record {record}, adding with default value None.")
             record[key] = None  # Set missing keys to None
         elif not isinstance(record[key], meta["type"]) and not (meta["nullable"] and record[key] is None):
             logging.warning(f"'{key}' has invalid data type. Expected {meta['type']}, got {type(record[key])}.")
