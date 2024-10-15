@@ -3,10 +3,15 @@ import re
 import json
 import scrapy
 from scrapy_playwright.page import PageMethod
+from utils.file_utils import load_mindef_units
 
 class MODSpider(scrapy.Spider):
     name = "mod"
     allowed_domains = ["direktori.mod.gov.my"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mindef_units = load_mindef_units()
     
     custom_settings = {
         'DOWNLOAD_DELAY': 3,
@@ -199,9 +204,6 @@ class MODSpider(scrapy.Spider):
         "https://direktori.mod.gov.my/index.php/mindef/category/midas",
         "https://direktori.mod.gov.my/index.php/mindef/category/mindef-sarawak"
     ]
-    
-    with open("src/utils/mindef_units.json", "r") as f:
-        mindef_units = json.loads(f.read())
     
     def start_requests(self):
         for url in self.start_urls:
