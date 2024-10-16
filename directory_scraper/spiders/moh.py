@@ -1,6 +1,7 @@
 import scrapy
 from scrapy.selector import Selector
 from scrapy_playwright.page import PageMethod
+from time import sleep
 
 class MOHSpider(scrapy.Spider):
     name = "moh"
@@ -69,6 +70,7 @@ class MOHSpider(scrapy.Spider):
                         PageMethod("wait_for_selector", "a[class^='paginate_button next']"),
                     ],
                     "division_sort_order": row["division_sort_order"],
+                    "division_name": row["division_name"],
                     "page_number": 0
                 },
             )
@@ -76,9 +78,11 @@ class MOHSpider(scrapy.Spider):
     async def parse(self, response):
         page = response.meta["playwright_page"]
         division_sort_order = response.meta["division_sort_order"]
-        while True:
-            page_number = response.meta["page_number"]
+        page_number = 1
+        total_pages = int(pagenum) if (pagenum := response.xpath("//a[starts-with(@class, 'paginate_button') and @tabindex=0 and not(contains(text(), 'Next'))][last()]/text()").get()) else 0
+        while page_number <= total_pages:
             current_page = Selector(text=await page.content())
+            page_number = int(current_page.xpath("//a[@class='paginate_button current']/text()").get())
 
             for person_sort, data_point in enumerate(current_page.css("div[class='profile-detail col-8-12']")):
                 name = self.none_handler(data_point.css("a::text").get())
@@ -112,13 +116,14 @@ class MOHSpider(scrapy.Spider):
             if next_page_available:
                 # print(f"\n\nNEXT PAGE AVAILABLE: {response.meta["page_number"]}")
                 await page.click("a[class='paginate_button next']")
-                
-                response.meta["page_number"] += 1
-                try:
-                    await page.wait_for_selector("a[class^='paginate_button next disabled']")
-                except Exception:
-                    print("\n\nLAST PAGE")
-                    continue
+                # await page.screenshot(path=f"data/screenshot/{response.meta['division_name']}_{page_number}.png", full_page=True)
+
+                # try:
+                #     await page.wait_for_selector("a[class^='paginate_button next disabled']")
+                # except Exception:
+                #     # break
+                #     print("\n\nLAST PAGE")
+                #     continue
             else:
                 break
         # print(f"\n\nCLOSING PAGE: {response.url}")
