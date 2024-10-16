@@ -3,8 +3,8 @@ import json
 from scrapy_playwright.page import PageMethod
 import logging
 
-class KKDW_PKDSpider(scrapy.Spider):
-    name = "kkdw_pkd"
+class RURALLINK_PKDSpider(scrapy.Spider):
+    name = "rurallink_pkd"
     
     seen_divisions = {} #init
     division_sort_counter = 1  #init (start w/ 1)
