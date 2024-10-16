@@ -114,17 +114,7 @@ class MOHSpider(scrapy.Spider):
             next_page_available = current_page.css("a[class='paginate_button next']")
             
             if next_page_available:
-                # print(f"\n\nNEXT PAGE AVAILABLE: {response.meta["page_number"]}")
                 await page.click("a[class='paginate_button next']")
-                # await page.screenshot(path=f"data/screenshot/{response.meta['division_name']}_{page_number}.png", full_page=True)
-
-                # try:
-                #     await page.wait_for_selector("a[class^='paginate_button next disabled']")
-                # except Exception:
-                #     # break
-                #     print("\n\nLAST PAGE")
-                #     continue
             else:
                 break
-        # print(f"\n\nCLOSING PAGE: {response.url}")
         await page.close()
