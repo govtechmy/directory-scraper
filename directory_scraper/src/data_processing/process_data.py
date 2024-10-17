@@ -91,7 +91,7 @@ VALID_PHONE_REGEX = [
     r'^\+1\(\d{3}\)\d{7}$',       # +1(514)9545771 (Canadian number format)
     r'^03[\u2013\u2014-]\d{8}$',  # 03–80917258 (Malaysian number with en-dash/em-dash/hyphen)
     r'^\+603-\d{8}\-ext\.\d{4,5}', # +603-8091 8000 ext 18208 (Malaysian landline with extension),
-    r'^03-\d{8}\-ext\.\d{4,5}',   # 03-8091 8000 ext 18208 (Malaysian landline with extension without country code),
+    r'^03-\d{8}\-ext\.\d{3,5}',   # 03-8091 8000 ext 18208 (Malaysian landline with extension without country code),
     r'^03-\d{8}/\d{3}',           # 03-22628400/442 (Malaysian landline with alt extension)
     r'^088-\d{6}/\d{3}',          # 088-xxxxxx/xxx (Sabah: Kota Kinabalu and Kudat numbers with extension seperated by '/')
     r'^03-\d{4}/\d{4}-ext\.\d{8}',# 03-xxxx/xxxx-ext.xxxxxxxx (Malaysian landline with variable digit used by KPT: Jabatan Pendidikan Politeknik & Kolej Komuniti)
@@ -202,16 +202,18 @@ def validate_person_phone(record):
         
         # Normalize phone number
         phone = phone.strip()
-        phone = re.sub(r"^-\+", "+", phone)
+        phone = re.sub(r'^-\+', "+", phone)
         phone = re.sub(r'\([a-zA-Z ]*\)$|\((?=ext.)|(?<=\d{4})\)', " ", phone, flags=re.IGNORECASE) # Cleaning parentheses, keeps extension but removes text
         phone = re.sub(r'ext(\.\s{0,1}|\s*:\s*){0,1}', "-ext.", phone, flags=re.IGNORECASE) # Ignores case to cover edge case '082-242257EXT102'
         phone = phone.replace("--", "-")
         phone = phone.replace("..", ".")
+        phone = re.sub(r'(?<=\d)\.$', "", phone) # Removes any standalone dots at the end of a phone number
         phone = phone.replace(" ", "")
         phone = re.sub(r'^Telefon.*?(?=[06\(]|\+\d|-$)|-$', "", phone)
         phone = re.sub(r'\s+', "", phone)  # Removes all spaces, tabs, newlines inside the string
         phone = re.sub(r'\)(?!.*\()', "", phone)  # Remove misplaced closing parenthesis e.g "03-29358989-ext.205)" or "03-29358989-ext.205)/03-88836407"
         phone = re.sub(r'\((?!.*\))', "", phone)  # Remove misplaced opening parenthesis e.g '(+410227994044' or '09-5163251(128'
+        phone = re.sub(r'^-(?=03|08)', "", phone) 
 
         # Return record if phone number is empty after normalization
         if not phone:
@@ -242,6 +244,14 @@ def validate_person_phone(record):
         # Add dash for numbers like '0313415437-ext.32845' -> '03-13415437-ext.32845
         elif re.match(r'^03\d{8}-ext.\d{4,5}', phone):
             phone = f"{phone[:2]}-{phone[2:]}"
+        # Removes dash from the front of the phone number to after the prefix
+        elif re.match(r'^-(?=03|08)', phone):
+            phone = f"{phone[1:3]}-{phone[3:]}"
+        # Removes repeated prefixes if exists e.g. '03-03-9236500' -> '03-9236500' or '087-087211415' -> '087-211415'
+        elif pattern_lst := re.findall(r'(^(?:03|087))[\-\s]+\1', phone):
+            trunc_pos = len(pattern_lst[0])
+            clean_phone = re.sub(rf'{pattern_lst[0]}[\-\s]*', "", phone, count=1).replace("-", "")
+            phone = f"{clean_phone[:trunc_pos]}-{clean_phone[trunc_pos:]}"
 
         record["person_phone"] = phone
         
