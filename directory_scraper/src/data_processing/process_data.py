@@ -204,7 +204,7 @@ def validate_person_phone(record):
         phone = phone.strip()
         phone = re.sub(r"^-\+", "+", phone)
         phone = re.sub(r'\([a-zA-Z ]*\)$|\((?=ext.)|(?<=\d{4})\)', " ", phone, flags=re.IGNORECASE) # Cleaning parentheses, keeps extension but removes text
-        phone = re.sub(r'ext(\.\s{0,1}|\s*:\s*){0,1}', "-ext.", phone)
+        phone = re.sub(r'ext(\.\s{0,1}|\s*:\s*){0,1}', "-ext.", phone, flags=re.IGNORECASE) # Ignores case to cover edge case '082-242257EXT102'
         phone = phone.replace("--", "-")
         phone = phone.replace("..", ".")
         phone = phone.replace(" ", "")
