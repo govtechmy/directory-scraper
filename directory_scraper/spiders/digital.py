@@ -59,7 +59,7 @@ class DIGITALSpider(scrapy.Spider):
                     self.division_sort_order += 1 
                     self.last_processed_division = division
 
-                if email:
+                if email and email not in ["-", "—", "–"]:
                     email = f"{email}@digital.gov.my"
 
                 if division and division != current_division:
@@ -125,6 +125,7 @@ class DIGITALSpider(scrapy.Spider):
         # post-processing after scraping is complete
         fixed_data = fix_subdivision_value(all_data)
         cleaned_data = delete_person_null(fixed_data)
+        cleaned_data = replace_dash_with_none(cleaned_data)
 
         for item in cleaned_data:
             yield item
@@ -149,5 +150,23 @@ def fix_subdivision_value(data):
     return data
 
 def delete_person_null(data):
-    """Filter out any object where person_name is None or an empty string"""
+    """Filter out any object where person_name is None or an empty string. 
+    notes:
+    1. if person_name is None, its just an empty objects (dirty data)
+    2. if person_name is "-", its an empty position (valid data) """
     return [obj for obj in data if obj['person_name']]
+
+def replace_dash_with_none(data):
+    """Cleanup function to standardize final outputs with other spiders. 
+    To replace "-" with None. 
+    Can only be run after delete_person_null() to avoid deleting relevant/valid data before doing standardization.
+    """
+    for obj in data:
+        if obj.get('person_name') in ["-", "—", "–"]:  # Check for hyphen, em dash, en dash
+            obj['person_name'] = None        
+        if obj.get('person_email') in ["-", "—", "–"]:  # Check for hyphen, em dash, en dash
+            obj['person_email'] = None
+        if obj.get('person_phone') in ["-", "—", "–"]:  # Check for hyphen, em dash, en dash
+            obj['person_phone'] = None
+
+    return data
