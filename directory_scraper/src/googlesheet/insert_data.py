@@ -89,9 +89,6 @@ def insert_data_to_sheet(worksheet, data):
         total_rows = len(rows)
         print(f"Total rows: {total_rows}")
 
-        # Write the header row only once
-        worksheet.append_row(header)
-
         # Insert data in batches
         for i in range(0, total_rows, BATCH_SIZE):
             batch = rows[i:i + BATCH_SIZE]
@@ -128,6 +125,10 @@ def main():
     
     total_orgs = len(grouped_data)
     print(f"Total number of org_id to process: {total_orgs}")
+
+    # Write the header once only, before inserting any data
+    header = list(data[0].keys())
+    worksheet.append_row(header)
     
     # Process each org_id group individually with a counter
     for org_index, (org_id, group_data) in enumerate(grouped_data.items(), start=1):
