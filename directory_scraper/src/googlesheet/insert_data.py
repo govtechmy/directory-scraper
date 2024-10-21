@@ -3,6 +3,7 @@ from google.oauth2.service_account import Credentials
 import json
 import time
 import random
+from datetime import datetime
 from dotenv import load_dotenv
 import os
 
@@ -75,17 +76,12 @@ def clear_sheet(worksheet):
         print(f"Error clearing Google Sheet: {e}")
         raise
 
-def insert_data_to_sheet(worksheet, data):
+def insert_data_to_sheet(worksheet, rows):
     """
     Inserts data into the Google Sheet in batches.
-    Writes the header and then inserts the data in batches.
     Implements exponential backoff to handle rate limits and prints progress.
     """
     try:
-        # Extract header and rows from the data
-        header = list(data[0].keys())
-        rows = [list(item.values()) for item in data]
-
         total_rows = len(rows)
         print(f"Total rows: {total_rows}")
 
@@ -114,7 +110,7 @@ def insert_data_to_sheet(worksheet, data):
         print(f"Error inserting data: {e}")
         raise
 
-def main():
+def main(add_timestamp=True):
     worksheet = connect_to_google_sheet(GOOGLE_SERVICE_ACCOUNT_CREDS, SCOPES, GOOGLE_SHEET_ID)
     
     clear_sheet(worksheet)
@@ -128,13 +124,25 @@ def main():
 
     # Write the header once only, before inserting any data
     header = list(data[0].keys())
+    if add_timestamp:
+        header.append('last_processed')
     worksheet.append_row(header)
+
+    if add_timestamp:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     # Process each org_id group individually with a counter
     for org_index, (org_id, group_data) in enumerate(grouped_data.items(), start=1):
         print(f"\nProcessing org_id: {org_id} ({org_index}/{total_orgs})")
-        insert_data_to_sheet(worksheet, group_data)
-        print(f"Completed processing for org_id: {org_id}")
+        
+        # Convert group_data to rows
+        group_rows = [list(item.values()) for item in group_data]
+
+        if add_timestamp:
+            group_rows = [row + [timestamp] for row in group_rows]
+
+        insert_data_to_sheet(worksheet, group_rows)        
+        print(f"Completed inserting data for org_id: {org_id}")
 
 if __name__ == '__main__':
     main()
