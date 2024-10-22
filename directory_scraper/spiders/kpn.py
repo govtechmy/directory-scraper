@@ -72,19 +72,19 @@ class KPNSpider(CrawlSpider):
                 unit_name = row.css("h3 > span::text").get()
             else:
                 person_data = {
+                    "org_sort": 22,
                     "org_id": "KPN",
                     "org_name": "Kementerian Perpaduan Negara",
-                    "org_sort": 22,
                     "org_type": "ministry",
-                    "division_name": division_name,
                     "division_sort": division_sort[-1]+1,
+                    "division_name": division_name,
                     "subdivision_name": unit_name,
-                    "position_name": row.css("span[aria-label='Position']::text").get(),
+                    "position_sort": page_number+person_sort,
                     "person_name": row.css("span[aria-label='Name']::text").get(),
+                    "position_name": row.css("span[aria-label='Position']::text").get(),
+                    "person_phone": row.css("span[aria-label='Phone']::text").get(),
                     "person_email": self.none_handler(row.css("span[aria-label='Email']::text").get()),
                     "person_fax": None,
-                    "person_phone": row.css("span[aria-label='Phone']::text").get(),
-                    "position_sort_order": page_number+person_sort,
                     "parent_org_id": None
                 }
                 person_sort += 1

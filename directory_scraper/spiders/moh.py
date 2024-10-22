@@ -93,19 +93,19 @@ class MOHSpider(scrapy.Spider):
                 unit = self.none_handler(data_point.css("tbody > tr:nth-child(4)").css("td[class='data-label']::text").get())
                 
                 person_data = {
+                    "org_sort":28,
                     "org_id": "MOH",
                     "org_name": "KEMENTERIAN KESIHATAN",
-                    "org_sort":28,
                     "org_type": "ministry",
                     "division_name": division,
                     "division_sort": division_sort_order,
                     "subdivision_name": unit,
-                    "position_name": position,
+                    "position_sort": 10*page_number + person_sort + 1,
                     "person_name": name,
+                    "position_name": position,
+                    "person_phone": phone,
                     "person_email": email,
                     "person_fax": None,
-                    "person_phone": phone,
-                    "position_sort_order": 10*page_number + person_sort + 1,
                     "parent_org_id": None
                 }
 

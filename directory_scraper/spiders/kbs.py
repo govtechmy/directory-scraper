@@ -29,19 +29,19 @@ class KBSSpider(scrapy.Spider):
                 None
             ]
             person_dict = {
+                "org_sort": 23,
                 "org_id": "KBS",
                 "org_name": "KEMENTERIAN BELIA DAN SUKAN",
-                "org_sort": 23,
                 "org_type": "ministry",
-                "division_name": division_name.pop(self.start_urls.index(response.url)),
                 "division_sort": self.start_urls.index(response.url)+1,
+                "division_name": division_name.pop(self.start_urls.index(response.url)),
                 "subdivision_name": div_lst[0] if (div_lst := [string for string in data if re.match(unit_regex, string)]) else None,
-                "position_name": data[0],
+                "position_sort": person_order+1,
                 "person_name": name,
+                "position_name": data[0],
+                "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else None,
                 "person_email": email_lst[0] if (email_lst := [string.replace(" ", "") for string in data if re.match(email_regex, string)]) else None,
                 "person_fax": None,
-                "person_phone": phone_lst[0] if (phone_lst := [string.replace(" ", "") for string in data if re.match(phone_regex, string)]) else None,
-                "position_sort_order": person_order+1,
                 "parent_org_id": None,
             }
             yield person_dict

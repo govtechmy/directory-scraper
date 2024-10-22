@@ -67,19 +67,19 @@ class KPKScraper(scrapy.Spider):
                 if not data_lst:
                     continue
                 person_data = {
+                    "org_sort": 26,
                     "org_id": "KPK",
                     "org_name": "KEMENTERIAN PERLADANGAN DAN KOMODITI",
-                    "org_sort": 26,
                     "org_type": "ministry",
-                    "division_name": current_division,
                     "division_sort": division_sort,
+                    "division_name": current_division,
                     "subdivision_name": current_unit,
-                    "position_name": data_lst[1],
+                    "position_sort": sort_order,
                     "person_name": data_lst[0],
+                    "position_name": data_lst[1],
+                    "person_phone": data_lst[3],
                     "person_email": data_lst[2],
                     "person_fax": None,
-                    "person_phone": data_lst[3],
-                    "position_sort_order": sort_order,
                     "parent_org_id": None
                 }
                 sort_order += 1

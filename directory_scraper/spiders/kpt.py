@@ -99,19 +99,19 @@ class KPTSpider(CrawlSpider):
                 else:
                     phone_number = phone_extension
                 person_data = {
+                    "org_sort": 18, 
                     "org_id": "KPT",
                     "org_name": "KEMENTERIAN PENDIDIKAN TINGGI",
-                    "org_sort": 18, 
                     "org_type": "ministry",
-                    "division_name": division,
                     "division_sort": self.directory_urls.index(response.url)+1,
+                    "division_name": division,
                     "subdivision_name": current_unit,
-                    "position_name": self.position_handler(row.xpath("td[2]/font/text()").get()),
+                    "position_sort": self.sort_handler(row.xpath("td[1]/text()").get()),
                     "person_name": self.none_handler(row.xpath("td[2]/text()").get()),
+                    "position_name": self.position_handler(row.xpath("td[2]/font/text()").get()),
+                    "person_phone": phone_number,
                     "person_email": email_handler(row.xpath("td[3]/text()").get()),
                     "person_fax": None,
-                    "person_phone": phone_number,
-                    "position_sort_order": self.sort_handler(row.xpath("td[1]/text()").get()),
                     "parent_org_id": None
                 }
                 yield person_data

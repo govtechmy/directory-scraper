@@ -84,19 +84,19 @@ class MOHRScraper(scrapy.Spider):
         for person_sort, row in enumerate(response.css("tbody > tr")):
             phone = self.none_handler(row.xpath("td[5]/text()").get())
             person_data = {
+                "org_sort": 29,
                 "org_id": "MOHR",
                 "org_name": "KEMENTERIAN SUMBER MANUSIA",
-                "org_sort": 29,
                 "org_type": "ministry",
                 "division_name": current_division,
                 "division_sort": division_sort+1,
                 "subdivision_name": current_unit,
-                "position_name": self.none_handler(row.xpath("td[2]/text()").get()),
+                "position_sort": person_sort+1,
                 "person_name": self.none_handler(row.xpath("td[1]/text()").get()),
+                "position_name": self.none_handler(row.xpath("td[2]/text()").get()),
+                "person_phone": phone if (phone and phone != "N/A") else None,
                 "person_email": self.email_handler(row.xpath("td[5]/a/text()").get()),
                 "person_fax": None,
-                "person_phone": phone if (phone and phone != "N/A") else None,
-                "position_sort_order": person_sort+1,
                 "parent_org_id": None,
             }
             yield(person_data)

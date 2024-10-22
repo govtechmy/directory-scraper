@@ -29,19 +29,19 @@ class KOMUNIKASIpider(scrapy.Spider):
         for person_sort, row in enumerate(response.css("article[class='uk-article']").css("div[class='uk-panel']")):
             contact_details = [txt.strip() for txt in row.xpath("div[not(@class)]/text()").getall() if txt.strip()]
             person_data = {
+                "org_sort": 20,
                 "org_id": "KOMUNIKASI",
                 "org_name": "Kementerian Komunikasi",
-                "org_sort": 20,
                 "org_type": "ministry",
-                "division_name": None,
                 "division_sort": 1,
+                "division_name": None,
                 "subdivision_name": None,
-                "position_name": self.none_handler(row.css("div[class='uk-margin']::text").get()),
+                "position_sort": person_sort+1,
                 "person_name": self.none_handler(row.css("h3 > strong::text").get()),
+                "position_name": self.none_handler(row.css("div[class='uk-margin']::text").get()),
+                "person_phone": self.none_handler(contact_details[0]),
                 "person_email": self.email_handler(self.none_handler(contact_details[1])),
                 "person_fax": None,
-                "person_phone": self.none_handler(contact_details[0]),
-                "position_sort_order": person_sort+1,
                 "parent_org_id": None,
             }
             yield person_data

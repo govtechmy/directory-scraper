@@ -80,19 +80,19 @@ class KPDNSpider(scrapy.Spider):
                 unit_name = None
 
             person_data = {
+                "org_sort": 25,
                 "org_id": "KPDN",
                 "org_name": "KEMENTERIAN PERDAGANGAN DALAM NEGERI DAN KOS SARA HIDUP",
-                "org_sort": 25,
                 "org_type": "ministry",
-                "division_name": division,
                 "division_sort": division_sort_order,
+                "division_name": division,
                 "subdivision_name": unit_name,
-                "position_name": self.none_handler(row.css("td:nth-child(4)").css("::text").get()),
+                "position_sort": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
                 "person_name": re.sub(r"[\n ]{2,}", " ",self.none_handler(row.css("td:nth-child(2)").css("::text").get())),
+                "position_name": self.none_handler(row.css("td:nth-child(4)").css("::text").get()),
+                "person_phone": self.none_handler(row.css("td:nth-child(5)").css("::text").get()),
                 "person_email": self.email_handler(row.css("td:nth-child(3)").css("img::attr(src)").get()),
                 "person_fax": None,
-                "person_phone": self.none_handler(row.css("td:nth-child(5)").css("::text").get()),
-                "position_sort_order": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
                 "parent_org_id": None
             }
             yield person_data

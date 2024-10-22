@@ -71,19 +71,19 @@ class MOTACSpider(CrawlSpider):
                 for data_type, text in zip(row.xpath("td[2]/i/@class"), self.clean_list(row.xpath("td[2]/text()").getall()))
             }
             person_data = {
+                "org_sort": 19,
                 "org_id": "MOTAC",
                 "org_name": "KEMENTERIAN PELANCONGAN, SENI DAN BUDAYA",
-                "org_sort": 19,
                 "org_type": "ministry",
                 "division_name": division,
                 "division_sort": self.url_lst.index(response.url)+1,
                 "subdivision_name": self.none_handler(row.xpath("td[1]/small/text()").get()),
-                "position_name": self.none_handler(row.xpath("td[1]/text()[2]").get()),
+                "position_sort": sort_order+1,
                 "person_name": self.none_handler(row.xpath("td[1]/strong/text()").get()),
+                "position_name": self.none_handler(row.xpath("td[1]/text()[2]").get()),
+                "person_phone": contact_details.get("uk-icon-phone-square"),
                 "person_email": contact_details.get("uk-icon-envelope-square"),
                 "person_fax": None,
-                "person_phone": contact_details.get("uk-icon-phone-square"),
-                "position_sort_order": sort_order+1,
                 "parent_org_id": None,
             }
             yield person_data
