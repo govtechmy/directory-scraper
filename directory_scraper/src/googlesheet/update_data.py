@@ -1,4 +1,3 @@
-# main_logic.py
 from datetime import datetime
 from google_sheets_utils import GoogleSheetManager
 from process_data import group_data_by_org_id, add_timestamp_to_rows

@@ -1,11 +1,10 @@
-# main_logic.py
 from datetime import datetime
 from google_sheets_utils import GoogleSheetManager
 from process_data import group_data_by_org_id, add_timestamp_to_rows
 
 def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
     """
-    Insert data into Google Sheet.
+    Load data into Google Sheet.
     1. Identify org_id to be inserted.
     2. Add header
     3. Insert/Append rows for the org_id, including timestamp.

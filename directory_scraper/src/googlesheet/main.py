@@ -1,4 +1,5 @@
-# main.py
+"""Main app for loading and updating data in Google Sheet"""
+
 from google_sheets_utils import GoogleSheetManager
 from process_data import validate_data
 from load_data import load_data_into_sheet

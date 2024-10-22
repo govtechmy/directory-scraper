@@ -1,4 +1,3 @@
-# google_sheets_utils.py
 import gspread
 from google.oauth2.service_account import Credentials
 import time
