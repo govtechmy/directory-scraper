@@ -16,7 +16,7 @@ def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
     # Write the header once, before inserting any data
     header = list(data[0].keys())
     if add_timestamp:
-        header.append('last_updated')
+        header.append('last_uploaded')
     google_sheets_manager.append_rows([header])  # Append the header to the sheet
 
     # Generate a single timestamp for all rows if needed
