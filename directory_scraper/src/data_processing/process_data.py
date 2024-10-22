@@ -86,11 +86,11 @@ VALID_PHONE_REGEX = [
     r'^\d{2}-\d{7}\(\d{3}\)$',    # 088-254317(133) (Malaysian number with extension)
     r'^\d{2,3}-\d{6,8}\(\d{1,5}\)$',  # Matches phone numbers like '088-254317(125)'
     r'^1800-\d{2}-\d{4}$',        # 1800-88-xxxx (Toll-free number)
-    r'^\d{2,3}-\d{7}\(\d{1,5}\)$', # 082-232434(285) (Local number with extension)
+    r'^\d{2,3}-\d{7}\(\d{1,5}\)$',# 082-232434(285) (Local number with extension)
     r'^\+61\d{1}\d{8,9}$',        # +612XXXXXXXX or +612XXXXXXXXX (Australian numbers)
     r'^\+1\(\d{3}\)\d{7}$',       # +1(514)9545771 (Canadian number format)
     r'^03[\u2013\u2014-]\d{8}$',  # 03–80917258 (Malaysian number with en-dash/em-dash/hyphen)
-    r'^\+603-\d{8}\-ext\.\d{4,5}', # +603-8091 8000 ext 18208 (Malaysian landline with extension),
+    r'^\+603-\d{8}\-ext\.\d{4,5}',# +603-8091 8000 ext 18208 (Malaysian landline with extension),
     r'^03-\d{8}\-ext\.\d{3,5}',   # 03-8091 8000 ext 18208 (Malaysian landline with extension without country code),
     r'^03-\d{8}/\d{3}',           # 03-22628400/442 (Malaysian landline with alt extension)
     r'^088-\d{6}/\d{3}',          # 088-xxxxxx/xxx (Sabah: Kota Kinabalu and Kudat numbers with extension seperated by '/')
@@ -99,27 +99,28 @@ VALID_PHONE_REGEX = [
     r'^\*?\d{4}',                 # *xxx (Extension for KPT)
     r'011-\d{8}',                 # 011-xxxxxxxx (Personal phone number)
     r'^1-300-\d{2}-\d{4}$',       # 1-300-xx-xxxx toll-free or service numbers
-    r'^082-\d{6,10}$',           # '082-xxxxxxxxx' Sarawak 
-    r'^088-\d{6,9}$',            # '088-xxxxxxxxx' Sabah 
-    r'^\+41\d{9}$',                # Switzerland
-    r'^\+44\d{10,11}$',            # UK 
-    r'^\+1\d{10}$',              # Canadian
-    r'^0[4-9]-\d{6,10}$',          # Pahang
+    r'^082-\d{6,10}$',            # '082-xxxxxxxxx' Sarawak 
+    r'^088-\d{6,9}$',             # '088-xxxxxxxxx' Sabah 
+    r'^\+41\d{9}$',               # Switzerland
+    r'^\+44\d{10,11}$',           # UK 
+    r'^\+1\d{10}$',               # Canadian
+    r'^0[4-9]-\d{6,10}$',         # Pahang
     r'^0[4-9]-\d{6,8}/0[4-9]-\d{6,8}$'  # '09-7449223/09-7486645' or '05-2539529/05-2530526'
-
 ]
 
 INVALID_PHONE_REGEX = [
-    r'^03\-\d{3,5}$',               # 03-xxxxx (Malaysian landline with missing digits)
-    r'^03\d{3,5}$',                 # 03xxxxx (Malaysian landline with missing digits)
-    r'0{1,7}$',                    # 0000000 (Missing numbers from KPDN)
-    r'1{3}$',                      # 111 (Missing numbers from KPDN)
-    r'^03\s*$',  # Exactly '03' with optional whitespace # 03 (Landline area code for Selangor, KL Putrajaya, Genting, Pahang without number)
-    r'^06\s*$',  # Exactly '06' with optional whitespace # 06 (Landline area code for Negeri Sembilan, Malacca, Muar (Johor) Tangkak (Johor) Batu Anam (Johor), Segamat (Johor) without number)
-    r'^04-04\s*$',                     # 04-04 (Landline area code for Perlis, Kedah, Penang, Pengkalan Hulu (Perak) with partial number)
+    r'^03\-\d{3,5}$',             # 03-xxxxx (Malaysian landline with missing digits)
+    r'^03\d{3,5}$',               # 03xxxxx (Malaysian landline with missing digits)
+    r'0{1,7}$',                   # 0000000 (Missing numbers from KPDN)
+    r'1{3}$',                     # 111 (Missing numbers from KPDN)
+    r'^03\s*$',                   # Exactly '03' with optional whitespace # 03 (Landline area code for Selangor, KL Putrajaya, Genting, Pahang without number)
+    r'^06\s*$',                   # Exactly '06' with optional whitespace # 06 (Landline area code for Negeri Sembilan, Malacca, Muar (Johor) Tangkak (Johor) Batu Anam (Johor), Segamat (Johor) without number)
+    r'^04-04\s*$',                # 04-04 (Landline area code for Perlis, Kedah, Penang, Pengkalan Hulu (Perak) with partial number)
     r'03-\d{4}$',
-    r'^03-\d{4}-$',              # '03-2771-'
-    r'^\+60-\d{4}$'             # '+60-8871'
+    r'^03-\d{4}-$',               # '03-2771-'
+    r'^\+60-\d{4}$',              # '+60-8871'
+    r'^\d{3}$',                   # 186, 123 (Numbers that are exactly 3 digits)
+    r'(^\d{3})[ -]+\1',           # 011-011 (Numbers that consists of three number digits repeated twice)
 ]
 
 def load_json(file_path):
@@ -460,7 +461,7 @@ def process_all_json_files(input_folder, output_folder):
             process_json_file(json_file_path, output_folder)
 
 if __name__ == "__main__":
-    input_folder = 'data/input'
+    input_folder = 'data/spiders_output'
     output_folder = 'data/output'
     # input_folder = '../../data/input'
     # output_folder = '../../data/output'
