@@ -51,19 +51,19 @@ class KPWKMSpider(scrapy.Spider):
                     phone = data_point.xpath("*[5]/text()").get()
                     person_phone = phone if (phone and phone != "--") else None
                     person_data = {
+                        "org_sort": 15,
                         "org_id": "KPWKM",
                         "org_name": "Kementerian Pembangunan Wanita, Keluarga dan Masyarakat",
-                        "org_sort": 15,
                         "org_type": "ministry",
-                        "division_name": division_name,
                         "division_sort": division_sort,
+                        "division_name": division_name,
                         "subdivision_name": current_unit,
-                        "position_name": data_point.xpath("*[3]/text()").get(),
+                        "position_sort": person_sort,
                         "person_name": data_point.xpath("*[2]//a/text()").get(),
+                        "position_name": data_point.xpath("*[3]/text()").get(),
+                        "person_phone": person_phone,
                         "person_email": person_email,
                         "person_fax": None,
-                        "person_phone": person_phone,
-                        "position_sort_order": person_sort,
                         "parent_org_id": None,
                     }
                     yield person_data

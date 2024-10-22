@@ -124,19 +124,19 @@ class MOESpider(scrapy.Spider):
                     if not top_row.css("td:nth-child(2)::text"):
                         continue
                     yield {
+                        "org_sort": 21,
                         "org_id": "MOE",
                         "org_name": "KEMENTERIAN PENDIDIKAN",
-                        "org_sort": 21,
                         "org_type": "ministry",
                         "division_name": division,
                         "division_sort": division_sort_order,
                         "subdivision_name": current_unit,
-                        "position_name": self.none_handler(top_row.css("td:nth-child(3)::text").get()),
+                        "position_sort": person_sort_order,
                         "person_name": self.none_handler(top_row.css("td:nth-child(2)::text").get()),
+                        "position_name": self.none_handler(top_row.css("td:nth-child(3)::text").get()),
+                        "person_phone": self.none_handler(top_row.css("td:nth-child(5)::text").get()),
                         "person_email": self.email_handler(top_row.css("td:nth-child(4)::text").get()),
                         "person_fax": None,
-                        "person_phone": self.none_handler(top_row.css("td:nth-child(5)::text").get()),
-                        "position_sort_order": person_sort_order,
                         "parent_org_id": None
                     }
             else:
@@ -145,19 +145,19 @@ class MOESpider(scrapy.Spider):
                         current_subunit = subunit_name
                     for data_row in row.css("table > tbody > tr"):
                         yield {
+                            "org_sort": 21,
                             "org_id": "MOE",
                             "org_name": "KEMENTERIAN PENDIDIKAN",
-                            "org_sort": 21,
                             "org_type": "ministry",
                             "division_name": division,
                             "division_sort": division_sort_order,
                             "subdivision_name": f"{current_unit} > {current_subunit}",
-                            "position_name": self.none_handler(data_row.css("td:nth-child(3)::text").get()),
+                            "position_sort": person_sort_order,
                             "person_name": self.none_handler(data_row.css("td:nth-child(2)::text").get()),
+                            "position_name": self.none_handler(data_row.css("td:nth-child(3)::text").get()),
+                            "person_phone": self.none_handler(data_row.css("td:nth-child(5)::text").get()),
                             "person_email": self.email_handler(data_row.css("td:nth-child(4)::text").get()),
                             "person_fax": None,
-                            "person_phone": self.none_handler(data_row.css("td:nth-child(5)::text").get()),
-                            "position_sort_order": person_sort_order,
                             "parent_org_id": None
                         }
 

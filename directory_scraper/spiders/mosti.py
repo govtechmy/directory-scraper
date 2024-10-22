@@ -62,19 +62,19 @@ class MOSTISpider(scrapy.Spider):
             for row in table.css("tr"):
                 if row.xpath("td[not(*)][1]/text()").get():
                     person_data = {
+                        "org_sort": 14,
                         "org_id": "MOSTI",
                         "org_name": "KEMENTERIAN SAINS, TEKNOLOGI DAN INOVASI",
-                        "org_sort": 14,
                         "org_type": "ministry",
                         "division_name": division_name,
                         "division_sort": division_sort,
                         "subdivision_name": unit_name,
-                        "position_name": self.none_handler(row.xpath("td[not(*)][3]/text()").get()),
+                        "position_sort": person_sort,
                         "person_name": self.none_handler(row.xpath("td[not(*)][2]/text()").get()),
+                        "position_name": self.none_handler(row.xpath("td[not(*)][3]/text()").get()),
+                        "person_phone": self.none_handler(row.xpath("td[not(*)][4]/text()").get()),
                         "person_email": self.email_handler(row.xpath("td[not(*)][5]/text()").get()),
                         "person_fax": None,
-                        "person_phone": self.none_handler(row.xpath("td[not(*)][4]/text()").get()),
-                        "position_sort_order": person_sort,
                         "parent_org_id": None
                     }
                     person_sort += 1
