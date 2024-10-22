@@ -9,6 +9,7 @@ cssselect==1.2.0
 defusedxml==0.7.1
 filelock==3.16.0
 greenlet==3.0.3
+gspread==6.1.4
 hyperlink==21.0.0
 idna==3.8
 incremental==24.7.2
