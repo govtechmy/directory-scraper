@@ -33,37 +33,7 @@ success_spiders = []
 fail_spiders = []
 
 # Define specific spiders if to use run_specific_spiders(), else run_all_spiders()
-SPECIFIC_SPIDERS = [
-    "jpm",
-    "mof",
-    "rurallink_anggota",
-    "rurallink_pkd",
-    "petra",
-    "mot",
-    "kpkm",
-    "ekonomi",
-    "kpkt",
-    "kln",
-    "kkr",
-    "moha",
-    "miti",
-    "mod",
-    "mosti",
-    "kpwkm",
-    "nres",
-    "kuskop",
-    "kpt",
-    "motac",
-    "komunikasi",
-    "moe",
-    "kpn",
-    "kbs",
-    "kpdn",
-    "kpk",
-    "digital",
-    "moh",
-    "mohr"
-]
+
 
 def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """
@@ -211,7 +181,7 @@ def set_playwright_settings(settings, spiders):
             logger.info(f"Playwright detected for spider '{spider_name}', forcing headless mode.")
             break
 
-def run_specific_spiders():
+def run_specific_spiders(SPECIFIC_SPIDERS, output_folder):
     """
     Runs only the spiders specified in the SPECIFIC_SPIDERS list.
 
@@ -247,7 +217,7 @@ def run_specific_spiders():
     logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
     logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
 
-def run_all_spiders():
+def run_all_spiders(output_folder):
     """
     Runs all spiders defined in the project (in 'spiders' folder).
 
@@ -332,18 +302,51 @@ class RunSpiderPipeline:
 
 
 if __name__ == "__main__":
+
+    SPECIFIC_SPIDERS = [
+        "jpm",
+        "mof",
+        # "rurallink_anggota",
+        # "rurallink_pkd",
+        # "petra",
+        # "mot",
+        # "kpkm",
+        # "ekonomi",
+        # "kpkt",
+        # "kln",
+        # "kkr",
+        # "moha",
+        # "miti",
+        # "mod",
+        # "mosti",
+        # "kpwkm",
+        # "nres",
+        # "kuskop",
+        # "kpt",
+        # "motac",
+        # "komunikasi",
+        # "moe",
+        # "kpn",
+        # "kbs",
+        # "kpdn",
+        # "kpk",
+        # "digital",
+        # "moh",
+        # "mohr"
+    ]
+
     output_folder = "./data/spiders_output"
     backup_folder = "./backups"
 
     # Option 1: If running specific spiders
     backup_spider_outputs(output_folder, SPECIFIC_SPIDERS, backup_folder)
-    run_specific_spiders()
+    run_specific_spiders(SPECIFIC_SPIDERS,output_folder )
 
     # Option 2: If running all spiders
     # spider_loader = SpiderLoader.from_settings(get_project_settings())
     # all_spiders = spider_loader.list()
     # backup_spider_outputs(output_folder, all_spiders, backup_folder)
-    # run_all_spiders()
+    # run_all_spiders(output_folder)
 
     filter_custom_logs()
 
