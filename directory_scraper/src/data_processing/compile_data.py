@@ -25,9 +25,10 @@ DATA_SCHEMA = {
 def validate_required_keys(record, json_file):
     """Function to validate required keys"""
     for key, meta in DATA_SCHEMA.items():
+        default_value = 999999 if key == "position_sort" else None
         if key not in record:
             logging.warning(f"Missing '{key}' in {json_file}, setting default value.")
-            record[key] = None  # specify default value for missing fields
+            record[key] = default_value  # specify default value for missing fields
 
     return record
 
@@ -87,6 +88,6 @@ def data_compiling_pipeline(input_folder, output_file):
 
 if __name__ == "__main__":
     input_folder = 'data/output'
-    output_file = 'compiled.json'
+    output_file = 'data/output/compiled.json'
 
     data_compiling_pipeline(input_folder, output_file)
