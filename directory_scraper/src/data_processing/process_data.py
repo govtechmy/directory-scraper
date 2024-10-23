@@ -266,6 +266,17 @@ def validate_person_phone(record):
 
     return record
 
+def validate_person_name(record):
+    name = record.get("person_name")
+    if name and isinstance(name, str):
+        if name.lower() == "kosong":
+            return record
+        
+        if name.lower().startswith("pejabat") or name.lower().startswith("kaunter"):
+            raise ValueError(f"Invalid 'person_name' '{name}' in record: {record}")
+
+    return record
+
 def validate_required_keys(record):
     """
     Ensure that the given record contains all required keys and their values are of the correct data types.
@@ -276,7 +287,7 @@ def validate_required_keys(record):
             logging.warning(f"'{key}' missing in record {record}, adding with default value None.")
             record[key] = None  # Set missing keys to None
         elif not isinstance(record[key], meta["type"]) and not (meta["nullable"] and record[key] is None):
-            logging.warning(f"'{key}' has invalid data type. Expected {meta['type']}, got {type(record[key])}.")
+            logging.warning(f"'{key}' has invalid data type. Expected {meta['type']}, got {type(record[key])} from record: {record}")
             # Try to convert if possible, otherwise set to None
             try:
                 record[key] = meta["type"](record[key])
@@ -405,15 +416,28 @@ def data_processing_pipeline(data):
     Cleans, validates, and optionally sorts the records, then returns the processed data.
     """
     # Step 1: Process each record individually
-    for record in data:
-        validate_required_keys(record)
-        strip_spaces(record)
-        map_org_id_to_org_sort(record)
-        validate_org_type(record)
-        validate_person_email(record)
-        validate_person_phone(record)
-        capitalize_values(record)
-        standardize_position_sort_key(record)
+    faulty_record_index = []
+    for idx, record in enumerate(data):
+        try:
+            validate_required_keys(record)
+            strip_spaces(record)
+            map_org_id_to_org_sort(record)
+            validate_person_name(record)
+            validate_org_type(record)
+            validate_person_email(record)
+            validate_person_phone(record)
+            capitalize_values(record)
+            standardize_position_sort_key(record)
+        except ValueError as err:
+            faulty_record_index.append(idx)
+            logging.warning(str(err))
+            continue
+
+    # Step 1.5: Remove invalid records
+    if faulty_record_index:
+        for idx in reversed(faulty_record_index):
+            data.pop(idx)
+
 
     # Step 2: Sort the data
     reset_per_division = True  # change to False if you want global sorting
@@ -445,6 +469,7 @@ def process_json_file(json_file_path, output_folder):
         logging.error(f"Failed to decode JSON in {json_file_name}. Skipping file.")
     except Exception as e:
         logging.error(f"An error occurred while processing {json_file_name}: {str(e)}")
+        raise e
 
 def process_all_json_files(input_folder, output_folder):
     """
