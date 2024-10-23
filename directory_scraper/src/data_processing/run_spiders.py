@@ -18,7 +18,7 @@ if not os.path.exists(LOG_DIR):
 LOG_FILE_NAME = 'run_spiders.log'
 LOG_FILE_PATH = os.path.join(LOG_DIR, LOG_FILE_NAME)
 
-file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler = logging.FileHandler(LOG_FILE_PATH, mode='w')
 file_handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
