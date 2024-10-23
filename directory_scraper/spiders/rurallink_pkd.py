@@ -7,7 +7,7 @@ class RURALLINK_PKDSpider(scrapy.Spider):
     name = "rurallink_pkd"
     
     seen_divisions = {} #init
-    division_sort_counter = 1  #init (start w/ 1)
+    division_sort_counter = 1000000  #init (start w/ 1)
     person_sort_order = 0 #init global
 
     def start_requests(self):
