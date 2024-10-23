@@ -251,15 +251,15 @@ class MODSpider(scrapy.Spider):
                 "org_id": "MOD",
                 "org_name": "Kementerian Pertahanan",
                 "org_type": "ministry",
-                "division_name": current_division,
                 "division_sort": division_sort,
+                "division_name": current_division,
                 "subdivision_name": unit_name if (unit_name := " > ".join(possible_unit_path)) else None,
                 "position_sort": 10*(page_number-1) + sort_order + 1,
                 "person_name": name.strip() if (name := data_card.css("h2::text").get()) else None,
                 "position_name": position.strip() if (position := data_card.css("div:not([class])::text").get()) else None,
                 "person_phone": phone[0] if (phone := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Telefon" in txt]) else None,
                 "person_email": data_card.css("joomla-hidden-mail::text").get(),
-                "person_fax": fax[0] if (fax := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Faks" in txt]) else None,
+                "person_fax": fax[0].replace("Faks ", "") if (fax := [txt.strip() for txt in data_card.css("ul > li::text").getall() if "Faks" in txt]) else None,
                 "parent_org_id": None
             }
             yield data
