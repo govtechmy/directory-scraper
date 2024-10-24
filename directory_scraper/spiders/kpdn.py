@@ -84,7 +84,7 @@ class KPDNSpider(scrapy.Spider):
                 "org_id": "KPDN",
                 "org_name": "KEMENTERIAN PERDAGANGAN DALAM NEGERI DAN KOS SARA HIDUP",
                 "org_type": "ministry",
-                "division_sort": division_sort_order,
+                "division_sort": division_sort_order+1,
                 "division_name": division,
                 "subdivision_name": unit_name,
                 "position_sort": self.none_handler(row.css("td:nth-child(1)").css("::text").get()),
