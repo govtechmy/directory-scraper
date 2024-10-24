@@ -63,8 +63,7 @@ class MohaSpider(CrawlSpider):
     person_sort_order = 0
 
     rules = (
-        # Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn/\d+-'), callback='parse_item', follow=True), # not ok. it matches division & individual-level pages
-        Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn/\d+-[^/]+$'), callback='parse_item', follow=True), # match only division-level pages
+        Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn/\d+-[^/]+$'), callback='parse_item', follow=True), # match only division-level pages. (exclude individual-level pages)
         Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn\?start=\d+'), follow=True),
     )
 
