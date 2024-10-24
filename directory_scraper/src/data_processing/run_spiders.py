@@ -63,7 +63,7 @@ def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
                     if scrapy_pattern.search(line):
                         continue
                     elif custom_logger_name in line:
-                        continue
+                        outfile.write(line)
                     elif non_scrapy_pattern.search(line) and "scrapy" not in line:
                         outfile.write(line)
                     elif not scrapy_pattern.search(line) and "scrapy" not in line:
