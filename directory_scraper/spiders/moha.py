@@ -3,8 +3,6 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 import re
 from urllib.parse import urlparse, parse_qs
-import time
-import random
 from html import unescape  # Import to decode HTML entities
 
 class MohaSpider(CrawlSpider):
@@ -14,17 +12,16 @@ class MohaSpider(CrawlSpider):
 
     # custom settings for this spider (moha website will close connection if no delay when scraping)
     custom_settings = {
-        'DOWNLOAD_DELAY': 3,
+        'DOWNLOAD_DELAY': 1.5,  # Reduced to 1.5 seconds
         'AUTOTHROTTLE_ENABLED': True,
-        'AUTOTHROTTLE_START_DELAY': 1,
-        'AUTOTHROTTLE_MAX_DELAY': 10,
+        'AUTOTHROTTLE_START_DELAY': 2,  # Increased start delay to 2 seconds
+        'AUTOTHROTTLE_MAX_DELAY': 10,  # Kept the max delay the same
         'RETRY_TIMES': 5,
         'RETRY_HTTP_CODES': [500, 502, 503, 504, 408],
         'RETRY_WAIT_TIME': 10,
         'DOWNLOAD_TIMEOUT': 30,
-        'CONCURRENT_REQUESTS': 8,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 2,
-        'LOG_LEVEL': 'ERROR',  # Use 'DEBUG' for more detailed logs
+        'CONCURRENT_REQUESTS': 4,  # Reduced concurrent requests to 4
+        'CONCURRENT_REQUESTS_PER_DOMAIN': 1,  # Reduced to 1 per domain
     }
 
     division_sort_map = {
@@ -66,7 +63,8 @@ class MohaSpider(CrawlSpider):
     person_sort_order = 0
 
     rules = (
-        Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn/\d+-'), callback='parse_item', follow=True),
+        # Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn/\d+-'), callback='parse_item', follow=True), # not ok. it matches division & individual-level pages
+        Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn/\d+-[^/]+$'), callback='parse_item', follow=True), # match only division-level pages
         Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn\?start=\d+'), follow=True),
     )
 
@@ -93,6 +91,7 @@ class MohaSpider(CrawlSpider):
 
     def parse_email(self, hidden_email):
         """Parse and decode the email using html unescape"""
+       #print("Decoding email using OCR..")
         prefix = re.search(r"var prefix = '(.*?)';", hidden_email) #mailto:
         part1 = re.search(r"var addy\w+ = '(.*?)';", hidden_email) #before @
         part2 = re.search(r"addy\w+ = addy\w+ \+ '(.*?)';", hidden_email) # after @
@@ -114,15 +113,16 @@ class MohaSpider(CrawlSpider):
         return None
 
     def parse_item(self, response):
-        time.sleep(random.uniform(1, 3))  # Delay between 1 to 3 seconds
+        # Removed time.sleep(random.uniform(1, 3)) to rely on Scrapy's built-in delay
         page_number = self.extract_page(response.url)
         division = response.css('h2::text').get()
 
         if division:
             division = division.strip()
+            # print(f"Division found: {division} for {response.url}")
         else:
             self.logger.warning(f"Division not found for {response.url}")
-            division = "Unknown"  # Fallback for missing divisions
+            division = "Lain-Lain"  # Fallback for missing divisions
 
         # Get division_sort_order from the map, fallback to 999 for unknown divisions
         division_sort_order = self.division_sort_map.get(division, 999)
@@ -158,17 +158,3 @@ class MohaSpider(CrawlSpider):
                 #'url': response.url,
                 #'page_number': page_number,
             }
-
-    def make_requests_from_url(self, url):
-        """Override method to add priority based on division_sort_order"""
-        priority = 100  # Default priority for unknown divisions
-        division_name = None
-
-        # check if the URL matches the custom division mapping for priority
-        for division, sort_order in self.division_sort_map.items():
-            if division.lower().replace(" ", "-") in url.lower():
-                priority = 100 - sort_order  # higher sort_order -> Lower priority value
-                division_name = division
-                break
-
-        return scrapy.Request(url, priority=priority, dont_filter=True)
