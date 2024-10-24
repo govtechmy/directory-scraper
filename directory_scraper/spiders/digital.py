@@ -4,7 +4,7 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 class DIGITALSpider(scrapy.Spider):
     name = 'digital'
-    start_urls = ['https://www.digital.gov.my/direktori']
+    start_urls = ['https://kd-portal.vercel.app/direktori']#['https://www.digital.gov.my/direktori']
 
     person_sort_order = 0
     division_sort_order = 0
@@ -81,7 +81,7 @@ class DIGITALSpider(scrapy.Spider):
                     'org_id': 'DIGITAL',
                     'org_name': 'KEMENTERIAN DIGITAL',
                     'org_type': 'ministry',
-                    'division_sort': self.division_sort_order,
+                    'division_sort_order': self.division_sort_order,
                     'division_name': division.strip() if division else None,
                     'subdivision_name': current_unit.strip() if current_unit else None,
                     'position_sort_order': self.person_sort_order,
@@ -126,6 +126,7 @@ class DIGITALSpider(scrapy.Spider):
         fixed_data = fix_subdivision_value(all_data)
         cleaned_data = delete_person_null(fixed_data)
         cleaned_data = replace_dash_with_none(cleaned_data)
+        cleaned_data = sort_division(cleaned_data)
 
         for item in cleaned_data:
             yield item
@@ -170,3 +171,25 @@ def replace_dash_with_none(data):
             obj['person_phone'] = None
 
     return data
+
+def sort_division(data):
+    """Cleanup function to re-sort the division_sort. The sort wasnt correct due to dirty data & pagination.
+    Assigns division_sort based on grouping by division_name and follows division_sort_order."""
+
+    sorted_data = sorted(data, key=lambda x: x['division_sort_order'])
+
+    division_sort_counter = 1
+    division_sort_map = {}  # to keep track of division_name -> division_sort
+
+    for record in sorted_data:
+        division_name = record.get('division_name')
+
+        if division_name not in division_sort_map:
+            division_sort_map[division_name] = division_sort_counter
+            division_sort_counter += 1
+
+        record['division_sort'] = division_sort_map[division_name]
+
+        record.pop('division_sort_order', None)
+
+    return sorted_data
