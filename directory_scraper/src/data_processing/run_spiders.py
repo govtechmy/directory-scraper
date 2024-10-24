@@ -7,6 +7,7 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from scrapy.spiderloader import SpiderLoader
 import re
+from datetime import datetime
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ def setup_output_folder(folder_path, spider_names):
                     logger.info(f"Deleted directory: {file_path}")
             except Exception as e:
                 logger.warning(f"Failed to delete {file_path}. Reason: {e}")
-        logger.info(f"Done.. deleted relevant files in {folder_path}")
+        logger.info(f"Done deleting relevant files in {folder_path}")
 
 def backup_spider_outputs(output_folder, spider_names, backup_folder, max_backups=5):
     """
@@ -203,6 +204,9 @@ def run_specific_spiders(SPECIFIC_SPIDERS, output_folder):
 
     setup_output_folder(output_folder, SPECIFIC_SPIDERS)
 
+    start_time = datetime.now()
+    logger.info(f"Spider process started.")
+
     process = setup_crawler(SPECIFIC_SPIDERS)
 
     for spider_name in SPECIFIC_SPIDERS:
@@ -213,6 +217,10 @@ def run_specific_spiders(SPECIFIC_SPIDERS, output_folder):
             logger.warning(f"Spider '{spider_name}' not found. Skipping...")
 
     process.start()
+
+    end_time = datetime.now()
+    total_duration = end_time - start_time
+    logger.info(f"Completed all spiders. Total run time: {total_duration}")
 
     logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
     logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
@@ -240,6 +248,9 @@ def run_all_spiders(output_folder):
 
     setup_output_folder(output_folder, all_spiders)
 
+    start_time = datetime.now()
+    logger.info(f"Spider process started at {start_time}")
+
     process = setup_crawler(all_spiders)
 
     for spider_name in all_spiders:
@@ -250,6 +261,10 @@ def run_all_spiders(output_folder):
         )
 
     process.start()
+
+    end_time = datetime.now()
+    total_duration = end_time - start_time
+    logger.info(f"All spiders completed. Total run time: {total_duration}")
 
     logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
     logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
@@ -271,6 +286,7 @@ class RunSpiderPipeline:
         self.results = {}
 
     def open_spider(self, spider):
+        self.start_time = datetime.now()
         self.results[spider.name] = []
         logger.info(f"Running spider '{spider.name}' ..")
 
@@ -279,6 +295,10 @@ class RunSpiderPipeline:
         return item
 
     def close_spider(self, spider):
+        end_time = datetime.now()
+        duration = end_time - self.start_time
+        logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
+
         global success_count, fail_count, success_spiders, fail_spiders
 
         if self.results[spider.name]:
@@ -292,7 +312,7 @@ class RunSpiderPipeline:
                     else:
                         f.write("\n")  # No comma after the last object
                 f.write("]\n")
-            logger.info(f"Done! spider '{spider.name}' data is written to {output_file}")
+            logger.info(f"Successfully written '{spider.name}' data to {output_file}")
             success_count += 1
             success_spiders.append(spider.name)
         else:
@@ -302,6 +322,7 @@ class RunSpiderPipeline:
 
 
 if __name__ == "__main__":
+    
 
     SPECIFIC_SPIDERS = [
         "jpm",
@@ -340,7 +361,7 @@ if __name__ == "__main__":
 
     # Option 1: If running specific spiders
     backup_spider_outputs(output_folder, SPECIFIC_SPIDERS, backup_folder)
-    run_specific_spiders(SPECIFIC_SPIDERS,output_folder )
+    run_specific_spiders(SPECIFIC_SPIDERS,output_folder)
 
     # Option 2: If running all spiders
     # spider_loader = SpiderLoader.from_settings(get_project_settings())
