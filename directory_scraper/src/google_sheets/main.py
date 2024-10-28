@@ -1,9 +1,7 @@
 """Main app for loading and updating data in Google Sheet"""
 
 from google_sheets_utils import GoogleSheetManager
-from process_data import validate_data
-from load_data import load_data_into_sheet
-from update_data import update_data_in_sheet
+from process_data import validate_data, load_data_into_sheet, update_data_in_sheet
 
 import os
 from dotenv import load_dotenv
