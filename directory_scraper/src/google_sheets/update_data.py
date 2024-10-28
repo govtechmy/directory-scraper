@@ -17,6 +17,19 @@ def update_data_in_sheet(google_sheets_manager, data, add_timestamp=True):
     timestamp = None
     if add_timestamp:
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Define the header
+    header = list(data[0].keys())  # Extract the keys as headers
+    if add_timestamp:
+        header.append('last_uploaded')  # Append the timestamp header
+    
+    # Check if the sheet is empty and add the header
+    all_data = google_sheets_manager.get_all_data()
+    
+    # Handle cases where all_data contains only empty rows like [[]]
+    if not all_data or all(len(row) == 0 for row in all_data):
+        print("Sheet is empty. Adding header row...")
+        google_sheets_manager.append_rows([header])  # Add header if sheet is blank
 
     for org_index, (org_id, group_data) in enumerate(grouped_data.items(), start=1):
         print(f"\nUpdating org_id: {org_id} ({org_index}/{total_orgs})")
