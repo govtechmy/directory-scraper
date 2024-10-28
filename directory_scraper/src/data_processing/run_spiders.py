@@ -8,6 +8,8 @@ from scrapy.utils.project import get_project_settings
 from scrapy.spiderloader import SpiderLoader
 import re
 from datetime import datetime
+import argparse
+
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -33,8 +35,9 @@ fail_count = 0
 success_spiders = []
 fail_spiders = []
 
-# Define specific spiders if to use run_specific_spiders(), else run_all_spiders()
-
+def run_spiders(spider_list, output_folder, backup_folder):
+    backup_spider_outputs(output_folder, spider_list, backup_folder)
+    run_specific_spiders(spider_list, output_folder)
 
 def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """
@@ -320,9 +323,47 @@ class RunSpiderPipeline:
             fail_count += 1
             fail_spiders.append(spider.name)
 
+def main():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run Scrapy spiders. Available spider_selection are:\n"
+            "\n"
+            "1. 'all' - to run all spiders in the project.\n"
+            "2. 'listed' - to run a predefined list of spiders (from the SPECIFIC_SPIDERS list).\n"
+            "3. A single spider name - to run a specific spider (e.g., 'jpm').\n"
+            "4. A comma-separated list of spiders - to run multiple specific spiders (e.g., 'jpm,mof,miti').\n"
+            "\n"
+            "E.g:\n"
+            "python run_spiders all\n"
+            "python run_spiders listed\n"
+            "python run_spiders jpm\n"
+            "python run_spiders jpm,mof,miti\n"
+            "\n"
+            "Ensure the spider names are valid, or the program will return an error."
 
-if __name__ == "__main__":
-    
+        ),
+            formatter_class=argparse.RawTextHelpFormatter  # preserve formatting
+
+    )
+
+    parser.add_argument(
+        "spider_selection", 
+        help=(
+            "spider_selection: 'all' to run all spiders, 'listed' for predefined spiders, "
+            "or specify one or more valid spider names (separated by commas)."
+        )
+    )
+    args = parser.parse_args()
+
+    output_folder = "./data/spiders_output"
+    backup_folder = "./backups"
+
+# =============================================================================
+# ======================= SPIDER_SELECTION OPTIONS ============================
+# =============================================================================
+
+    spider_loader = SpiderLoader.from_settings(get_project_settings())
+    all_spiders = spider_loader.list()
 
     SPECIFIC_SPIDERS = [
         "jpm",
@@ -356,18 +397,51 @@ if __name__ == "__main__":
         # "mohr"
     ]
 
-    output_folder = "./data/spiders_output"
-    backup_folder = "./backups"
+    # Option 1: run all spiders in the project
+    if args.spider_selection == "all":
+        backup_spider_outputs(output_folder, all_spiders, backup_folder)
+        run_all_spiders(output_folder)
 
-    # Option 1: If running specific spiders
-    backup_spider_outputs(output_folder, SPECIFIC_SPIDERS, backup_folder)
-    run_specific_spiders(SPECIFIC_SPIDERS,output_folder)
+    # Option 2: run list of specific spiders based on SPECIFIC_SPIDERS
+    elif args.spider_selection == "listed":
+        if SPECIFIC_SPIDERS:
+            backup_spider_outputs(output_folder, SPECIFIC_SPIDERS, backup_folder)
+            run_spiders(SPECIFIC_SPIDERS, output_folder, backup_folder)
+        else:
+            logger.error("No spiders listed in SPECIFIC_SPIDERS.")
 
-    # Option 2: If running all spiders
-    # spider_loader = SpiderLoader.from_settings(get_project_settings())
-    # all_spiders = spider_loader.list()
-    # backup_spider_outputs(output_folder, all_spiders, backup_folder)
-    # run_all_spiders(output_folder)
+    # Option 3: run list specific spiders on command line (separated by comma)
+    elif "," in args.spider_selection:
+        spider_list = [spider.strip() for spider in args.spider_selection.split(",")]
+        valid_spiders = [spider for spider in spider_list if spider in all_spiders]
+        invalid_spiders = [spider for spider in spider_list if spider not in all_spiders]
 
+        if valid_spiders:
+            backup_spider_outputs(output_folder, valid_spiders, backup_folder)
+            run_spiders(valid_spiders, output_folder, backup_folder)
+        else:
+            logger.error(f"No valid spiders found in list: {spider_list}")
+
+        if invalid_spiders:
+            logger.warning(f"The following spiders were not found: {invalid_spiders}")
+
+    # Option 4: run only 1 specific spider
+    elif args.spider_selection in all_spiders:
+        backup_spider_outputs(output_folder, [args.spider_selection], backup_folder)
+        run_spiders([args.spider_selection], output_folder, backup_folder)
+
+    # Do nothing if no valid spider_selection is provided
+    else:
+        logger.error(f"Invalid command or spider name: '{args.spider_selection}'. Please provide a valid spider_selection, or check the spider name.")
+        logger.info("Available spider_selection(s): 'all', 'listed', a spider name (e.g 'jpm'), or a list of spiders names (e.g 'jpm,miti,mof')")
+        logger.info(f"Available spiders names are: {all_spiders}")
+
+# =============================================================================
+# ========================== END OF SELECTION =================================
+# =============================================================================
+
+    # Custom logging. Run this once after all the spiders have finished
     filter_custom_logs()
 
+if __name__ == "__main__":
+    main()
