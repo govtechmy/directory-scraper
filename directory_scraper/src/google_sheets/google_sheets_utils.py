@@ -88,12 +88,20 @@ class GoogleSheetManager:
     def find_rows_by_org_id(self, org_id, org_id_column_index=1):
         """
         Finds all rows that match a specific org_id in the sheet.
+        Checks if the row has enough columns to access org_id_column_index
         Returns a list of row indices to be deleted.
         """
         all_data = self.get_all_data()
-        rows_to_delete = [row_index + 1 for row_index, row in enumerate(all_data) if row[org_id_column_index] == org_id]
-        return rows_to_delete
+        rows_to_delete = []
 
+        for row_index, row in enumerate(all_data):
+            if len(row) > org_id_column_index:
+                if row[org_id_column_index] == org_id:
+                    rows_to_delete.append(row_index + 1)
+            else:
+                print(f"Row {row_index + 1} is too short: {row}")
+        return rows_to_delete
+    
     def delete_rows_by_org_id(self, org_id, org_id_column_index=1, max_retries=5):
         """
         Deletes all rows that match a specific org_id, applying batch deletion for consecutive rows.
