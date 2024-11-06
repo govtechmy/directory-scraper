@@ -253,7 +253,14 @@ def run_spiders(spider_list):
     logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
 
 def get_spiders_by_folder():
-    # Load all spiders using SpiderLoader
+    """
+    Function to categorize the spider scripts according to the folders in spiders/.
+    Modify this function if new folder(category) is added!
+    Current category:
+    1. ministry
+    2. ministry_orgs
+    3. non_ministry
+    """
     settings = get_project_settings()
     spider_loader = SpiderLoader.from_settings(settings)
     all_spiders = spider_loader.list()
@@ -265,7 +272,7 @@ def get_spiders_by_folder():
     }
 
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../spiders"))
-    logger.debug(f"Base directory: {base_dir}")  # Debug: Check base directory
+    logger.debug(f"Base directory: {base_dir}")
 
     for spider_name in all_spiders:
         spider_cls = spider_loader.load(spider_name)
@@ -276,7 +283,7 @@ def get_spiders_by_folder():
         # Ensure the file path is relative to the base_dir
         if os.path.exists(spider_file_path):
             relative_spider_file_path = os.path.relpath(spider_file_path, base_dir)
-            logger.debug(f"Spider name: {spider_name}, Relative Path: {relative_spider_file_path}")  # Debug
+            logger.debug(f"Spider name: {spider_name}, Relative Path: {relative_spider_file_path}")
 
             # Check which category the spider belongs to
             if relative_spider_file_path.startswith("ministry" + os.sep):
