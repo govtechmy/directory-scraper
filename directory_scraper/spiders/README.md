@@ -4,11 +4,13 @@
    - Description: Contains spiders for scraping data directly from main government ministries.
 
 2. `ministry_orgs/`
-   - Description: Contains spiders for agencies and departments under each ministry. Organized 'jabatan' and 'agensi' into subdirectories.
+   - Description: Contains spiders for scraping agencies and departments under each ministry. Organized 'jabatan' and 'agensi' into subdirectories.
 
 3. `non_ministry/`
-   - Description: Contains spiders for independent organizations, regulatory bodies, or major companies not tied to any ministry.
+   - Description: Contains spiders for scraping independent organizations, regulatory bodies, or major companies not tied to any ministry.
 
+3. `bahagian_unit/`
+   - Description: Contains spiders for scraping data related to descriptions and duties of various divisions or units within an organization.
 
 Example:
 ```
@@ -42,5 +44,5 @@ Example:
     |-- jpm/
     |   |-- jpm_bahagian.py/
     |-- mohr/
-        |-- mohr_bahagian,py/
+        |-- mohr_bahagian.py/
 ```
