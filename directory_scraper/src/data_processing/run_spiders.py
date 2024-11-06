@@ -192,6 +192,7 @@ class RunSpiderPipeline:
         self.results = {}
 
     def open_spider(self, spider):
+        self.start_time = datetime.now()
         global success_count, fail_count, success_spiders, fail_spiders
         self.results[spider.name] = []
         logger.info(f"Running spider '{spider.name}' ...")
@@ -201,6 +202,10 @@ class RunSpiderPipeline:
         return item
 
     def close_spider(self, spider):
+        end_time = datetime.now()
+        duration = end_time - self.start_time
+        logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
+
         if self.results[spider.name]:
             output_file = os.path.join("./data/spiders_output", f"{spider.name}.json")
             with open(output_file, 'w') as f:
@@ -208,9 +213,9 @@ class RunSpiderPipeline:
                 for idx, result in enumerate(self.results[spider.name]):
                     json.dump(result, f)
                     if idx < len(self.results[spider.name]) - 1:
-                        f.write(",\n")  # Add a comma and newline between objects
+                        f.write(",\n")
                     else:
-                        f.write("\n")  # Add just a newline after the last object
+                        f.write("\n")
                 f.write("]\n")
             global success_count, success_spiders
             success_count += 1
@@ -220,7 +225,7 @@ class RunSpiderPipeline:
             global fail_count, fail_spiders
             fail_count += 1
             fail_spiders.append(spider.name)
-            logger.warning(f"Spider '{spider.name}' finished without collecting data.")
+            logger.warning(f"Spider '{spider.name}' finished and failed to collect any data.")
 
 def run_spiders(spider_list):
     global success_count, fail_count, success_spiders, fail_spiders
@@ -259,7 +264,6 @@ def get_spiders_by_folder():
         "non_ministry": []
     }
 
-    # Correct the base directory path
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../spiders"))
     logger.debug(f"Base directory: {base_dir}")  # Debug: Check base directory
 
