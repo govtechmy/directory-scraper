@@ -345,12 +345,15 @@ def main():
 
     args = parser.parse_args()
     spider_tree = get_spiders_by_folder()
-    all_spiders = get_all_spiders()  # To support 'all' option
+    all_spiders = get_all_spiders()
 
     LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
 
-    print(f"Spider tree: {spider_tree}")
-    if args.name == "all":
+    logger.debug(f"Spider tree: {spider_tree}")
+
+    if args.name in all_spiders:
+        spider_list = [args.name]
+    elif args.name == "all":
         spider_list = all_spiders
     elif args.name == "list":
         spider_list = [spider for spider in LIST_OF_SPIDERS_TO_RUN if spider in all_spiders]
