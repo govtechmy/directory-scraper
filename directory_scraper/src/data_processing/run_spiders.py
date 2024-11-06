@@ -2,20 +2,20 @@ import json
 import os
 import shutil
 import logging
-from datetime import datetime
-from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
-from scrapy.spiderloader import SpiderLoader
 import re
 from datetime import datetime
 import argparse
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+from scrapy.spiderloader import SpiderLoader
+import inspect
 
 
-# Logging
+#==========================Logging setup=======================================
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO) # logging level for custom logger
+logger.setLevel(logging.INFO)
 
-LOG_DIR = os.path.join(os.path.dirname(__file__), '../..', 'logs') 
+LOG_DIR = os.path.join(os.path.dirname(__file__), '../..', 'logs')
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 LOG_FILE_NAME = 'run_spiders.log'
@@ -25,19 +25,16 @@ file_handler = logging.FileHandler(LOG_FILE_PATH, mode='w')
 file_handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
-
 logger.addHandler(file_handler)
-logger.propagate = True  # Propagate logs to Scrapy's root logger
+logger.propagate = True
+
+#==============================================================================
 
 # Global success and fail counters
 success_count = 0
 fail_count = 0
 success_spiders = []
 fail_spiders = []
-
-def run_spiders(spider_list, output_folder, backup_folder):
-    backup_spider_outputs(output_folder, spider_list, backup_folder)
-    run_specific_spiders(spider_list, output_folder)
 
 def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """
@@ -54,29 +51,26 @@ def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """
     input_log = LOG_FILE_PATH
     output_log = LOG_FILE_PATH.replace('.log', '_custom.log')
-    
     custom_logger_name = f"[{__name__}]"
     scrapy_pattern = re.compile(r"\[scrapy(?:\..*?)?\]")
     non_scrapy_pattern = re.compile(r", (DEBUG|INFO|WARNING|ERROR|CRITICAL) - .* - ")
 
     try:
-        with open(input_log, "r") as infile:
-            with open(output_log, "w") as outfile:
-                for line in infile:
-                    if scrapy_pattern.search(line):
-                        continue
-                    elif custom_logger_name in line:
-                        outfile.write(line)
-                    elif non_scrapy_pattern.search(line) and "scrapy" not in line:
-                        outfile.write(line)
-                    elif not scrapy_pattern.search(line) and "scrapy" not in line:
-                        outfile.write(line)
-                        
-        print(f"Filtered custom logs have been written to {output_log}")
+        with open(input_log, "r") as infile, open(output_log, "w") as outfile:
+            for line in infile:
+                if scrapy_pattern.search(line):
+                    continue
+                elif custom_logger_name in line:
+                    outfile.write(line)
+                elif non_scrapy_pattern.search(line) and "scrapy" not in line:
+                    outfile.write(line)
+                elif not scrapy_pattern.search(line) and "scrapy" not in line:
+                    outfile.write(line)
+        logger.info(f"Filtered custom logs have been written to {output_log}")
     except FileNotFoundError:
-        print(f"Error: The file {input_log} does not exist.")
+        logger.error(f"The file {input_log} does not exist.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
 
 def setup_output_folder(folder_path, spider_names):
     """
@@ -116,7 +110,6 @@ def backup_spider_outputs(output_folder, spider_names, backup_folder, max_backup
     backup_folder (str): Path to the folder where backups will be stored.
     max_backups (int): Maximum number of backups to retain for each spider outputs. 
     """
-
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     if not os.path.exists(backup_folder):
         os.makedirs(backup_folder)
@@ -127,7 +120,7 @@ def backup_spider_outputs(output_folder, spider_names, backup_folder, max_backup
             spider_backup_folder = os.path.join(backup_folder, spider_name)
             if not os.path.exists(spider_backup_folder):
                 os.makedirs(spider_backup_folder)
-            
+
             backup_file_path = os.path.join(spider_backup_folder, f"{spider_name}_{timestamp}.json")
             try:
                 shutil.copy(spider_output_file, backup_file_path)
@@ -155,16 +148,14 @@ def setup_crawler(spiders):
     """
     settings = get_project_settings()
     settings.set('RETRY_ENABLED', True)
-    settings.set('RETRY_TIMES', 3)  
+    settings.set('RETRY_TIMES', 3)
     settings.set('DOWNLOAD_TIMEOUT', 60)
     settings.set('DOWNLOAD_DELAY', 1)
     settings.set('LOG_FILE', LOG_FILE_PATH)
-    settings.set('LOG_LEVEL', 'INFO') # logging level for Scrapy's internal
-    
-    set_playwright_settings(settings, spiders)
+    settings.set('LOG_LEVEL', 'INFO')
 
+    set_playwright_settings(settings, spiders)
     process = CrawlerProcess(settings)
-    process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
 
     return process
 
@@ -185,93 +176,6 @@ def set_playwright_settings(settings, spiders):
             logger.info(f"Playwright detected for spider '{spider_name}', forcing headless mode.")
             break
 
-def run_specific_spiders(SPECIFIC_SPIDERS, output_folder):
-    """
-    Runs only the spiders specified in the SPECIFIC_SPIDERS list.
-
-    The function resets global counters for success and failure, verifies 
-    that the spiders exist in the project, and runs each spider from the SPECIFIC_SPIDERS list.
-
-    Global Variables:
-    - success_count (int): Counter for successful spiders.
-    - fail_count (int): Counter for failed spiders.
-    - success_spiders (list): List of successfully completed spiders.
-    - fail_spiders (list): List of spiders that failed.
-    """
-    global success_count, fail_count, success_spiders, fail_spiders
-    success_count, fail_count = 0, 0 # Reset the counters
-    success_spiders, fail_spiders = [], [] # Reset lists
-
-    spider_loader = SpiderLoader.from_settings(get_project_settings())
-    all_spiders = spider_loader.list()
-
-    setup_output_folder(output_folder, SPECIFIC_SPIDERS)
-
-    start_time = datetime.now()
-    logger.info(f"Spider process started.")
-
-    process = setup_crawler(SPECIFIC_SPIDERS)
-
-    for spider_name in SPECIFIC_SPIDERS:
-        if spider_name in all_spiders:
-            spider_cls = spider_loader.load(spider_name)
-            process.crawl(spider_cls)
-        else:
-            logger.warning(f"Spider '{spider_name}' not found. Skipping...")
-
-    process.start()
-
-    end_time = datetime.now()
-    total_duration = end_time - start_time
-    logger.info(f"Completed all spiders. Total run time: {total_duration}")
-
-    logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
-    logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
-
-def run_all_spiders(output_folder):
-    """
-    Runs all spiders defined in the project (in 'spiders' folder).
-
-    The function resets global counters for success and failure, loads all spiders from the project, 
-    runs each one, and logs the results. It also ensures that the output folder is set up correctly 
-    before running the spiders.
-
-    Global Variables:
-    - success_count (int): Counter for successful spiders.
-    - fail_count (int): Counter for failed spiders.
-    - success_spiders (list): List of successfully completed spiders.
-    - fail_spiders (list): List of spiders that failed.
-    """
-    global success_count, fail_count, success_spiders, fail_spiders
-    success_count, fail_count = 0, 0  # Reset the counters
-    success_spiders, fail_spiders = [], []  # Reset lists
-
-    spider_loader = SpiderLoader.from_settings(get_project_settings())
-    all_spiders = spider_loader.list()
-
-    setup_output_folder(output_folder, all_spiders)
-
-    start_time = datetime.now()
-    logger.info(f"Spider process started at {start_time}")
-
-    process = setup_crawler(all_spiders)
-
-    for spider_name in all_spiders:
-        spider_cls = spider_loader.load(spider_name)
-        process.crawl(
-            spider_cls,
-            spider_name=spider_name,  # Meta data to identify failed spiders
-        )
-
-    process.start()
-
-    end_time = datetime.now()
-    total_duration = end_time - start_time
-    logger.info(f"All spiders completed. Total run time: {total_duration}")
-
-    logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
-    logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
-
 class RunSpiderPipeline:
     """
     Pipeline to collect and store the results when a spider crawls website.
@@ -284,164 +188,153 @@ class RunSpiderPipeline:
         process_item(item, spider): Appends scraped items to the spider's results.
         close_spider(spider): Writes results to a JSON file if data was collected, or logs a failure.
     """
-
     def __init__(self):
         self.results = {}
 
     def open_spider(self, spider):
-        self.start_time = datetime.now()
+        global success_count, fail_count, success_spiders, fail_spiders
         self.results[spider.name] = []
-        logger.info(f"Running spider '{spider.name}' ..")
+        logger.info(f"Running spider '{spider.name}' ...")
 
     def process_item(self, item, spider):
         self.results[spider.name].append(item)
         return item
 
     def close_spider(self, spider):
-        end_time = datetime.now()
-        duration = end_time - self.start_time
-        logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
-
-        global success_count, fail_count, success_spiders, fail_spiders
-
         if self.results[spider.name]:
-            output_file = os.path.join(output_folder, f"{spider.name}.json")
+            output_file = os.path.join("./data/spiders_output", f"{spider.name}.json")
             with open(output_file, 'w') as f:
                 f.write("[\n")
                 for idx, result in enumerate(self.results[spider.name]):
                     json.dump(result, f)
                     if idx < len(self.results[spider.name]) - 1:
-                        f.write(",\n")  # Add a comma after each object except the last
+                        f.write(",\n")  # Add a comma and newline between objects
                     else:
-                        f.write("\n")  # No comma after the last object
+                        f.write("\n")  # Add just a newline after the last object
                 f.write("]\n")
-            logger.info(f"Successfully written '{spider.name}' data to {output_file}")
+            global success_count, success_spiders
             success_count += 1
             success_spiders.append(spider.name)
+            logger.info(f"Spider '{spider.name}' finished successfully.")
         else:
-            logger.warning(f"Spider '{spider.name}' failed to collect any data. No file was created.")
+            global fail_count, fail_spiders
             fail_count += 1
             fail_spiders.append(spider.name)
+            logger.warning(f"Spider '{spider.name}' finished without collecting data.")
 
-def main():
-    parser = argparse.ArgumentParser(
-        description=(
-            "Run Scrapy spiders. Available spider_selection are:\n"
-            "\n"
-            "1. 'all' - to run all spiders in the project.\n"
-            "2. 'listed' - to run a predefined list of spiders (from the SPECIFIC_SPIDERS list).\n"
-            "3. A single spider name - to run a specific spider (e.g., 'jpm').\n"
-            "4. A comma-separated list of spiders - to run multiple specific spiders (e.g., 'jpm,mof,miti').\n"
-            "\n"
-            "E.g:\n"
-            "python run_spiders all\n"
-            "python run_spiders listed\n"
-            "python run_spiders jpm\n"
-            "python run_spiders jpm,mof,miti\n"
-            "\n"
-            "Ensure the spider names are valid, or the program will return an error."
-
-        ),
-            formatter_class=argparse.RawTextHelpFormatter  # preserve formatting
-
-    )
-
-    parser.add_argument(
-        "spider_selection", 
-        help=(
-            "spider_selection: 'all' to run all spiders, 'listed' for predefined spiders, "
-            "or specify one or more valid spider names (separated by commas)."
-        )
-    )
-    args = parser.parse_args()
-
-    output_folder = "./data/spiders_output"
-    backup_folder = "./backups"
-
-# =============================================================================
-# ======================= SPIDER_SELECTION OPTIONS ============================
-# =============================================================================
+def run_spiders(spider_list):
+    global success_count, fail_count, success_spiders, fail_spiders
+    success_count, fail_count = 0, 0
+    success_spiders, fail_spiders = [], []
 
     spider_loader = SpiderLoader.from_settings(get_project_settings())
     all_spiders = spider_loader.list()
 
-    SPECIFIC_SPIDERS = [
-        "jpm",
-        "mof",
-        # "rurallink_anggota",
-        # "rurallink_pkd",
-        # "petra",
-        # "mot",
-        # "kpkm",
-        # "ekonomi",
-        # "kpkt",
-        # "kln",
-        # "kkr",
-        # "moha",
-        # "miti",
-        # "mod",
-        # "mosti",
-        # "kpwkm",
-        # "nres",
-        # "kuskop",
-        # "kpt",
-        # "motac",
-        # "komunikasi",
-        # "moe",
-        # "kpn",
-        # "kbs",
-        # "kpdn",
-        # "kpk",
-        # "digital",
-        # "moh",
-        # "mohr"
-    ]
+    backup_spider_outputs(output_folder="./data/spiders_output", spider_names=spider_list, backup_folder="./backups")
+    setup_output_folder(folder_path="./data/spiders_output", spider_names=spider_list)
 
-    # Option 1: run all spiders in the project
-    if args.spider_selection == "all":
-        backup_spider_outputs(output_folder, all_spiders, backup_folder)
-        run_all_spiders(output_folder)
+    process = setup_crawler(spider_list)
+    process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
 
-    # Option 2: run list of specific spiders based on SPECIFIC_SPIDERS
-    elif args.spider_selection == "listed":
-        if SPECIFIC_SPIDERS:
-            backup_spider_outputs(output_folder, SPECIFIC_SPIDERS, backup_folder)
-            run_spiders(SPECIFIC_SPIDERS, output_folder, backup_folder)
+    for spider_name in spider_list:
+        if spider_name in all_spiders:
+            spider_cls = spider_loader.load(spider_name)
+            process.crawl(spider_cls)
         else:
-            logger.error("No spiders listed in SPECIFIC_SPIDERS.")
+            logger.warning(f"Spider '{spider_name}' not found. Skipping...")
 
-    # Option 3: run list specific spiders on command line (separated by comma)
-    elif "," in args.spider_selection:
-        spider_list = [spider.strip() for spider in args.spider_selection.split(",")]
-        valid_spiders = [spider for spider in spider_list if spider in all_spiders]
-        invalid_spiders = [spider for spider in spider_list if spider not in all_spiders]
+    process.start()
+    logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
+    logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
 
-        if valid_spiders:
-            backup_spider_outputs(output_folder, valid_spiders, backup_folder)
-            run_spiders(valid_spiders, output_folder, backup_folder)
-        else:
-            logger.error(f"No valid spiders found in list: {spider_list}")
+def get_spiders_by_folder():
+    # Load all spiders using SpiderLoader
+    settings = get_project_settings()
+    spider_loader = SpiderLoader.from_settings(settings)
+    all_spiders = spider_loader.list()
 
-        if invalid_spiders:
-            logger.warning(f"The following spiders were not found: {invalid_spiders}")
+    spiders_by_category = {
+        "ministry": [],
+        "ministry_orgs": [],
+        "non_ministry": []
+    }
 
-    # Option 4: run only 1 specific spider
-    elif args.spider_selection in all_spiders:
-        backup_spider_outputs(output_folder, [args.spider_selection], backup_folder)
-        run_spiders([args.spider_selection], output_folder, backup_folder)
+    # Correct the base directory path
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../spiders"))
+    logger.debug(f"Base directory: {base_dir}")  # Debug: Check base directory
 
-    # Do nothing if no valid spider_selection is provided
+    for spider_name in all_spiders:
+        spider_cls = spider_loader.load(spider_name)
+        
+        # Use inspect to get the actual file path of the spider class
+        spider_file_path = os.path.abspath(inspect.getfile(spider_cls))
+        
+        # Ensure the file path is relative to the base_dir
+        if os.path.exists(spider_file_path):
+            relative_spider_file_path = os.path.relpath(spider_file_path, base_dir)
+            logger.debug(f"Spider name: {spider_name}, Relative Path: {relative_spider_file_path}")  # Debug
+
+            # Check which category the spider belongs to
+            if relative_spider_file_path.startswith("ministry" + os.sep):
+                spiders_by_category["ministry"].append(spider_name)
+            elif relative_spider_file_path.startswith("ministry_orgs" + os.sep):
+                spiders_by_category["ministry_orgs"].append(spider_name)
+            elif relative_spider_file_path.startswith("non_ministry" + os.sep):
+                spiders_by_category["non_ministry"].append(spider_name)
+
+    return spiders_by_category
+
+def get_all_spiders():
+    settings = get_project_settings()
+    spider_loader = SpiderLoader.from_settings(settings)
+    return spider_loader.list()
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run Scrapy spiders for ministries, ministry organizations, and non-ministry entities.",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument("name", help="Specify the spider name, category, or 'all'. Options include:\n"
+                                     "Spider name:\n"
+                                     "- A specific spider name (e.g., 'jpm', 'mof', 'mohr', etc.).\n"
+                                     "Category:\n"
+                                     "- 'ministry': Runs all spiders in the 'ministry' folder.\n"
+                                     "- 'ministry_orgs': Runs all spiders in the 'ministry_orgs' folder.\n"
+                                     "- 'non_ministry': Runs all spiders in the 'non_ministry' folder.\n"
+                                     "All:\n"
+                                     "- 'all': Runs all available spiders.\n"
+                                     )
+    parser.add_argument("org_name", nargs="?", default=None, help="Specify the organisation name under the main category if applicable (e.g., 'jpm', 'mohr')")
+    parser.add_argument("subcategory", nargs="?", default=None, help="Specify the subcategory if applicable (e.g., 'jabatan', 'agensi').")
+
+    args = parser.parse_args()
+    spiders = get_spiders_by_folder()
+
+    all_spiders = get_all_spiders()
+
+    LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
+
+    if args.name in all_spiders:
+        spider_list = [args.name]
+    elif args.name in spiders["ministry"]:
+        spider_list = [args.name]
+    elif args.name == "ministry":
+        spider_list = spiders["ministry"]
+    elif args.name == "ministry_orgs":
+        spider_list = spiders["ministry_orgs"]
+    elif args.name == "non_ministry":
+        spider_list = spiders["non_ministry"]
+    elif args.name == "all":
+        spider_list = all_spiders #spiders["ministry"] + spiders["ministry_orgs"] + spiders["non_ministry"]
+    elif args.name == "list":
+        spider_list = [spider for spider in LIST_OF_SPIDERS_TO_RUN if spider in all_spiders]
     else:
-        logger.error(f"Invalid command or spider name: '{args.spider_selection}'. Please provide a valid spider_selection, or check the spider name.")
-        logger.info("Available spider_selection(s): 'all', 'listed', a spider name (e.g 'jpm'), or a list of spiders names (e.g 'jpm,miti,mof')")
-        logger.info(f"Available spiders names are: {all_spiders}")
+        logger.error(f"Invalid spider name or category specified: {args.name}")
+        print(f"Invalid spider name or category specified: {args.name}")
+        return
 
-# =============================================================================
-# ========================== END OF SELECTION =================================
-# =============================================================================
-
-    # Custom logging. Run this once after all the spiders have finished
-    filter_custom_logs()
+    print(f"Running spider: {spider_list}")
+    run_spiders(spider_list)
 
 if __name__ == "__main__":
     main()
