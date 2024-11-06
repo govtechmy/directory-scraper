@@ -270,10 +270,10 @@ def get_spiders_by_folder():
         module_path = spider_modules[0].replace(".", os.sep)
         base_dir = os.path.abspath(os.path.join(os.getcwd(), module_path))
     else:
-        print("SPIDER_MODULES is not configured correctly.")
+        logger.error("SPIDER_MODULES is not configured correctly.")
         return spider_tree
 
-    print(f"Base Directory for spiders: {base_dir}")
+    logger.debug(f"Base Directory for spiders: {base_dir}")
 
     for spider_name in all_spiders:
         spider_cls = spider_loader.load(spider_name)
