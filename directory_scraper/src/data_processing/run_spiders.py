@@ -254,46 +254,72 @@ def run_spiders(spider_list):
 
 def get_spiders_by_folder():
     """
-    Function to categorize the spider scripts according to the folders in spiders/.
-    Modify this function if new folder(category) is added!
-    Current category:
-    1. ministry
-    2. ministry_orgs
-    3. non_ministry
+    Function to categorize spider scripts dynamically according to the folder structure in 'spiders/'.
+    Any new folder added under 'spiders/' will be treated as a new category automatically.
     """
     settings = get_project_settings()
     spider_loader = SpiderLoader.from_settings(settings)
     all_spiders = spider_loader.list()
 
-    spiders_by_category = {
-        "ministry": [],
-        "ministry_orgs": [],
-        "non_ministry": []
-    }
+    # Use SPIDER_MODULES setting to locate the actual base path for spider modules
+    spider_modules = settings.get('SPIDER_MODULES', [])
+    spider_tree = {}
 
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../spiders"))
-    logger.debug(f"Base directory: {base_dir}")
+    # Directly set base_dir from SPIDER_MODULES
+    if spider_modules:
+        module_path = spider_modules[0].replace(".", os.sep)
+        base_dir = os.path.abspath(os.path.join(os.getcwd(), module_path))
+    else:
+        print("SPIDER_MODULES is not configured correctly.")
+        return spider_tree
+
+    print(f"Base Directory for spiders: {base_dir}")
 
     for spider_name in all_spiders:
         spider_cls = spider_loader.load(spider_name)
-        
-        # Use inspect to get the actual file path of the spider class
-        spider_file_path = os.path.abspath(inspect.getfile(spider_cls))
-        
-        # Ensure the file path is relative to the base_dir
-        if os.path.exists(spider_file_path):
-            relative_spider_file_path = os.path.relpath(spider_file_path, base_dir)
-            logger.debug(f"Spider name: {spider_name}, Relative Path: {relative_spider_file_path}")
+        spider_module = spider_cls.__module__
 
-            # Check which category the spider belongs to
-            if relative_spider_file_path.startswith("ministry" + os.sep):
-                spiders_by_category["ministry"].append(spider_name)
-            elif relative_spider_file_path.startswith("ministry_orgs" + os.sep):
-                spiders_by_category["ministry_orgs"].append(spider_name)
-            elif relative_spider_file_path.startswith("non_ministry" + os.sep):
-                spiders_by_category["non_ministry"].append(spider_name)
+        # Convert module to file path
+        spider_file_path = os.path.abspath(spider_module.replace(".", os.sep) + ".py")
+        relative_spider_file_path = os.path.relpath(spider_file_path, base_dir)
 
-    return spiders_by_category
+        # Split the relative path to categorize by folders
+        path_parts = relative_spider_file_path.split(os.sep)
+
+        # Build the nested dictionary structure based on path_parts
+        current_level = spider_tree
+        for part in path_parts[:-1]:  # Ignore the file itself, only use directories
+            current_level = current_level.setdefault(part, {})
+
+        # Place the spider name in the final level of the dictionary
+        current_level.setdefault("spiders", []).append(spider_name)
+
+    return spider_tree
+
+def get_spiders_from_tree(spider_tree, *path_parts):
+    """Recursively retrieve spiders from the spider tree based on path parts.
+       If a path part leads to nested dictionaries, collect all spiders within them."""
+    current_level = spider_tree
+    for part in path_parts:
+        if isinstance(current_level, dict) and part in current_level:
+            current_level = current_level[part]
+        else:
+            return []  # Path doesn't exist
+
+    # If we reached a nested dictionary, collect all spiders from subdirectories
+    if isinstance(current_level, dict):
+        spiders = []
+        def collect_spiders(level):
+            if 'spiders' in level:
+                spiders.extend(level['spiders'])
+            for sub_level in level.values():
+                if isinstance(sub_level, dict):
+                    collect_spiders(sub_level)
+
+        collect_spiders(current_level)
+        return spiders
+    else:
+        return []
 
 def get_all_spiders():
     settings = get_project_settings()
@@ -302,10 +328,9 @@ def get_all_spiders():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run Scrapy spiders for ministries, ministry organizations, and non-ministry entities.",
-        formatter_class=argparse.RawTextHelpFormatter
+        description="Run Scrapy spiders dynamically by directory hierarchy.",
     )
-    parser.add_argument("name", help="Specify the spider name, category, or 'all'. Options include:\n"
+    parser.add_argument("name", help="Specify the spider name, category, or 'all'."
                                      "Spider name:\n"
                                      "- A specific spider name (e.g., 'jpm', 'mof', 'mohr', etc.).\n"
                                      "Category:\n"
@@ -315,36 +340,29 @@ def main():
                                      "All:\n"
                                      "- 'all': Runs all available spiders.\n"
                                      )
-    parser.add_argument("org_name", nargs="?", default=None, help="Specify the organisation name under the main category if applicable (e.g., 'jpm', 'mohr')")
-    parser.add_argument("subcategory", nargs="?", default=None, help="Specify the subcategory if applicable (e.g., 'jabatan', 'agensi').")
+    parser.add_argument("org_name", nargs="?", default=None, help="Specify the organization if applicable.")
+    parser.add_argument("subcategory", nargs="?", default=None, help="Specify the subcategory if applicable.")
 
     args = parser.parse_args()
-    spiders = get_spiders_by_folder()
-
-    all_spiders = get_all_spiders()
+    spider_tree = get_spiders_by_folder()
+    all_spiders = get_all_spiders()  # To support 'all' option
 
     LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
 
-    if args.name in all_spiders:
-        spider_list = [args.name]
-    elif args.name in spiders["ministry"]:
-        spider_list = [args.name]
-    elif args.name == "ministry":
-        spider_list = spiders["ministry"]
-    elif args.name == "ministry_orgs":
-        spider_list = spiders["ministry_orgs"]
-    elif args.name == "non_ministry":
-        spider_list = spiders["non_ministry"]
-    elif args.name == "all":
-        spider_list = all_spiders #spiders["ministry"] + spiders["ministry_orgs"] + spiders["non_ministry"]
+    print(f"Spider tree: {spider_tree}")
+    if args.name == "all":
+        spider_list = all_spiders
     elif args.name == "list":
         spider_list = [spider for spider in LIST_OF_SPIDERS_TO_RUN if spider in all_spiders]
     else:
-        logger.error(f"Invalid spider name or category specified: {args.name}")
-        print(f"Invalid spider name or category specified: {args.name}")
+        path_parts = [part for part in [args.name, args.org_name, args.subcategory] if part]
+        spider_list = get_spiders_from_tree(spider_tree, *path_parts)
+
+    if not spider_list:
+        print(f"No spiders found for specified path: {'/'.join(path_parts)}")
         return
 
-    print(f"Running spider: {spider_list}")
+    print(f"Running spiders: {spider_list}")
     run_spiders(spider_list)
 
 if __name__ == "__main__":
