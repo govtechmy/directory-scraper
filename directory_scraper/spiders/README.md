@@ -31,11 +31,16 @@ Example:
 |       |     |-- niosh.py
 |       |-- jabatan/
 |             |-- jtksabah.py
-|       
 |
 |-- non_ministry/
-      |-- banknegara.py
-      |-- securitiescommision.py
-      |-- yayasankhazanah.py
-      |-- petronas.py    
+|     |-- banknegara.py
+|     |-- securitiescommision.py
+|     |-- yayasankhazanah.py
+|     |-- petronas.py    
+|
+|-- bahagian_unit/
+    |-- jpm/
+    |   |-- jpm_bahagian.py/
+    |-- mohr/
+        |-- mohr_bahagian,py/
 ```
