@@ -311,15 +311,16 @@ def extract_spiders_from_path(spider_tree, *path_parts):
 
     spiders = []
     def collect_spiders(level):
-        if 'spiders' in level:
-            spiders.extend(level['spiders'])
-        for sub_level in level.values():
-            if isinstance(sub_level, dict):
+        if isinstance(level, list):  # If level is a list, directly add its items
+            spiders.extend(level)
+        elif isinstance(level, dict):  # If level is a dictionary, continue traversing
+            if 'spiders' in level:
+                spiders.extend(level['spiders'])
+            for sub_level in level.values():
                 collect_spiders(sub_level)
 
     collect_spiders(level)
     return spiders
-
 
 def get_all_spiders():
     settings = get_project_settings()
