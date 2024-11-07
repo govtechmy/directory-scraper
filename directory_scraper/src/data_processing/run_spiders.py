@@ -252,7 +252,7 @@ def run_spiders(spider_list):
     logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
     logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
 
-#========= Spider Tree functions based on spiders/ folder hierarchy ===============
+#========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
 def validate_path(spider_tree, *path_parts):
     """
@@ -326,7 +326,48 @@ def get_all_spiders():
     spider_loader = SpiderLoader.from_settings(settings)
     return spider_loader.list()
 
-#======================== END ==============================
+#================ END OF SPIDER TREE FUNCTION ==============
+
+#================ ARG VALIDATION FUNCTION ==================
+
+def validate_arg_name(name, all_spiders, spider_tree):
+    """Validate 'name' argument."""
+    if name not in all_spiders and name not in spider_tree and name not in ["all", "list"]:
+        print(f"Error: '{name}' is not a valid spider, category, or special keyword.")
+        print("Please provide a valid spider name, category (e.g., 'ministry', 'ministry_orgs'), or special keyword ('all' or 'list').")
+        return False
+    return True
+
+def validate_arg_org_name(name, org_name, spider_tree):
+    """Validate 'org_name' argument if 'name' is a valid category."""
+    if name in spider_tree and org_name:
+        if org_name not in spider_tree[name]:
+            print(f"Error: '{org_name}' is not a valid organization under the '{name}' category.")
+            print(f"Available organizations in '{name}': {', '.join(spider_tree[name].keys())}")
+            return False
+    return True
+
+def validate_arg_subcategory(name, org_name, subcategory, spider_tree):
+    """Validate 'subcategory' argument if 'name' and 'org_name' are valid."""
+    if name in spider_tree and org_name and subcategory:
+        if subcategory not in spider_tree[name][org_name]:
+            print(f"Error: '{subcategory}' is not a valid subcategory under the organization '{org_name}' in '{name}'.")
+            print(f"Available subcategories in '{org_name}': {', '.join(spider_tree[name][org_name].keys())}")
+            return False
+    return True
+
+def validate_extra_args(name, org_name, subcategory, all_spiders):
+    """
+    Ensure no extra arguments are passed for single spiders, 'all', or 'list' when user input the arg name.
+    """
+    if name in all_spiders or name in ["all", "list"]:
+        if org_name or subcategory:
+            print(f"Error: '{name}' is not a category. Extra arguments are only applicable for categories.")
+            print("Refer to `python run_spiders.py --help` for usage guidelines.")
+            return False
+    return True
+
+#========== END OF ARG VALIDATION FUNCTION =============
 
 def main():
     parser = argparse.ArgumentParser(
@@ -336,6 +377,8 @@ def main():
     Usage:
     ------
     python run_spiders.py <spider name | category | special keyword> [organization name] [subcategory]
+    
+    *Note*: No extra arguments (`organization name` or `subcategory`) can be used with a <spider name> and <special keywords>.
 
     Arguments:
     ----------
@@ -354,6 +397,8 @@ def main():
 
     3. [subcategory] (OPTIONAL): Provide a specific subcategory under the organization (e.g., 'jabatan', 'agensi').
 
+    *Note*: OPTIONAL arguments only applies for <Category>
+    
     Examples:
     ---------
     To run a specific spider by its spider name:
@@ -386,31 +431,14 @@ def main():
     LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
 
     #================== ARGS VALIDATION =====================
-    # Validate 'name' argument
-    if args.name not in all_spiders and args.name not in spider_tree and args.name not in ["all", "list"]:
-        print(f"Error: '{args.name}' is not a valid spider, category, or keyword.")
-        print("Please provide a valid spider name, category (e.g., 'ministry', 'ministry_orgs'), or special keyword ('all' or 'list').")
+    if not validate_arg_name(args.name, all_spiders, spider_tree):
         return
-    
-    # Additional Check: If 'name' is a single spider, ensure no extra arguments are passed
-    if args.name in all_spiders:
-        if args.org_name or args.subcategory:
-            print(f"Error: '{args.name}' is a single spider, not a category. Extra arguments for organization or subcategory are not applicable.")
-            return
-
-    # Validate 'org_name' argument
-    if args.name in spider_tree and args.org_name:
-        if args.org_name not in spider_tree[args.name]:
-            print(f"Error: '{args.org_name}' is not a valid organization under the '{args.name}' category.")
-            print(f"Available organizations in '{args.name}': {', '.join(spider_tree[args.name].keys())}")
-            return
-
-    # Validate 'subcategory' argument
-    if args.name in spider_tree and args.org_name and args.subcategory:
-        if args.subcategory not in spider_tree[args.name][args.org_name]:
-            print(f"Error: '{args.subcategory}' is not a valid subcategory under the organization '{args.org_name}' in '{args.name}'.")
-            print(f"Available subcategories in '{args.org_name}': {', '.join(spider_tree[args.name][args.org_name].keys())}")
-            return
+    if not validate_extra_args(args.name, args.org_name, args.subcategory, all_spiders):
+        return
+    if not validate_arg_org_name(args.name, args.org_name, spider_tree):
+        return
+    if not validate_arg_subcategory(args.name, args.org_name, args.subcategory, spider_tree):
+        return
     #=========================================================
 
     # Determine the list of spiders to run
