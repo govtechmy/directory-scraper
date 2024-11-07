@@ -328,20 +328,53 @@ def get_all_spiders():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run Scrapy spiders dynamically by directory hierarchy.",
+        description=""" 
+    Run Scrapy spiders based on a structured hierarchy.
+
+    Usage:
+    ------
+    python run_spiders.py <spider name | category | special keyword> [organization name] [subcategory]
+
+    Arguments:
+    ----------
+    1. <spider name | category | special keyword> (REQUIRED):
+    - Spider Name: Specify a specific spider by its name (e.g., 'jpm', 'mof', 'mohr').
+    - Category:
+        • 'ministry'      : Runs all spiders under the 'ministry' directory.
+        • 'ministry_orgs' : Runs all spiders under the 'ministry_orgs' directory.
+        • 'non_ministry'  : Runs all spiders under the 'non_ministry' directory.
+        • 'bahagian_unit' : Runs all spiders under the 'bahagian_unit' directory.
+    - Special Keywords: 
+        • 'all'           : Runs every available spider.
+        • 'list'          : Runs a predefined list of spiders in the code. 
+
+    2. [organization name] (OPTIONAL): Specify an organization within the category if applicable (e.g., 'jpm', 'mohr').
+
+    3. [subcategory] (OPTIONAL): Provide a specific subcategory under the organization (e.g., 'jabatan', 'agensi').
+
+    Examples:
+    ---------
+    To run a specific spider by its spider name:
+    python run_spiders.py jpm
+
+    To run all `ministry` category spiders:
+    python run_spiders.py ministry
+    
+    To run all spiders under the `ministry_orgs` category for the `jpm` organization:
+    python run_spiders.py ministry_orgs jpm
+
+    To run only the spiders under the `ministry_orgs` category for the `jpm` organization within the `jabatan` subcategory:
+    python run_spiders.py ministry_orgs jpm jabatan
+
+    To run a predefined list of spiders:
+    python run_spiders.py list
+    """,
+        formatter_class=argparse.RawTextHelpFormatter 
+
     )
-    parser.add_argument("name", help="Specify the spider name, category, or 'all'."
-                                     "Spider name:\n"
-                                     "- A specific spider name (e.g., 'jpm', 'mof', 'mohr', etc.).\n"
-                                     "Category:\n"
-                                     "- 'ministry': Runs all spiders in the 'ministry' folder.\n"
-                                     "- 'ministry_orgs': Runs all spiders in the 'ministry_orgs' folder.\n"
-                                     "- 'non_ministry': Runs all spiders in the 'non_ministry' folder.\n"
-                                     "All:\n"
-                                     "- 'all': Runs all available spiders.\n"
-                                     )
-    parser.add_argument("org_name", nargs="?", default=None, help="Specify the organization if applicable.")
-    parser.add_argument("subcategory", nargs="?", default=None, help="Specify the subcategory if applicable.")
+    parser.add_argument("name", help="Specify the spider name, category, or use 'all' for all spiders. See above for options.")
+    parser.add_argument("org_name", nargs="?", default=None, help="(Optional) Specify the organisation name if applicable. (e.g. 'jpm', or 'mohr')")
+    parser.add_argument("subcategory", nargs="?", default=None, help="(Optional) Specify the subcategory if applicable. (e.g 'jabatan', or 'agensi')")
 
     args = parser.parse_args()
     spider_tree = get_spiders_by_folder()
