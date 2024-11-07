@@ -99,7 +99,7 @@ def setup_output_folder(folder_path, spider_names):
                 logger.warning(f"Failed to delete {file_path}. Reason: {e}")
         logger.info(f"Done deleting relevant files in {folder_path}")
 
-def backup_spider_outputs(output_folder, spider_names, backup_folder, max_backups=5):
+def backup_spider_outputs(output_folder, spider_names, backup_folder, max_backups=3):
     """
     Backs up existing spider output files to a backup folder.
     Creates timestamped backups and removes older backups if exceeding max_backups.
@@ -227,7 +227,7 @@ class RunSpiderPipeline:
             fail_spiders.append(spider.name)
             logger.warning(f"Spider '{spider.name}' finished and failed to collect any data.")
 
-def run_spiders(spider_list):
+def run_spiders(spider_list, output_folder, backup_folder):
     global success_count, fail_count, success_spiders, fail_spiders
     success_count, fail_count = 0, 0
     success_spiders, fail_spiders = [], []
@@ -235,8 +235,8 @@ def run_spiders(spider_list):
     spider_loader = SpiderLoader.from_settings(get_project_settings())
     all_spiders = spider_loader.list()
 
-    backup_spider_outputs(output_folder="./data/spiders_output", spider_names=spider_list, backup_folder="./backups")
-    setup_output_folder(folder_path="./data/spiders_output", spider_names=spider_list)
+    backup_spider_outputs(output_folder=output_folder, spider_names=spider_list, backup_folder=backup_folder)
+    setup_output_folder(folder_path=output_folder, spider_names=spider_list)
 
     process = setup_crawler(spider_list)
     process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
@@ -464,7 +464,11 @@ def main():
         return
 
     print(f"Running spiders: {spider_list}")
-    run_spiders(spider_list)
+
+    OUTPUT_FOLDER = "./data/spiders_output"
+    BACKUP_FOLDER = "./backups"
+
+    run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
 
 if __name__ == "__main__":
     main()
