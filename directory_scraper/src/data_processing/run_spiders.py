@@ -391,6 +391,12 @@ def main():
         print(f"Error: '{args.name}' is not a valid spider, category, or keyword.")
         print("Please provide a valid spider name, category (e.g., 'ministry', 'ministry_orgs'), or special keyword ('all' or 'list').")
         return
+    
+    # Additional Check: If 'name' is a single spider, ensure no extra arguments are passed
+    if args.name in all_spiders:
+        if args.org_name or args.subcategory:
+            print(f"Error: '{args.name}' is a single spider, not a category. Extra arguments for organization or subcategory are not applicable.")
+            return
 
     # Validate 'org_name' argument
     if args.name in spider_tree and args.org_name:
