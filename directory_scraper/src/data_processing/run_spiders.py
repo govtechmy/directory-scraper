@@ -379,14 +379,34 @@ def main():
     args = parser.parse_args()
     spider_tree = get_spiders_by_folder()
     all_spiders = get_all_spiders()
+    logger.debug(f"Spider tree: {spider_tree}")
 
     LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
 
-    logger.debug(f"Spider tree: {spider_tree}")
+    #================== ARGS VALIDATION =====================
+    # Validate 'name' argument
+    if args.name not in all_spiders and args.name not in spider_tree and args.name not in ["all", "list"]:
+        print(f"Error: '{args.name}' is not a valid spider, category, or keyword.")
+        print("Please provide a valid spider name, category (e.g., 'ministry', 'ministry_orgs'), or special keyword ('all' or 'list').")
+        return
 
-    if args.name in all_spiders:
-        spider_list = [args.name]
-    elif args.name == "all":
+    # Validate 'org_name' argument
+    if args.name in spider_tree and args.org_name:
+        if args.org_name not in spider_tree[args.name]:
+            print(f"Error: '{args.org_name}' is not a valid organization under the '{args.name}' category.")
+            print(f"Available organizations in '{args.name}': {', '.join(spider_tree[args.name].keys())}")
+            return
+
+    # Validate 'subcategory' argument
+    if args.name in spider_tree and args.org_name and args.subcategory:
+        if args.subcategory not in spider_tree[args.name][args.org_name]:
+            print(f"Error: '{args.subcategory}' is not a valid subcategory under the organization '{args.org_name}' in '{args.name}'.")
+            print(f"Available subcategories in '{args.org_name}': {', '.join(spider_tree[args.name][args.org_name].keys())}")
+            return
+    #=========================================================
+
+    # Determine the list of spiders to run
+    if args.name == "all":
         spider_list = all_spiders
     elif args.name == "list":
         spider_list = [spider for spider in LIST_OF_SPIDERS_TO_RUN if spider in all_spiders]
