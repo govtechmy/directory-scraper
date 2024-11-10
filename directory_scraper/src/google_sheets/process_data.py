@@ -2,22 +2,26 @@ import json
 from datetime import datetime
 from google_sheets_utils import GoogleSheetManager
 
-def validate_data(json_data_path):
+def validate_data(json_data):
     """
-    Validates and loads data from a JSON file.
+    Validates and loads data from a JSON file or validates an already loaded JSON object.
     Returns the data if it's valid.
     Raises an error if the data format is incorrect.
     """
     try:
-        with open(json_data_path, 'r') as json_file:
-            data = json.load(json_file)
+        if isinstance(json_data, str):
+            with open(json_data, 'r') as json_file:
+                data = json.load(json_file)
+        else:
+            data = json_data  # Use directly if it's already loaded
         if not data or not isinstance(data, list):
-            raise ValueError("Invalid data format: The JSON file must contain a list of dictionaries.")
-        print("Successfully validate JSON data.")
+            raise ValueError("Invalid data format: The JSON data must contain a list of dictionaries.")
+        print("Successfully validated JSON data.")
         return data
     except Exception as e:
         print(f"Error loading or validating JSON data: {e}")
         raise
+
 
 def group_data_by_org_id(data):
     """
