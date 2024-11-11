@@ -79,6 +79,13 @@ def process_specific_org(org_id, operation="update", add_timestamp=True):
 
 
 def main(operation="update", org_id=None, add_timestamp=True):
+    """
+    Main function to load or update data for either a specific org or all orgs.
+    Args:
+        org_id: Organization ID to limit processing to a specific organization (if provided).
+        operation: Either "load" or "update" (default is "load").
+        add_timestamp: Whether to add a timestamp to the data (default is True).
+    """
     if org_id:
         process_specific_org(org_id, operation, add_timestamp)
     else:
