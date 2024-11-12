@@ -10,14 +10,17 @@ from scrapy.utils.project import get_project_settings
 from scrapy.spiderloader import SpiderLoader
 import inspect
 
+#=========================Folder setup=======================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, "../../logs")
+OUTPUT_FOLDER = os.path.join(BASE_DIR, "data", "spiders_output")
+BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")
+#========================= End of folder setup ==============================
 
-#==========================Logging setup=======================================
+#==========================Logging setup=====================================
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-LOG_DIR = os.path.join(os.path.dirname(__file__), '../..', 'logs')
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
 LOG_FILE_NAME = 'run_spiders.log'
 LOG_FILE_PATH = os.path.join(LOG_DIR, LOG_FILE_NAME)
 
@@ -28,13 +31,18 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.propagate = True
 
-#==============================================================================
+#========================== End of logging setup =======================================
 
 # Global success and fail counters
 success_count = 0
 fail_count = 0
 success_spiders = []
 fail_spiders = []
+
+def setup_folders():
+    os.makedirs(LOG_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
 def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """
@@ -207,7 +215,7 @@ class RunSpiderPipeline:
         logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
 
         if self.results[spider.name]:
-            output_file = os.path.join("./data/spiders_output", f"{spider.name}.json")
+            output_file = os.path.join(OUTPUT_FOLDER, f"{spider.name}.json")
             with open(output_file, 'w') as f:
                 f.write("[\n")
                 for idx, result in enumerate(self.results[spider.name]):
@@ -227,7 +235,7 @@ class RunSpiderPipeline:
             fail_spiders.append(spider.name)
             logger.warning(f"Spider '{spider.name}' finished and failed to collect any data.")
 
-def run_spiders(spider_list, output_folder, backup_folder):
+def run_spiders(spider_list):
     global success_count, fail_count, success_spiders, fail_spiders
     success_count, fail_count = 0, 0
     success_spiders, fail_spiders = [], []
@@ -235,8 +243,8 @@ def run_spiders(spider_list, output_folder, backup_folder):
     spider_loader = SpiderLoader.from_settings(get_project_settings())
     all_spiders = spider_loader.list()
 
-    backup_spider_outputs(output_folder=output_folder, spider_names=spider_list, backup_folder=backup_folder)
-    setup_output_folder(folder_path=output_folder, spider_names=spider_list)
+    backup_spider_outputs(output_folder=OUTPUT_FOLDER, spider_names=spider_list, backup_folder=BACKUP_FOLDER)
+    setup_output_folder(folder_path=OUTPUT_FOLDER, spider_names=spider_list)
 
     process = setup_crawler(spider_list)
     process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
@@ -371,6 +379,9 @@ def validate_extra_args(name, org_name, subcategory, all_spiders):
 #========== END OF ARG VALIDATION FUNCTION =============
 
 def main():
+
+    setup_folders()
+
     parser = argparse.ArgumentParser(
         description=""" 
     Run Scrapy spiders based on a structured hierarchy.
@@ -464,11 +475,8 @@ def main():
         return
 
     print(f"Running spiders: {spider_list}")
-
-    OUTPUT_FOLDER = "./data/spiders_output"
-    BACKUP_FOLDER = "./backups"
-
-    run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
+    run_spiders(spider_list)
+    filter_custom_logs()
 
 if __name__ == "__main__":
     main()
