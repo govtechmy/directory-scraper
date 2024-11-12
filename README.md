@@ -35,13 +35,15 @@ Make sure you have the following installed:
       ```bash
       env\Scripts\activate
       ```
+==============================================================
 
-4. Install the required dependencies by running:
+4a. Install the required dependencies by running:
     ```bash
     pip install -r requirements.txt
     ```
+Alternatively, ignore step 4a, and run step 4b instead (suggested):
 
-5. Install the project setup.py 
+4b. Install the project setup.py 
 The project is organized as a Python package. 
 
 To install it in editable mode (development):
@@ -53,7 +55,10 @@ To install it in non-editable mode
     ```bash
     pip install .
     ```  
-    You will be able to import the project’s internal modules (e.g utils.file_utils) without needing to modify sys.path.
+
+You will be able to install dependencies, and import the project’s internal modules (e.g utils.file_utils) without needing to modify sys.path.
+
+==============================================================
 
 ### Running the Spider
 
