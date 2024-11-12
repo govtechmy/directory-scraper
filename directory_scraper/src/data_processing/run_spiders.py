@@ -43,6 +43,10 @@ def setup_folders():
     os.makedirs(LOG_DIR, exist_ok=True)
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     os.makedirs(BACKUP_FOLDER, exist_ok=True)
+    logger.info(f"BASE_DIR: {BASE_DIR}")
+    logger.info(f"LOG_DIR: {LOG_DIR}")
+    logger.info(f"OUTPUT_FOLDER: {OUTPUT_FOLDER}")
+    logger.info(f"BACKUP_FOLDER: {BACKUP_FOLDER}")
 
 def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """
