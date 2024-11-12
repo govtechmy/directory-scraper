@@ -1,8 +1,8 @@
 name: Run Pipeline
 
 on:
-  # push:
-  #   branches: [ "feat/actions" ]
+  push:
+    branches: [ "feat/actions" ]
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
