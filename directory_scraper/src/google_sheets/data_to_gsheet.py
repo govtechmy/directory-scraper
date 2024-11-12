@@ -14,10 +14,11 @@ from utils.file_utils import load_spreadsheets_config
 from dotenv import load_dotenv
 
 load_dotenv()
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 GOOGLE_SERVICE_ACCOUNT_CREDS = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDS')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-DATA_DIRECTORY = '../data_processing/data/output/'
+DATA_DIRECTORY = os.path.join(script_dir, '../data_processing/data/output/')
 
 def load_org_data(data_file):
     """
