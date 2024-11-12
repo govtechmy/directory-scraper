@@ -41,5 +41,19 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: spider-output
-          path: $DIRECTORY_SRC/data_processing/spiders_output
+          path: $DIRECTORY_SRC/data_processing/data/spiders_output
+          retention-days: 5
+
+      - name: Upload run_spiders.log as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: run_spiders-log
+          path: directory_scraper/logs/run_spiders.log
+          retention-days: 5
+
+      - name: Upload run_spiders.log as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: run_spiders-log
+          path: directory_scraper/logs/run_spiders_custom.log
           retention-days: 5
