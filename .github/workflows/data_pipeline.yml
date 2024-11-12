@@ -30,6 +30,10 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'directory_scraper/setup.py') }}
           restore-keys: |
              ${{ runner.os }}-pip-
+
+      - name: Test connectivity to target site
+        run: |
+          curl -I https://direktori.jpm.gov.my || echo "Could not connect to site"
                 
       - name: Install package setup.py in editable mode
         run: pip install -e directory_scraper/
