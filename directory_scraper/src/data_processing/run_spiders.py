@@ -11,10 +11,11 @@ from scrapy.spiderloader import SpiderLoader
 import inspect
 
 #=========================Folder setup=======================================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = os.path.join(BASE_DIR, "../../logs")
-OUTPUT_FOLDER = os.path.join(BASE_DIR, "data", "spiders_output")
-BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+SRC_DIR = os.path.join(BASE_DIR, 'src/data_processing')
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+OUTPUT_FOLDER = os.path.join(SRC_DIR, 'data/spiders_output') # set this
+BACKUP_FOLDER = os.path.join(SRC_DIR, 'backups')  # set this
 #========================= End of folder setup ==============================
 
 #==========================Logging setup=====================================
