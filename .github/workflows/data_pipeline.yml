@@ -31,15 +31,15 @@ jobs:
           restore-keys: |
              ${{ runner.os }}-pip-
 
-      - name: Test connectivity to target site
+      - name: Test connectivity to target site with timeout
         run: |
-          curl -I https://direktori.jpm.gov.my || echo "Could not connect to site"
-                
+          curl -I --max-time 10 https://www.mof.gov.my/portal/ms/hubungi/direktori || echo "Could not connect to site"
+
       - name: Install package setup.py in editable mode
         run: pip install -e directory_scraper/
 
       - name: Run spiders and store raw data in data/spiders_output
-        run: python $DIRECTORY_SRC/data_processing/run_spiders.py jpm
+        run: python $DIRECTORY_SRC/data_processing/run_spiders.py mof
 
       - name: Upload spider output as artifact
         uses: actions/upload-artifact@v3
