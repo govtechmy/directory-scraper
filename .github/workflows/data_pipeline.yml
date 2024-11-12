@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: spider-output
-          path: ${{ github.workspace }}/data_processing/data/spiders_output
+          path: ${{ github.workspace }}/directory_scraper/src/data_processing/data/spiders_output
           retention-days: 5
 
       - name: Upload run_spiders.log as an artifact
