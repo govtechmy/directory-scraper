@@ -23,22 +23,21 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python main.py <spider name | category | special keyword> [organization name] [subcategory]")
         return
-
-    spider_name = sys.argv[1]  # Required argument
-    org_name = sys.argv[2] if len(sys.argv) > 2 else None  # Optional organization name
-    subcategory = sys.argv[3] if len(sys.argv) > 3 else None  # Optional subcategory
-
-    print(f"Running spider(s) with: name='{spider_name}', org_name='{org_name}', subcategory='{subcategory}'")
-
+    
+    # print(f"Running spider(s) with: name='{spider_name}', org_name='{org_name}', subcategory='{subcategory}'")
+    spiders_ran_successfully = False
     try:
-        run_spiders_main(
-            spider_list=[spider_name],
+        spiders_ran_successfully = run_spiders_main(
             output_folder=SPIDERS_OUTPUT_FOLDER,
             backup_folder=BACKUP_FOLDER
         )
     except Exception as e:
         print("Error encountered while running spiders:", e)
         print("Spiders did not run successfully. Skipping data processing and data upload.")
+        return
+
+    if not spiders_ran_successfully:
+        print("No spiders were run. Skipping data processing and upload.")
         return
 
     print("Spiders ran successfully. Proceeding with data processing...")

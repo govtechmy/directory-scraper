@@ -463,13 +463,13 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
 
         #================== ARGS VALIDATION =====================
         if not validate_arg_name(args.name, all_spiders, spider_tree):
-            return
+            return False
         if not validate_extra_args(args.name, args.org_name, args.subcategory, all_spiders):
-            return
+            return False
         if not validate_arg_org_name(args.name, args.org_name, spider_tree):
-            return
+            return False
         if not validate_arg_subcategory(args.name, args.org_name, args.subcategory, spider_tree):
-            return
+            return False
         #=========================================================
 
         # Determine the list of spiders to run
@@ -483,15 +483,8 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
             # Validate path and extract spiders from tree
             path_parts = [part for part in [args.name, args.org_name, args.subcategory] if part]
             is_valid, _ = validate_path(spider_tree, *path_parts)
-            if not is_valid:
-                print(f"Invalid path: {'/'.join(path_parts)}. Please check available categories.")
-                return
 
             spider_list = extract_spiders_from_path(spider_tree, *path_parts)
-
-        if not spider_list:
-            print(f"No spiders found for specified path: {'/'.join(path_parts)}")
-            return
 
     print(f"Running spiders: {spider_list}")
     run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
