@@ -1,4 +1,5 @@
 import os
+import uuid
 import json
 import hashlib
 from elasticsearch import Elasticsearch
@@ -142,11 +143,14 @@ def upload_clean_data_to_es(files_to_upload):
             
         actions = []
         for doc in data:
-            sha_256_hash = calculate_sha256_for_document(doc)
-            doc['sha_256_hash'] = sha_256_hash
+            sha_256_hash = calculate_sha256_for_document(doc)  # Calculate SHA for change tracking
+            doc['sha_256_hash'] = sha_256_hash  # Store SHA in the document
+            
+            # Generate a new UUID for each document's Elasticsearch _id
+            doc_id = str(uuid.uuid4())
             actions.append({
                 "_index": INDEX_NAME,
-                "_id": sha_256_hash,
+                "_id": doc_id,
                 "_source": doc
             })
 
@@ -156,7 +160,6 @@ def upload_clean_data_to_es(files_to_upload):
             print(f"\nSuccessfully indexed {success} documents.")
             if failed:
                 print("\nSome documents failed:", failed)
-
 
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
