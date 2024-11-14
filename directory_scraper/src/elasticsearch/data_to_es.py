@@ -84,10 +84,8 @@ if api_key_info:
         ES_URL,
         api_key=(api_key_info['id'], api_key_info['api_key'])
     )
-    print("Connected to Elasticsearch with API key.")
 else:
     es = Elasticsearch(ES_URL)
-    print("Connected to Elasticsearch without API key.")
 
 def calculate_sha256_for_document(doc):
     """
@@ -331,7 +329,7 @@ def create_index_if_not_exists():
 def main(data_folder=None):
     """Main function to check for changes and upload data to Elasticsearch."""
     data_folder = data_folder or DATA_FOLDER
-    
+
     if not get_elasticsearch_info():
         print("Skipping indexing due to Elasticsearch connection issues.")
         return
