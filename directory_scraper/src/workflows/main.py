@@ -6,6 +6,7 @@ from directory_scraper.path_config import DEFAULT_SPIDERS_OUTPUT_FOLDER, DEFAULT
 from directory_scraper.src.data_processing.process_data import process_all_json_files
 from directory_scraper.src.elasticsearch.data_to_es import upload_clean_data_to_es, check_sha_and_update
 from directory_scraper.src.data_processing.run_spiders import main as run_spiders_main
+from directory_scraper.src.elasticsearch.data_to_es import main as data_to_es_main
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 CLEAN_DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
@@ -19,41 +20,37 @@ def main():
     os.makedirs(CLEAN_DATA_FOLDER, exist_ok=True)
     os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
-    # Parse command-line arguments as required by run_spiders.py
+    # Step 2: Run spiders
     if len(sys.argv) < 2:
         print("Usage: python main.py <spider name | category | special keyword> [organization name] [subcategory]")
         return
     
-    # print(f"Running spider(s) with: name='{spider_name}', org_name='{org_name}', subcategory='{subcategory}'")
-    spiders_ran_successfully = False
     try:
-        spiders_ran_successfully = run_spiders_main(
-            output_folder=SPIDERS_OUTPUT_FOLDER,
-            backup_folder=BACKUP_FOLDER
-        )
+        # Run spiders and proceed based on the presence of output files
+        run_spiders_main(output_folder=SPIDERS_OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
+
+        # Check if any files were generated in the output folder
+        if not os.listdir(SPIDERS_OUTPUT_FOLDER):
+            print("No spiders were run or no data was collected. Skipping data processing and upload.")
+            return
     except Exception as e:
         print("Error encountered while running spiders:", e)
-        print("Spiders did not run successfully. Skipping data processing and data upload.")
         return
 
-    if not spiders_ran_successfully:
-        print("No spiders were run. Skipping data processing and upload.")
+    # Step 3: Process spiders output into clean data
+    try:
+        print("Spiders ran successfully. Proceeding with data processing...")
+        process_all_json_files(input_folder=SPIDERS_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
+    except Exception as e:
+        print("Data processing failed:", e)
         return
-
-    print("Spiders ran successfully. Proceeding with data processing...")
-    process_all_json_files(input_folder=SPIDERS_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
-    print("Data processing completed and cleaned data stored in:", CLEAN_DATA_FOLDER)
     
     # Step 4: Check SHA and upload to Elasticsearch if there are changes
-    print("Checking for changes in data compared to in Elasticsearch...")
-    sha_changed = check_sha_and_update(CLEAN_DATA_FOLDER)
-    
-    if sha_changed:
-        print("Data has changed. Uploading newer data to Elasticsearch...")
-        upload_clean_data_to_es(CLEAN_DATA_FOLDER)
-        print("Data upload to Elasticsearch completed.")
-    else:
-        print("No changes detected in data. Skipping Elasticsearch upload.")
+    try:
+        print("Checking for changes and uploading to Elasticsearch...")
+        data_to_es_main(CLEAN_DATA_FOLDER)
+    except Exception as e:
+        print("Elasticsearch upload failed:", e)
 
 if __name__ == "__main__":
     main()
