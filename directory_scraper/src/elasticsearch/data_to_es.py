@@ -13,11 +13,11 @@ from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER, INDEX_NAME,
 load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-ES_URL = os.getenv('ES_URL') #ES_URL
+ES_URL = ES_URL # os.getenv('ES_URL') #ES_URL
 INDEX_NAME = INDEX_NAME
 SHA_INDEX_NAME = SHA_INDEX_NAME
 DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
-API_KEY_FILE = os.getenv('API_KEY_FILE')
+API_KEY_FILE = ""# os.getenv('API_KEY_FILE')
 
 COLUMNS_TO_HASH = [
     "org_sort", "org_id", "org_name", "org_type", "division_sort",
@@ -117,7 +117,10 @@ def check_and_update_file_sha(file_path):
     if new_sha != stored_sha:
         # Store the updated SHA in Elasticsearch
         es.index(index=SHA_INDEX_NAME, id=os.path.basename(file_path), document={"sha": new_sha, "task_id": task_id})
+        print(f'Status index "{SHA_INDEX_NAME}" | {os.path.basename(file_path)}: UPDATED')
         return True  # Data has changed
+    else:
+        print(f'Status index "{SHA_INDEX_NAME}" | {os.path.basename(file_path)}: NO CHANGES')
     return False  # No changes
 
 def check_sha_and_update(data_folder):
@@ -130,10 +133,10 @@ def check_sha_and_update(data_folder):
         file_path = os.path.join(data_folder, file_name)
         if file_name.endswith(".json"):
             if check_and_update_file_sha(file_path):
-                print(f"STATUS {file_name}: Changes detected.")
+                print(f'Status file | {file_name}: CHANGES DETECTED')
                 changed_files.append(file_path)
             else:
-                print(f"STATUS {file_name}: No changes.")
+                print(f'Status file | {file_name}: NO CHANGES')
     return changed_files
 
 def delete_documents_by_org_id(org_id):
@@ -147,7 +150,7 @@ def delete_documents_by_org_id(org_id):
     }
     try:
         es.delete_by_query(index=INDEX_NAME, body=delete_query)
-        print(f"Deleted existing documents with org_id : {org_id} from Elasticsearch.")
+        print(f"Deleted existing documents with org_id : {org_id}")
     except Exception as e:
         print(f"Error deleting documents with org_id {org_id}: {e}")
 
@@ -178,9 +181,9 @@ def upload_clean_data_to_es(files_to_upload):
             })
 
         if actions:
-            print(f"Indexing {len(actions)} documents from {file_name} to Elasticsearch...")
+            print(f"\nIndexing {file_name} : {len(actions)} documents to Elasticsearch...")
             success, failed = bulk(es, actions)
-            print(f"\nSuccessfully indexed {success} documents.")
+            print(f"Successfully indexed {success} documents.")
             if failed:
                 print("\nSome documents failed:", failed)
 
@@ -188,8 +191,8 @@ def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
     try:
         resp = es.info()
-        print("Elasticsearch Info:")
-        print(json.dumps(resp.body, indent=2))
+        #print("Elasticsearch Info:")
+        #print(json.dumps(resp.body, indent=2))
         return True
     except Exception as e:
         print(f"Error getting Elasticsearch info: {e}")
