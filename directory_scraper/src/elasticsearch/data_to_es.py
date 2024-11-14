@@ -5,14 +5,19 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from datetime import datetime
 import sys
+from dotenv import load_dotenv
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER, INDEX_NAME, SHA_INDEX_NAME, ES_URL
 
+load_dotenv()
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-ES_URL = ES_URL                  
-INDEX_NAME = INDEX_NAME          
-SHA_INDEX_NAME = SHA_INDEX_NAME  
+ES_URL = os.getenv('ES_URL') #ES_URL
+INDEX_NAME = INDEX_NAME
+SHA_INDEX_NAME = SHA_INDEX_NAME
 DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
+API_KEY_FILE = os.getenv('API_KEY_FILE')
 
 COLUMNS_TO_HASH = [
     "org_sort", "org_id", "org_name", "org_type", "division_sort",
@@ -61,7 +66,28 @@ mapping = {
     }
 }
 
-es = Elasticsearch(ES_URL)
+
+def read_api_key():
+    """Read API key information from the file if it exists."""
+    if API_KEY_FILE and os.path.exists(API_KEY_FILE):
+        try:
+            with open(API_KEY_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error reading API key file: {e}")
+            sys.exit(1)
+    return None
+
+api_key_info = read_api_key()
+if api_key_info:
+    es = Elasticsearch(
+        ES_URL,
+        api_key=(api_key_info['id'], api_key_info['api_key'])
+    )
+    print("Connected to Elasticsearch with API key.")
+else:
+    es = Elasticsearch(ES_URL)
+    print("Connected to Elasticsearch without API key.")
 
 def calculate_sha256_for_document(doc):
     """
