@@ -104,11 +104,26 @@ def check_sha_and_update(data_folder):
         file_path = os.path.join(data_folder, file_name)
         if file_name.endswith(".json"):
             if check_and_update_file_sha(file_path):
-                print(f"Status {file_name}: Changes detected.")
+                print(f"STATUS {file_name}: Changes detected.")
                 changed_files.append(file_path)
             else:
-                print(f"Status {file_name}: No changes.")
+                print(f"STATUS {file_name}: No changes.")
     return changed_files
+
+def delete_documents_by_org_id(org_id):
+    """Delete all documents in Elasticsearch with the specified org_id."""
+    delete_query = {
+        "query": {
+            "term": {
+                "org_id": org_id
+            }
+        }
+    }
+    try:
+        es.delete_by_query(index=INDEX_NAME, body=delete_query)
+        print(f"Deleted existing documents with org_id : {org_id} from Elasticsearch.")
+    except Exception as e:
+        print(f"Error deleting documents with org_id {org_id}: {e}")
 
 def upload_clean_data_to_es(files_to_upload):
     """Upload JSON documents to Elasticsearch only for the specified files."""
@@ -118,6 +133,13 @@ def upload_clean_data_to_es(files_to_upload):
         with open(file_path, 'r') as f:
             data = json.load(f)
         
+        if data:
+            # Retrieve the org_id from the first document (assuming all documents share the same org_id)
+            org_id = data[0].get("org_id")
+            if org_id:
+                # Delete existing documents for this org_id before re-indexing
+                delete_documents_by_org_id(org_id)
+            
         actions = []
         for doc in data:
             sha_256_hash = calculate_sha256_for_document(doc)
@@ -131,9 +153,10 @@ def upload_clean_data_to_es(files_to_upload):
         if actions:
             print(f"Indexing {len(actions)} documents from {file_name} to Elasticsearch...")
             success, failed = bulk(es, actions)
-            print(f"Successfully indexed {success} documents.")
+            print(f"\nSuccessfully indexed {success} documents.")
             if failed:
-                print("Some documents failed:", failed)
+                print("\nSome documents failed:", failed)
+
 
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
@@ -170,7 +193,7 @@ def main():
         if changed_files:
             upload_clean_data_to_es(changed_files)
         else:
-            print("No changes detected in data. Skipping upload.")
+            print("\nNo changes detected in data. Skipping upload.")
     else:
         print("Skipping indexing due to index creation issues.")
 
