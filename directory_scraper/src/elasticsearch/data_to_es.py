@@ -146,11 +146,9 @@ def upload_clean_data_to_es(files_to_upload):
             sha_256_hash = calculate_sha256_for_document(doc)  # Calculate SHA for change tracking
             doc['sha_256_hash'] = sha_256_hash  # Store SHA in the document
             
-            # Generate a new UUID for each document's Elasticsearch _id
-            doc_id = str(uuid.uuid4())
             actions.append({
                 "_index": INDEX_NAME,
-                "_id": doc_id,
+                "_id": f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}",
                 "_source": doc
             })
 
