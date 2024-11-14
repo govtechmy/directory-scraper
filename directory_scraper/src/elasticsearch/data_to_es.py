@@ -1,5 +1,4 @@
 import os
-import uuid
 import json
 import hashlib
 from elasticsearch import Elasticsearch
