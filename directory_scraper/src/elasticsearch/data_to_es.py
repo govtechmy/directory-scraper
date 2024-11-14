@@ -328,14 +328,16 @@ def create_index_if_not_exists():
         print(f"Error creating or checking index: {e}")
         return False
 
-def main():
+def main(data_folder=None):
     """Main function to check for changes and upload data to Elasticsearch."""
+    data_folder = data_folder or DATA_FOLDER
+    
     if not get_elasticsearch_info():
         print("Skipping indexing due to Elasticsearch connection issues.")
         return
         
     if create_index_if_not_exists():
-        changed_files = check_sha_and_update(DATA_FOLDER)
+        changed_files = check_sha_and_update(data_folder)
         if changed_files:
             upload_clean_data_to_es(changed_files)
         else:
