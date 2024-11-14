@@ -236,7 +236,7 @@ def upload_clean_data_to_es(files_to_upload):
 
         # Process each org_id group separately
         for org_id, docs in org_id_groups.items():
-            print(f"\nProcessing org_id: {org_id} in file: {file_name}")
+            print(f"\nChecking org_id: {org_id} in file: {file_name}")
             
             # Load existing documents for this org_id
             existing_docs_query = {"query": {"term": {"org_id": org_id}}, "size": 10000}
@@ -282,7 +282,7 @@ def upload_clean_data_to_es(files_to_upload):
             # Identify and delete stale documents (those in Elasticsearch but not in new_data)
             stale_docs = set(existing_docs_by_id.keys()) - processed_ids
             for stale_id in stale_docs:
-                print(f"Deleted stale document: {stale_id}")
+                print(f"Deleting stale document: {stale_id}")
                 actions.append({
                     "_op_type": "delete",
                     "_index": INDEX_NAME,
@@ -292,14 +292,14 @@ def upload_clean_data_to_es(files_to_upload):
 
             # Execute bulk actions for this org_id
             if actions:
-                print(f"Processing {len(actions)} actions for org_id {org_id} in {file_name}...")
+                print(f"Processing {len(actions)} actions for org_id {org_id}...")
                 success, failed = bulk(es, actions)
                 print(f"Successfully processed {success} actions.")
                 if failed:
                     print("\nSome actions failed:", failed)
 
             # Print summary for each org_id in the file
-            print(f"Summary for org_id: {org_id} in {file_name}:")
+            print(f"Summary for org_id {org_id}:")
             print(f"  - Added: {added_count}")
             print(f"  - Updated: {updated_count}")
             print(f"  - Deleted: {deleted_count}")
