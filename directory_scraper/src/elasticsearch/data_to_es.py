@@ -13,11 +13,11 @@ from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER, INDEX_NAME,
 load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-ES_URL = ES_URL # os.getenv('ES_URL') #ES_URL
+ES_URL = ES_URL #os.getenv('ES_URL') #ES_URL
 INDEX_NAME = INDEX_NAME
 SHA_INDEX_NAME = SHA_INDEX_NAME
 DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
-API_KEY_FILE = ""# os.getenv('API_KEY_FILE')
+API_KEY_FILE = "" #os.getenv('API_KEY_FILE')
 
 COLUMNS_TO_HASH = [
     "org_sort", "org_id", "org_name", "org_type", "division_sort",
@@ -127,16 +127,13 @@ def check_sha_and_update(data_folder):
     """
     Check if there are any changes in the files' SHA-256 hashes.
     Returns a list of files with changed SHAs.
-    """
+    """    
     changed_files = []
     for file_name in os.listdir(data_folder):
         file_path = os.path.join(data_folder, file_name)
-        if file_name.endswith(".json"):
-            if check_and_update_file_sha(file_path):
-                print(f'Status file | {file_name}: CHANGES DETECTED')
-                changed_files.append(file_path)
-            else:
-                print(f'Status file | {file_name}: NO CHANGES')
+        if file_name.endswith(".json") and check_and_update_file_sha(file_path):
+            print(f'Status file | {file_name}: CHANGES DETECTED')
+            changed_files.append(file_path)
     return changed_files
 
 def delete_documents_by_org_id(org_id):
@@ -155,37 +152,63 @@ def delete_documents_by_org_id(org_id):
         print(f"Error deleting documents with org_id {org_id}: {e}")
 
 def upload_clean_data_to_es(files_to_upload):
-    """Upload JSON documents to Elasticsearch only for the specified files."""
+    """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
     for file_path in files_to_upload:
         file_name = os.path.basename(file_path)
         
         with open(file_path, 'r') as f:
-            data = json.load(f)
-        
-        if data:
-            # Retrieve the org_id from the first document (assuming all documents share the same org_id)
-            org_id = data[0].get("org_id")
-            if org_id:
-                # Delete existing documents for this org_id before re-indexing
-                delete_documents_by_org_id(org_id)
-            
-        actions = []
-        for doc in data:
-            sha_256_hash = calculate_sha256_for_document(doc)  # Calculate SHA for change tracking
-            doc['sha_256_hash'] = sha_256_hash  # Store SHA in the document
-            
-            actions.append({
-                "_index": INDEX_NAME,
-                "_id": f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}",
-                "_source": doc
-            })
+            new_data = json.load(f)
 
-        if actions:
-            print(f"\nIndexing {file_name} : {len(actions)} documents to Elasticsearch...")
-            success, failed = bulk(es, actions)
-            print(f"Successfully indexed {success} documents.")
-            if failed:
-                print("\nSome documents failed:", failed)
+        if new_data:
+            org_id = new_data[0].get("org_id")
+            
+            # Load existing documents for the org_id
+            existing_docs_query = {"query": {"term": {"org_id": org_id}},"size": 10000}
+            existing_docs = es.search(index=INDEX_NAME, body=existing_docs_query)
+            existing_docs_by_id = {hit['_id']: hit['_source']['sha_256_hash'] for hit in existing_docs['hits']['hits']}
+            
+            actions = []
+            processed_ids = set()
+
+            for doc in new_data:
+                sha_256_hash = calculate_sha256_for_document(doc)
+                doc['sha_256_hash'] = sha_256_hash
+                document_id = f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}"
+                
+                # Mark this document as processed, even if unchanged
+                processed_ids.add(document_id)
+
+                if document_id in existing_docs_by_id:
+                    if existing_docs_by_id[document_id] != sha_256_hash:
+                        print(f"Updating document: {document_id}")
+                        actions.append({
+                            "_index": INDEX_NAME,
+                            "_id": document_id,
+                            "_source": doc
+                        })
+                    # If SHA matches, skip adding to actions
+                else:
+                    print(f"Adding new document: {document_id}")
+                    actions.append({
+                        "_index": INDEX_NAME,
+                        "_id": document_id,
+                        "_source": doc
+                    })
+
+            # Identify and delete stale documents (those in Elasticsearch but not in new_data)
+            stale_docs = set(existing_docs_by_id.keys()) - processed_ids
+            for stale_id in stale_docs:
+                es.delete(index=INDEX_NAME, id=stale_id)
+                print(f"Deleted stale document: {stale_id}")
+
+            # Execute bulk actions
+            if actions:
+                print(f"\nProcessing {file_name}: {len(actions)} actions...")
+                success, failed = bulk(es, actions)
+                print(f"Successfully processed {success} actions.")
+                if failed:
+                    print("\nSome actions failed:", failed)
+
 
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
