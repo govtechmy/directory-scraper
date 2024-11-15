@@ -76,9 +76,10 @@ The script executes the following steps in sequence:
 Two-Level Hashing Implementation:
 
 File-Level Hash (SHA_INDEX):
-- When a file is uploaded, its entire content is hashed.
-- If this hash matches the one stored in the SHA_INDEX, no further action is taken (the file hasn’t changed).
-- If the hash differs, the file proceeds to Document-Level Hashing.
+- When a file is processed, its entire content is hashed using SHA-256.
+- Before uploaded, this new hash is compared against the one stored in SHA_INDEX (an index in your Elasticsearch).
+- If the hashes match, no further action is taken (the file content hasn’t changed).
+- If the hashes differ, the new hash is stored in SHA_INDEX, and the file proceeds to Document-Level Hashing to process individual records.
 
 Document-Level Hash (sha_256_hash):
 - The content of each document(row) in the file is hashed.
@@ -88,7 +89,6 @@ Document-Level Hash (sha_256_hash):
   - **Update**: Changed content (hash differs).
   - **Delete**: Missing document (not in the file but present in ES).
   - **No Action**: Document unchanged (hash matches).
-
 
 ## End Result
 
