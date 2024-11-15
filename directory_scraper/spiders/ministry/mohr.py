@@ -65,8 +65,6 @@ class MOHRScraper(scrapy.Spider):
                 )
     
     def parse(self, response):
-        with open("/Users/mydigital/Desktop/KD Work/directory-scraper/a.html", "w") as f:
-            f.write(response.text)
         code = response.meta["code"]
         name = response.meta["name"]
         division_sort = response.meta["division_sort"]
