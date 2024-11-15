@@ -39,7 +39,7 @@ def main():
 
     # Step 3: Process spiders output into clean data
     try:
-        print("Spiders ran successfully. Proceeding with data processing...")
+        print("\nSpiders ran successfully. Proceeding with data processing...")
         process_all_json_files(input_folder=SPIDERS_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
     except Exception as e:
         print("Data processing failed:", e)
@@ -47,7 +47,7 @@ def main():
     
     # Step 4: Check SHA and upload to Elasticsearch if there are changes
     try:
-        print("Checking for changes and uploading to Elasticsearch...")
+        print("\nChecking for changes and uploading to Elasticsearch...")
         data_to_es_main(CLEAN_DATA_FOLDER)
     except Exception as e:
         print("Elasticsearch upload failed:", e)
