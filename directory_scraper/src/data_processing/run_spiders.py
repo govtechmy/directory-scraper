@@ -274,8 +274,10 @@ def run_spiders(spider_list, output_folder, backup_folder):
             logger.warning(f"Spider '{spider_name}' not found. Skipping...")
 
     process.start()
-    logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
-    logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
+    logger.info(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+    logger.info(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+    print(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+    print(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
 
 #========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
