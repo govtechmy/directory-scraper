@@ -240,13 +240,15 @@ class RunSpiderPipeline:
                 f.write("]\n")
             global success_count, success_spiders
             success_count += 1
-            success_spiders.append(spider.name)
+            if spider.name not in success_spiders:
+                success_spiders.append(spider.name)
             logger.info(f"Spider '{spider.name}' finished successfully.")
-        else:
+        else:  # Spider failed
             global fail_count, fail_spiders
             fail_count += 1
-            fail_spiders.append(spider.name)
-            logger.warning(f"Spider '{spider.name}' finished and failed to collect any data.")
+            if spider.name not in fail_spiders:
+                fail_spiders.append(spider.name)
+            logger.warning(f"Spider '{spider.name}' finished without results.")
 
 def run_spiders(spider_list, output_folder, backup_folder):
     global success_count, fail_count, success_spiders, fail_spiders
