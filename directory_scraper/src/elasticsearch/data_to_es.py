@@ -13,11 +13,11 @@ from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER, INDEX_NAME,
 load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-ES_URL = ES_URL #os.getenv('ES_URL') #ES_URL
+ES_URL = os.getenv('ES_URL') #ES_URL
 INDEX_NAME = INDEX_NAME
 SHA_INDEX_NAME = SHA_INDEX_NAME
 DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
-API_KEY_FILE = "" #os.getenv('API_KEY_FILE')
+API_KEY_FILE = os.getenv('API_KEY_FILE') #""
 
 COLUMNS_TO_HASH = [
     "org_sort", "org_id", "org_name", "org_type", "division_sort",
@@ -63,6 +63,7 @@ mapping = {
         "person_phone": {"type": "keyword", "null_value": "NULL"},
         "position_sort": {"type": "integer"},
         "parent_org_id": {"type": "keyword", "null_value": "NULL"},
+        "sha_256_hash": {"type": "keyword"},
     }
 }
 
