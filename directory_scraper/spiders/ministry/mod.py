@@ -210,7 +210,7 @@ class MODSpider(scrapy.Spider):
             try_count = 1
             while try_count < 3:
                 try:
-                    print(f"Processing URL: {url} (try {try_count})")
+                    #print(f"Processing URL: {url} (try {try_count})")
                     yield scrapy.Request(
                         url=url,
                         callback=self.parse_item,
