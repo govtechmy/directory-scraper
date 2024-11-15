@@ -28,3 +28,18 @@ def load_org_mapping():
     except json.JSONDecodeError:
         logging.error(f"Error: Could not decode JSON in '{org_mapping_file}'.")
         return None
+    
+def load_spreadsheets_config():
+    """
+    Loads the spreadsheets configuration from the 'spreadsheets_config.json' file.
+    """
+    spreadsheets_config_file = os.path.join(os.path.dirname(__file__), 'json', 'spreadsheets_config.json')
+    try:
+        with open(spreadsheets_config_file, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Error: {spreadsheets_config_file} not found.")
+        return {}
+    except json.JSONDecodeError:
+        print(f"Error: Failed to parse {spreadsheets_config_file}. Please ensure it is valid JSON.")
+        return {}
