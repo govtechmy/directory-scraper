@@ -151,7 +151,7 @@ def delete_documents_by_org_id(org_id):
         print(f"Error deleting documents with org_id {org_id}: {e}")
 
 def upload_clean_data_to_es(files_to_upload):
-    """Upload JSON documents to Elasticsearch, with stability in large files."""
+    """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
     for file_path in files_to_upload:
         file_name = os.path.basename(file_path)
         
