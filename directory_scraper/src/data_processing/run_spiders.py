@@ -49,6 +49,7 @@ def setup_folders():
     logger.info(f"LOG_DIR: {LOG_DIR}")
     logger.info(f"OUTPUT_FOLDER: {OUTPUT_FOLDER}")
     logger.info(f"BACKUP_FOLDER: {BACKUP_FOLDER}")
+    print(f"Log folder: {LOG_DIR}")
 
 def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """

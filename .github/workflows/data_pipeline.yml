@@ -49,16 +49,23 @@ jobs:
           path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
           retention-days: 5
 
+      - name: Upload cleaned data as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: clean-data
+          path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
+          retention-days: 5
+
       - name: Upload run_spiders.log as an artifact
         uses: actions/upload-artifact@v3
         with:
           name: run_spiders-log
-          path: ${{ github.workspace}}/directory_scraper/logs/run_spiders.log
+          path: ${{ github.workspace}}/logs/run_spiders.log
           retention-days: 5
 
       - name: Upload custom run_spiders.log as an artifact
         uses: actions/upload-artifact@v3
         with:
           name: custom_run_spiders-log
-          path: ${{ github.workspace}}/directory_scraper/logs/run_spiders_custom.log
+          path: ${{ github.workspace}}/logs/run_spiders_custom.log
           retention-days: 5
