@@ -40,14 +40,14 @@ jobs:
       - name: Run main
         env:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
-        run: python $DIRECTORY_SRC/workflows/main.py mof
+        run: python $DIRECTORY_SRC/workflows/main.py ministry
 
-      - name: Upload spider output as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: spider-output
-          path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
-          retention-days: 5
+      # - name: Upload spider output as artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: spider-output
+      #     path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
+      #     retention-days: 5
 
       - name: Upload cleaned data as artifact
         uses: actions/upload-artifact@v3
