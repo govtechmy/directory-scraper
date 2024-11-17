@@ -11,4 +11,4 @@ DEFAULT_BACKUP_FOLDER = "data/backups"
 # Elastic Search
 ES_URL = "http://localhost:9200"
 INDEX_NAME = "directory"
-SHA_INDEX_NAME = "directory-sha-check"
+SHA_INDEX_NAME = "directory-sha"
