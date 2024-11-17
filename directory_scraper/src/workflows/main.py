@@ -15,9 +15,8 @@ import subprocess
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_SPIDERS_OUTPUT_FOLDER, DEFAULT_CLEAN_DATA_FOLDER
 from directory_scraper.src.data_processing.process_data import process_all_json_files
-from directory_scraper.src.elasticsearch.data_to_es import upload_clean_data_to_es, check_sha_and_update
 from directory_scraper.src.data_processing.run_spiders import main as run_spiders_main
-from directory_scraper.src.elasticsearch.data_to_es import main as data_to_es_main
+from directory_scraper.src.elasticsearch_upload.data_to_es import main as data_to_es_main
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 CLEAN_DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
