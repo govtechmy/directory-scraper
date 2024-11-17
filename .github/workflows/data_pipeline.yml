@@ -12,10 +12,12 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      TZ: Asia/Kuala_Lumpur
       DIRECTORY_SRC: directory_scraper/src
       ES_INDEX: ${{ vars.ES_INDEX }}
       ES_SHA_INDEX: ${{ vars.ES_SHA_INDEX}}
       ES_URL: ${{ vars.ES_URL }}
+      TESSERACT_PATH: /usr/bin/tesseract
 
     steps:
       - name: Check out the code
@@ -37,10 +39,16 @@ jobs:
       - name: Install package setup.py in editable mode
         run: pip install -e directory_scraper/
 
+      - name: Install Tesseract OCR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr
+          tesseract --version
+
       - name: Run main
         env:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
-        run: python $DIRECTORY_SRC/workflows/main.py ministry
+        run: python $DIRECTORY_SRC/workflows/main.py kpkt
 
       # - name: Upload spider output as artifact
       #   uses: actions/upload-artifact@v3
