@@ -14,9 +14,9 @@ load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ES_URL = os.getenv('ES_URL') #ES_URL
-INDEX_NAME = os.getenv('INDEX_NAME')
-SHA_INDEX_NAME = os.getenv('SHA_INDEX_NAME')
-API_KEY_FILE = os.getenv('API_KEY_FILE') #""
+ES_INDEX = os.getenv('ES_INDEX')
+ES_SHA_INDEX = os.getenv('ES_SHA_INDEX')
+ES_API_KEY = os.getenv('ES_API_KEY') #""
 DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
 
 COLUMNS_TO_HASH = [
@@ -70,9 +70,9 @@ mapping = {
 
 def read_api_key():
     """Read API key information from the file if it exists."""
-    if API_KEY_FILE and os.path.exists(API_KEY_FILE):
+    if ES_API_KEY and os.path.exists(ES_API_KEY):
         try:
-            with open(API_KEY_FILE, 'r') as f:
+            with open(ES_API_KEY, 'r') as f:
                 return json.load(f)
         except Exception as e:
             print(f"Error reading API key file: {e}")
@@ -108,18 +108,18 @@ def calculate_sha256_for_file(file_path):
 
 def check_and_update_file_sha(file_path):
     new_sha = calculate_sha256_for_file(file_path)
-    response = es.options(ignore_status=404).get(index=SHA_INDEX_NAME, id=os.path.basename(file_path))
+    response = es.options(ignore_status=404).get(index=ES_SHA_INDEX, id=os.path.basename(file_path))
     stored_sha = response["_source"]["sha"] if response.get("found") else None
 
     task_id = f"{os.path.basename(file_path)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     if new_sha != stored_sha:
         # Store the updated SHA in Elasticsearch
-        es.index(index=SHA_INDEX_NAME, id=os.path.basename(file_path), document={"sha": new_sha, "task_id": task_id})
-        print(f'Status index "{SHA_INDEX_NAME}" | {os.path.basename(file_path)}: UPDATED')
+        es.index(index=ES_SHA_INDEX, id=os.path.basename(file_path), document={"sha": new_sha, "task_id": task_id})
+        print(f'Status index "{ES_SHA_INDEX}" | {os.path.basename(file_path)}: UPDATED')
         return True  # Data has changed
     else:
-        print(f'Status index "{SHA_INDEX_NAME}" | {os.path.basename(file_path)}: NO CHANGES')
+        print(f'Status index "{ES_SHA_INDEX}" | {os.path.basename(file_path)}: NO CHANGES')
     return False  # No changes
 
 def check_sha_and_update(data_folder):
@@ -145,7 +145,7 @@ def delete_documents_by_org_id(org_id):
         }
     }
     try:
-        es.delete_by_query(index=INDEX_NAME, body=delete_query)
+        es.delete_by_query(index=ES_INDEX, body=delete_query)
         print(f"Deleted existing documents with org_id : {org_id}")
     except Exception as e:
         print(f"Error deleting documents with org_id {org_id}: {e}")
@@ -172,7 +172,7 @@ def upload_clean_data_to_es(files_to_upload):
             
             # Load existing documents for this org_id
             existing_docs_query = {"query": {"term": {"org_id": org_id}}, "size": 10000}
-            existing_docs = es.search(index=INDEX_NAME, body=existing_docs_query)
+            existing_docs = es.search(index=ES_INDEX, body=existing_docs_query)
             existing_docs_by_id = {hit['_id']: hit['_source']['sha_256_hash'] for hit in existing_docs['hits']['hits']}
             
             actions = []
@@ -196,7 +196,7 @@ def upload_clean_data_to_es(files_to_upload):
                     if existing_docs_by_id[document_id] != sha_256_hash:
                         print(f"Updating document: {document_id}")
                         actions.append({
-                            "_index": INDEX_NAME,
+                            "_index": ES_INDEX,
                             "_id": document_id,
                             "_source": doc
                         })
@@ -205,7 +205,7 @@ def upload_clean_data_to_es(files_to_upload):
                     # Add new document
                     print(f"Adding new document: {document_id}")
                     actions.append({
-                        "_index": INDEX_NAME,
+                        "_index": ES_INDEX,
                         "_id": document_id,
                         "_source": doc
                     })
@@ -217,7 +217,7 @@ def upload_clean_data_to_es(files_to_upload):
                 print(f"Deleting stale document: {stale_id}")
                 actions.append({
                     "_op_type": "delete",
-                    "_index": INDEX_NAME,
+                    "_index": ES_INDEX,
                     "_id": stale_id
                 })
                 deleted_count += 1
@@ -250,11 +250,11 @@ def get_elasticsearch_info():
 def create_index_if_not_exists():
     """Create the Elasticsearch index if it does not exist."""
     try:
-        if es.indices.exists(index=INDEX_NAME):
-            print(f'Index "{INDEX_NAME}" already exists.')
+        if es.indices.exists(index=ES_INDEX):
+            print(f'Index "{ES_INDEX}" already exists.')
         else:
-            es.indices.create(index=INDEX_NAME, body={"mappings": mapping})
-            print(f'Index "{INDEX_NAME}" created with the provided mapping.')
+            es.indices.create(index=ES_INDEX, body={"mappings": mapping})
+            print(f'Index "{ES_INDEX}" created with the provided mapping.')
         return True
     except Exception as e:
         print(f"Error creating or checking index: {e}")
