@@ -1,3 +1,14 @@
+"""
+IMPORTANT: 
+1. The uploaded data is considered the source of truth.
+   - Any new data provided will completely overwrite the old data for the same `org_id`.
+   - It is expected that the new data is complete and not a snippet or subset of the previous data.
+
+2. Incomplete or partial data may result in loss of information, as the old data not present in the new upload
+   will be treated as stale and deleted.
+
+3. Ensure that the new data represents the latest information before uploading.
+"""
 import sys
 import os
 import subprocess
@@ -15,6 +26,8 @@ BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")
 
 
 def main():
+    print("IMPORTANT: The newer data will overwrite existing data for the same 'org_id' in Elasticsearch.")
+    print("Ensure the uploaded file is complete and represents the latest information.")
     # Step 1: Ensure directories exist
     os.makedirs(SPIDERS_OUTPUT_FOLDER, exist_ok=True)
     os.makedirs(CLEAN_DATA_FOLDER, exist_ok=True)
