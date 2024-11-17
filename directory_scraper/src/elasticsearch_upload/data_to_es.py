@@ -67,23 +67,11 @@ mapping = {
     }
 }
 
-
-def read_api_key():
-    """Read API key information from the file if it exists."""
-    if ES_API_KEY and os.path.exists(ES_API_KEY):
-        try:
-            with open(ES_API_KEY, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error reading API key file: {e}")
-            sys.exit(1)
-    return None
-
-api_key_info = read_api_key()
+api_key_info = ES_API_KEY
 if api_key_info:
     es = Elasticsearch(
         ES_URL,
-        api_key=(api_key_info['id'], api_key_info['api_key'])
+        api_key=ES_API_KEY
     )
 else:
     es = Elasticsearch(ES_URL)

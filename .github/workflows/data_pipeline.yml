@@ -37,16 +37,9 @@ jobs:
       - name: Install package setup.py in editable mode
         run: pip install -e directory_scraper/
 
-      - name: Configure API key for Elasticsearch
-        env:
-          ES_API_KEY: ${{ secrets.ES_API_KEY }}
-        run: |
-          echo -n $ES_API_KEY > ES_API_KEY.json
-          echo "Configured Elasticsearch API key."
-
       - name: Run main
         env:
-          ES_API_KEY: ./ES_API_KEY.json
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
         run: python $DIRECTORY_SRC/workflows/main.py mof
 
       - name: Upload spider output as artifact
