@@ -14,7 +14,7 @@ CREDS_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_CREDS")
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-OUTPUT_FOLDER = os.path.join(BASE_DIR,DEFAULT_GSHEETS_OUTPUT_FOLDER)
+OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_GSHEETS_OUTPUT_FOLDER)
 BACKUP_FOLDER = os.path.join(BASE_DIR, DEFAULT_BACKUP_FOLDER)
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -49,9 +49,9 @@ def fetch_and_store_gsheet(sheet_id, file_name, output_folder):
         print(f"Error fetching or storing data for file_name={file_name}: {e}")
 
 
-def main(output_folder=None, backup_folder=None):
+def main(org_id=None, output_folder=None, backup_folder=None):
     """
-    Main function to fetch data from Google Sheets and store it in the specified folder.
+    Main function to fetch data for a specific org_id from Google Sheets.
     If no parameters are passed, the global OUTPUT_FOLDER and BACKUP_FOLDER will be used.
     """
     global OUTPUT_FOLDER, BACKUP_FOLDER
@@ -64,10 +64,19 @@ def main(output_folder=None, backup_folder=None):
     # Load spreadsheet configuration
     spreadsheets_config = load_spreadsheets_config()
 
-    # Fetch and store data for each sheet in the configuration
+    # Filter by org_id if specified
+    if org_id:
+        spreadsheets_config = [sheet for sheet in spreadsheets_config if sheet["org_id"] == org_id.upper()]
+        if not spreadsheets_config:
+            print(f"No configuration found for org_id={org_id}.")
+            return
+
+    # Fetch and store data for the relevant sheets
     for sheet in spreadsheets_config:
         print(f"Fetching {sheet['org_id']}...")
         fetch_and_store_gsheet(sheet_id=sheet["sheet_id"], file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
 
 if __name__ == "__main__":
-    main()
+    # Example usage: specify an org_id or leave it as None to fetch all sheets
+    org_id = sys.argv[1] if len(sys.argv) > 1 else None
+    main(org_id=org_id)

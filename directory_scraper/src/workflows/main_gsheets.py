@@ -35,17 +35,18 @@ def main():
     os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
     # Step 1: Fetch Google Sheets
+    org_id = sys.argv[1] if len(sys.argv) > 1 else None
     if len(sys.argv) > 2:
-        print("Usage: python main.py")
+        print("Usage: python main_gsheets.py [org_id]")
         return
     
     try:
         # Run fetch and proceed based on the presence of output files
-        fetch_gsheet_main(output_folder=RAW_OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
+        fetch_gsheet_main(org_id=org_id, output_folder=RAW_OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
 
         # Check if any files were generated in the output folder
         if not os.listdir(RAW_OUTPUT_FOLDER):
-            print("No google sheets was collected. Skipping data processing and upload.")
+            print("No google sheets was fetched. Skipping data processing and upload.")
             return
     except Exception as e:
         print("Error encountered while fetching google sheets:", e)
@@ -53,7 +54,7 @@ def main():
 
     # Step 3: Process spiders output into clean data
     try:
-        print("\Fetching ran successfully. Proceeding with data processing...")
+        print("\nProceeding with data processing...")
         process_all_json_files(input_folder=RAW_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
     except Exception as e:
         print("Data processing failed:", e)
