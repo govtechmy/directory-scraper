@@ -48,7 +48,7 @@ jobs:
       - name: Run main
         env:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
-        run: python $DIRECTORY_SRC/workflows/main.py kpkt
+        run: python $DIRECTORY_SRC/workflows/main_spiders.py kpkt
 
       # - name: Upload spider output as artifact
       #   uses: actions/upload-artifact@v3
