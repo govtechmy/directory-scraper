@@ -1,10 +1,12 @@
 import os
+import sys
 import json
 import hashlib
+from io import BytesIO
+from datetime import datetime
+
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from datetime import datetime
-import sys
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
@@ -87,40 +89,72 @@ def calculate_sha256_for_document(doc):
 def calculate_sha256_for_file(file_path):
     """
     Calculate SHA-256 hash for the entire file content.
+    Handles on-disk files and in-memory files differently.
     """
     sha256 = hashlib.sha256()
-    with open(file_path, "rb") as f:
+    if isinstance(file_path, (str,)):
+        f = open(file_path, "rb")
+
+    elif isinstance(file_path, (list,)):
+        data_txt = "[\n" + ",\n".join([json.dumps(row, separators=(",", ":"), ensure_ascii=False) for row in file_path]) + "\n]"
+        f = BytesIO(data_txt.encode("utf-8"))
+
+    try:
         while chunk := f.read(8192):
             sha256.update(chunk)
+    except Exception as e:
+        raise e
+    finally:
+        f.close()
+
     return sha256.hexdigest()
 
 def check_and_update_file_sha(file_path):
+    """
+    Calculate SHA-256 for a file and compares it to the version in ElasticSearch.
+    Handles on-disk files and in-memory files differently.
+    """
+    if isinstance(file_path, (str,)):
+        file_id = os.path.basename(file_path)
+    elif isinstance(file_path, (dict,)):
+        file_id = file_path.get("file_name", None)
+
     new_sha = calculate_sha256_for_file(file_path)
-    response = es.options(ignore_status=404).get(index=ES_SHA_INDEX, id=os.path.basename(file_path))
+    response = es.options(ignore_status=404).get(index=ES_SHA_INDEX, id=file_id)
     stored_sha = response["_source"]["sha"] if response.get("found") else None
 
-    task_id = f"{os.path.basename(file_path)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    task_id = f"{file_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     if new_sha != stored_sha:
         # Store the updated SHA in Elasticsearch
-        es.index(index=ES_SHA_INDEX, id=os.path.basename(file_path), document={"sha": new_sha, "task_id": task_id})
-        print(f'Status index "{ES_SHA_INDEX}" | {os.path.basename(file_path)}: UPDATED')
+        es.index(index=ES_SHA_INDEX, id=file_id, document={"sha": new_sha, "task_id": task_id})
+        print(f'Status index "{ES_SHA_INDEX}" | {file_id}: UPDATED')
         return True  # Data has changed
     else:
-        print(f'Status index "{ES_SHA_INDEX}" | {os.path.basename(file_path)}: NO CHANGES')
+        print(f'Status index "{ES_SHA_INDEX}" | {file_id}: NO CHANGES')
     return False  # No changes
 
 def check_sha_and_update(data_folder):
     """
     Check if there are any changes in the files' SHA-256 hashes.
     Returns a list of files with changed SHAs.
+    Handles on-disk files and in-memory files differently.
     """    
     changed_files = []
-    for file_name in os.listdir(data_folder):
-        file_path = os.path.join(data_folder, file_name)
-        if file_name.endswith(".json") and check_and_update_file_sha(file_path):
-            print(f'Status file | {file_name}: CHANGES DETECTED')
-            changed_files.append(file_path)
+    if isinstance(data_folder, (str,)):
+        for file_name in os.listdir(data_folder):
+            file_path = os.path.join(data_folder, file_name)
+            if file_name.endswith(".json") and check_and_update_file_sha(file_path):
+                print(f'Status file | {file_name}: CHANGES DETECTED')
+                changed_files.append(file_path)
+
+    elif isinstance(data_folder, (list,)):
+        for file in data_folder:
+            file_name = file.get("file_name", None)
+            file_data = file.get("file_data", None)
+            if file_name and file_data and check_and_update_file_sha(file):
+                changed_files.append(file)
+
     return changed_files
 
 def delete_documents_by_org_id(org_id):
@@ -139,12 +173,22 @@ def delete_documents_by_org_id(org_id):
         print(f"Error deleting documents with org_id {org_id}: {e}")
 
 def upload_clean_data_to_es(files_to_upload):
-    """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
+    """
+    Upload JSON documents to Elasticsearch, using new files as the source of truth.
+    Handles on-disk files and in-memory files differently.
+    """
     for file_path in files_to_upload:
-        file_name = os.path.basename(file_path)
-        
-        with open(file_path, 'r') as f:
-            new_data = json.load(f)
+        if isinstance(files_to_upload, (str,)):
+            file_name = os.path.basename(file_path)
+            
+            with open(file_path, 'r') as f:
+                new_data = json.load(f)
+
+        elif isinstance(files_to_upload, (dict,)):
+            file_name = file_path.get("file_name", None)
+            new_data = file_path.get("file_data", None)
+            if not file_name or not new_data:
+                raise ValueError("Warning - files_to_upload is neither a path or a dictionary. Check the input and rerun the function")
 
         # Group documents by org_id
         org_id_groups = {}
@@ -249,8 +293,13 @@ def create_index_if_not_exists():
         return False
 
 def main(data_folder=None):
-    """Main function to check for changes and upload data to Elasticsearch."""
-    data_folder = data_folder or DATA_FOLDER
+    """
+    Main function to check for changes and upload data to Elasticsearch.
+    `data_folder` input should either be a path to the folder containing
+    json files to be uploaded or a list of dictionaries of the data.
+    """
+    if isinstance(data_folder, (str,)):
+        data_folder = data_folder or DATA_FOLDER
 
     if not get_elasticsearch_info():
         print("Skipping indexing due to Elasticsearch connection issues.")
