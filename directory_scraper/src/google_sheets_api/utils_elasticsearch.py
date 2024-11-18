@@ -1,7 +1,11 @@
 import json
+import logging
 import elasticsearch as es
 from elasticsearch.helpers import bulk
 from elasticsearch_upload.script import DATA_FILE, INDEX_NAME, get_elasticsearch_info, create_index_if_not_exists
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="gsheet_api.log", filemode="a", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def index_json_file():
     try:
@@ -16,21 +20,21 @@ def index_json_file():
                     "_source": doc
                 }
 
-        print(f"Sending bulk request to Elasticsearch for {len(data)} documents...")
+        logging.info(f"Sending bulk request to Elasticsearch for {len(data)} documents...")
         success, failed = bulk(es, generate_actions())
 
-        print(f"Bulk indexing completed. Success: {success}, Failed: {len(failed)}")
+        logging.info(f"Bulk indexing completed. Success: {success}, Failed: {len(failed)}")
         if failed:
-            print("Failed actions:")
+            logging.error("Failed actions:")
             for item in failed:
-                print(json.dumps(item, indent=2))
+                logging.error(json.dumps(item, indent=2))
 
         count = es.count(index=INDEX_NAME)['count']
-        print(f"Number of documents in index: {count}")
+        logging.info(f"Number of documents in index: {count}")
     except Exception as e:
-        print(f"Error during indexing: {e}")
-        print(f"Error type: {type(e)}")
-        print(f"Error details: {str(e)}")
+        logging.error(f"Error during indexing: {e}")
+        logging.error(f"Error type: {type(e)}")
+        logging.error(f"Error details: {str(e)}")
 
 def main():
     try:
@@ -38,12 +42,12 @@ def main():
             if create_index_if_not_exists():
                 index_json_file()
             else:
-                print("Skipping indexing due to index creation issues.")
+                logging.warning("Skipping indexing due to index creation issues.")
         else:
-            print("Skipping indexing due to Elasticsearch connection issues.")
+            logging.error("Skipping indexing due to Elasticsearch connection issues.")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        print(f"Error type: {type(e)}")
-        print(f"Error details: {str(e)}")
+        logging.error(f"An unexpected error occurred: {e}")
+        logging.error(f"Error type: {type(e)}")
+        logging.error(f"Error details: {str(e)}")
     finally:
         es.close()

@@ -6,8 +6,8 @@ import datetime
 import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
-from utils_gsheet import GoogleSheetManager
-from utils_elasticsearch import upload_data
+from google_sheets_api.utils_gsheet import GoogleSheetManager
+from google_sheets_api.utils_elasticsearch import upload_data
 from data_processing.process_data import data_processing_pipeline
 
 # Setup
@@ -17,7 +17,7 @@ GOOGLE_SERVICE_ACCOUNT_CREDS = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDS')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename="process_data.log", filemode="w", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename="gsheet_api.log", filemode="a", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 # Replaces process_json_data from data_processing.process_data
@@ -57,7 +57,7 @@ def compare_data(sheet_id:str, username:str) -> None:
     previous_hash = edit_logs.acell(f"B{1+last_row}").value
 
     if document_hash != previous_hash:
-        cleaned_data = process_json_file(sheet_df.to_dict(orient="records"))
+        cleaned_data = process_json_data(sheet_df.to_dict(orient="records"))
         
         # Append new hash to "Edit Logs" worksheet
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
