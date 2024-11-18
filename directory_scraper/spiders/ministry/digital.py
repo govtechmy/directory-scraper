@@ -101,7 +101,7 @@ class DIGITALSpider(scrapy.Spider):
                 next_button = await page.query_selector('button[aria-label="Seterusnya"]:not([disabled])')
 
                 if next_button:
-                    print(f"Clicking the 'Seterusnya' (Next) button to load page {page_count + 1}...")
+                    #print(f"Clicking the 'Seterusnya' (Next) button to load page {page_count + 1}...")
                     await next_button.click()
                     await page.wait_for_selector('table')  # Wait for the next page's table to load
                     #await page.wait_for_timeout(2000)  # delay to ensure the table loads fully
