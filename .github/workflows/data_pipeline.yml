@@ -1,0 +1,79 @@
+name: Run Spider & Load to ES Pipeline
+
+on:
+  push:
+    branches: [ "feat/actions" ]
+  # schedule:
+  #   - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    env:
+      TZ: Asia/Kuala_Lumpur
+      DIRECTORY_SRC: directory_scraper/src
+      ES_INDEX: ${{ vars.ES_INDEX }}
+      ES_SHA_INDEX: ${{ vars.ES_SHA_INDEX}}
+      ES_URL: ${{ vars.ES_URL }}
+      TESSERACT_PATH: /usr/bin/tesseract
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.11'
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'directory_scraper/setup.py') }}
+          restore-keys: |
+             ${{ runner.os }}-pip-
+
+      - name: Install package setup.py in editable mode
+        run: pip install -e directory_scraper/
+
+      - name: Install Tesseract OCR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr
+          tesseract --version
+
+      - name: Run main
+        env:
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
+        run: python $DIRECTORY_SRC/workflows/main.py kpkt
+
+      # - name: Upload spider output as artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: spider-output
+      #     path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
+      #     retention-days: 5
+
+      - name: Upload cleaned data as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: clean-data
+          path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
+          retention-days: 5
+
+      - name: Upload run_spiders.log as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: run_spiders-log
+          path: ${{ github.workspace}}/logs/run_spiders.log
+          retention-days: 5
+
+      - name: Upload custom run_spiders.log as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: custom_run_spiders-log
+          path: ${{ github.workspace}}/logs/run_spiders_custom.log
+          retention-days: 5

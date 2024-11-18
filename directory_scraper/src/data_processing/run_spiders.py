@@ -9,17 +9,24 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from scrapy.spiderloader import SpiderLoader
 import inspect
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+from directory_scraper.path_config import DEFAULT_SPIDERS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
 
+#=========================Folder setup=======================================
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+LOG_DIR = DEFAULT_LOG_DIR
+OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_SPIDERS_OUTPUT_FOLDER)
+BACKUP_FOLDER = os.path.join(BASE_DIR, DEFAULT_BACKUP_FOLDER)
+#========================= End of folder setup ==============================
 
-#==========================Logging setup=======================================
+#==========================Logging setup=====================================
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-LOG_DIR = os.path.join(os.path.dirname(__file__), '../..', 'logs')
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
 LOG_FILE_NAME = 'run_spiders.log'
 LOG_FILE_PATH = os.path.join(LOG_DIR, LOG_FILE_NAME)
+os.makedirs(LOG_DIR, exist_ok=True)
 
 file_handler = logging.FileHandler(LOG_FILE_PATH, mode='w')
 file_handler.setLevel(logging.INFO)
@@ -27,14 +34,22 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.propagate = True
-
-#==============================================================================
+#========================== End of logging setup =======================================
 
 # Global success and fail counters
 success_count = 0
 fail_count = 0
 success_spiders = []
 fail_spiders = []
+
+def setup_folders():
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    os.makedirs(BACKUP_FOLDER, exist_ok=True)
+    logger.info(f"BASE_DIR: {BASE_DIR}")
+    logger.info(f"LOG_DIR: {LOG_DIR}")
+    logger.info(f"OUTPUT_FOLDER: {OUTPUT_FOLDER}")
+    logger.info(f"BACKUP_FOLDER: {BACKUP_FOLDER}")
+    print(f"Log folder: {LOG_DIR}")
 
 def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     """
@@ -188,8 +203,15 @@ class RunSpiderPipeline:
         process_item(item, spider): Appends scraped items to the spider's results.
         close_spider(spider): Writes results to a JSON file if data was collected, or logs a failure.
     """
-    def __init__(self):
+    def __init__(self,output_folder):
         self.results = {}
+        self.output_folder = output_folder
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # Get output_folder from settings
+        output_folder = crawler.settings.get('OUTPUT_FOLDER')
+        return cls(output_folder=output_folder)
 
     def open_spider(self, spider):
         self.start_time = datetime.now()
@@ -207,7 +229,7 @@ class RunSpiderPipeline:
         logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
 
         if self.results[spider.name]:
-            output_file = os.path.join("./data/spiders_output", f"{spider.name}.json")
+            output_file = os.path.join(self.output_folder, f"{spider.name}.json")
             with open(output_file, 'w') as f:
                 f.write("[\n")
                 for idx, result in enumerate(self.results[spider.name]):
@@ -219,13 +241,15 @@ class RunSpiderPipeline:
                 f.write("]\n")
             global success_count, success_spiders
             success_count += 1
-            success_spiders.append(spider.name)
+            if spider.name not in success_spiders:
+                success_spiders.append(spider.name)
             logger.info(f"Spider '{spider.name}' finished successfully.")
-        else:
+        else:  # Spider failed
             global fail_count, fail_spiders
             fail_count += 1
-            fail_spiders.append(spider.name)
-            logger.warning(f"Spider '{spider.name}' finished and failed to collect any data.")
+            if spider.name not in fail_spiders:
+                fail_spiders.append(spider.name)
+            logger.warning(f"Spider '{spider.name}' finished without results.")
 
 def run_spiders(spider_list, output_folder, backup_folder):
     global success_count, fail_count, success_spiders, fail_spiders
@@ -239,7 +263,9 @@ def run_spiders(spider_list, output_folder, backup_folder):
     setup_output_folder(folder_path=output_folder, spider_names=spider_list)
 
     process = setup_crawler(spider_list)
-    process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
+    #process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
+    process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
+    process.settings.set('OUTPUT_FOLDER', output_folder)  # Pass output_folder to pipeline settings
 
     for spider_name in spider_list:
         if spider_name in all_spiders:
@@ -249,8 +275,10 @@ def run_spiders(spider_list, output_folder, backup_folder):
             logger.warning(f"Spider '{spider_name}' not found. Skipping...")
 
     process.start()
-    logger.info(f"SUCCESSFUL: {success_count} spiders. Spiders: {success_spiders}")
-    logger.info(f"FAILED: {fail_count} spiders. Spiders: {fail_spiders}")
+    logger.info(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+    logger.info(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+    print(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+    print(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
 
 #========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
@@ -370,105 +398,102 @@ def validate_extra_args(name, org_name, subcategory, all_spiders):
 
 #========== END OF ARG VALIDATION FUNCTION =============
 
-def main():
-    parser = argparse.ArgumentParser(
-        description=""" 
-    Run Scrapy spiders based on a structured hierarchy.
+def main(spider_list=None, output_folder=None, backup_folder=None):
 
-    Usage:
-    ------
-    python run_spiders.py <spider name | category | special keyword> [organization name] [subcategory]
-    
-    *Note*: No extra arguments (`organization name` or `subcategory`) can be used with a <spider name> and <special keywords>.
+    global OUTPUT_FOLDER, BACKUP_FOLDER
+    OUTPUT_FOLDER = output_folder or OUTPUT_FOLDER
+    BACKUP_FOLDER = backup_folder or BACKUP_FOLDER
+    setup_folders()
 
-    Arguments:
-    ----------
-    1. <spider name | category | special keyword> (REQUIRED):
-    - Spider Name: Specify a specific spider by its name (e.g., 'jpm', 'mof', 'mohr').
-    - Category:
-        • 'ministry'      : Runs all spiders under the 'ministry' directory.
-        • 'ministry_orgs' : Runs all spiders under the 'ministry_orgs' directory.
-        • 'non_ministry'  : Runs all spiders under the 'non_ministry' directory.
-        • 'bahagian_unit' : Runs all spiders under the 'bahagian_unit' directory.
-    - Special Keywords: 
-        • 'all'           : Runs every available spider.
-        • 'list'          : Runs a predefined list of spiders in the code. 
+    if spider_list is None:
+        parser = argparse.ArgumentParser(
+            description=""" 
+        Run Scrapy spiders based on a structured hierarchy.
 
-    2. [organization name] (OPTIONAL): Specify an organization within the category if applicable (e.g., 'jpm', 'mohr').
+        Usage:
+        ------
+        python run_spiders.py <spider name | category | special keyword> [organization name] [subcategory]
+        
+        *Note*: No extra arguments (`organization name` or `subcategory`) can be used with a <spider name> and <special keywords>.
 
-    3. [subcategory] (OPTIONAL): Provide a specific subcategory under the organization (e.g., 'jabatan', 'agensi').
+        Arguments:
+        ----------
+        1. <spider name | category | special keyword> (REQUIRED):
+        - Spider Name: Specify a specific spider by its name (e.g., 'jpm', 'mof', 'mohr').
+        - Category:
+            • 'ministry'      : Runs all spiders under the 'ministry' directory.
+            • 'ministry_orgs' : Runs all spiders under the 'ministry_orgs' directory.
+            • 'non_ministry'  : Runs all spiders under the 'non_ministry' directory.
+            • 'bahagian_unit' : Runs all spiders under the 'bahagian_unit' directory.
+        - Special Keywords: 
+            • 'all'           : Runs every available spider.
+            • 'list'          : Runs a predefined list of spiders in the code. 
 
-    *Note*: OPTIONAL arguments only applies for <Category>
-    
-    Examples:
-    ---------
-    To run a specific spider by its spider name:
-    python run_spiders.py jpm
+        2. [organization name] (OPTIONAL): Specify an organization within the category if applicable (e.g., 'jpm', 'mohr').
 
-    To run all `ministry` category spiders:
-    python run_spiders.py ministry
-    
-    To run all spiders under the `ministry_orgs` category for the `jpm` organization:
-    python run_spiders.py ministry_orgs jpm
+        3. [subcategory] (OPTIONAL): Provide a specific subcategory under the organization (e.g., 'jabatan', 'agensi').
 
-    To run only the spiders under the `ministry_orgs` category for the `jpm` organization within the `jabatan` subcategory:
-    python run_spiders.py ministry_orgs jpm jabatan
+        *Note*: OPTIONAL arguments only applies for <Category>
+        
+        Examples:
+        ---------
+        To run a specific spider by its spider name:
+        python run_spiders.py jpm
 
-    To run a predefined list of spiders:
-    python run_spiders.py list
-    """,
-        formatter_class=argparse.RawTextHelpFormatter 
+        To run all `ministry` category spiders:
+        python run_spiders.py ministry
+        
+        To run all spiders under the `ministry_orgs` category for the `jpm` organization:
+        python run_spiders.py ministry_orgs jpm
 
-    )
-    parser.add_argument("name", help="Specify the spider name, category, or use 'all' for all spiders. See above for options.")
-    parser.add_argument("org_name", nargs="?", default=None, help="(Optional) Specify the organisation name if applicable. (e.g. 'jpm', or 'mohr')")
-    parser.add_argument("subcategory", nargs="?", default=None, help="(Optional) Specify the subcategory if applicable. (e.g 'jabatan', or 'agensi')")
+        To run only the spiders under the `ministry_orgs` category for the `jpm` organization within the `jabatan` subcategory:
+        python run_spiders.py ministry_orgs jpm jabatan
 
-    args = parser.parse_args()
-    spider_tree = build_spider_tree()
-    all_spiders = get_all_spiders()
-    logger.debug(f"Spider tree: {spider_tree}")
+        To run a predefined list of spiders:
+        python run_spiders.py list
+        """,
+            formatter_class=argparse.RawTextHelpFormatter 
 
-    LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
+        )
+        parser.add_argument("name", help="Specify the spider name, category, or use 'all' for all spiders. See above for options.")
+        parser.add_argument("org_name", nargs="?", default=None, help="(Optional) Specify the organisation name if applicable. (e.g. 'jpm', or 'mohr')")
+        parser.add_argument("subcategory", nargs="?", default=None, help="(Optional) Specify the subcategory if applicable. (e.g 'jabatan', or 'agensi')")
 
-    #================== ARGS VALIDATION =====================
-    if not validate_arg_name(args.name, all_spiders, spider_tree):
-        return
-    if not validate_extra_args(args.name, args.org_name, args.subcategory, all_spiders):
-        return
-    if not validate_arg_org_name(args.name, args.org_name, spider_tree):
-        return
-    if not validate_arg_subcategory(args.name, args.org_name, args.subcategory, spider_tree):
-        return
-    #=========================================================
+        args = parser.parse_args()
+        spider_tree = build_spider_tree()
+        all_spiders = get_all_spiders()
+        logger.debug(f"Spider tree: {spider_tree}")
 
-    # Determine the list of spiders to run
-    if args.name in all_spiders:
-        spider_list = [args.name]
-    elif args.name == "all":
-        spider_list = all_spiders
-    elif args.name == "list":
-        spider_list = [spider for spider in LIST_OF_SPIDERS_TO_RUN if spider in all_spiders]
-    else:
-        # Validate path and extract spiders from tree
-        path_parts = [part for part in [args.name, args.org_name, args.subcategory] if part]
-        is_valid, _ = validate_path(spider_tree, *path_parts)
-        if not is_valid:
-            print(f"Invalid path: {'/'.join(path_parts)}. Please check available categories.")
-            return
+        LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
 
-        spider_list = extract_spiders_from_path(spider_tree, *path_parts)
+        #================== ARGS VALIDATION =====================
+        if not validate_arg_name(args.name, all_spiders, spider_tree):
+            return False
+        if not validate_extra_args(args.name, args.org_name, args.subcategory, all_spiders):
+            return False
+        if not validate_arg_org_name(args.name, args.org_name, spider_tree):
+            return False
+        if not validate_arg_subcategory(args.name, args.org_name, args.subcategory, spider_tree):
+            return False
+        #=========================================================
 
-    if not spider_list:
-        print(f"No spiders found for specified path: {'/'.join(path_parts)}")
-        return
+        # Determine the list of spiders to run
+        if args.name in all_spiders:
+            spider_list = [args.name]
+        elif args.name == "all":
+            spider_list = all_spiders
+        elif args.name == "list":
+            spider_list = [spider for spider in LIST_OF_SPIDERS_TO_RUN if spider in all_spiders]
+        else:
+            # Validate path and extract spiders from tree
+            path_parts = [part for part in [args.name, args.org_name, args.subcategory] if part]
+            is_valid, _ = validate_path(spider_tree, *path_parts)
+
+            spider_list = extract_spiders_from_path(spider_tree, *path_parts)
 
     print(f"Running spiders: {spider_list}")
-
-    OUTPUT_FOLDER = "./data/spiders_output"
-    BACKUP_FOLDER = "./backups"
-
     run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
+    filter_custom_logs()
 
 if __name__ == "__main__":
     main()

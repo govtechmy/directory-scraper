@@ -59,7 +59,7 @@ class MOHSpider(scrapy.Spider):
         for row in self.division_mapping:
             code = row["division_code"]
             url = f"{self.start_urls[0]}/{code}/1"
-            print(f"Starting scrape from: {url}")
+            #print(f"Starting scrape from: {url}")
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,

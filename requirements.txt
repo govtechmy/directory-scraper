@@ -45,3 +45,6 @@ zope.interface==7.0.3
 python-dotenv==1.0.1
 pytesseract==0.3.13
 pillow==10.4.0
+elastic-transport==8.15.1
+elasticsearch==8.15.1
+
