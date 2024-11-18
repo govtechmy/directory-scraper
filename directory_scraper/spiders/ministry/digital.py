@@ -44,7 +44,7 @@ class DIGITALSpider(scrapy.Spider):
             if not rows:
                 self.logger.error("No rows found in the table!")
             else:
-                print(f"Found {len(rows)} rows in page {page_count}.")
+                self.logger.debug(f"Found {len(rows)} rows in page {page_count}.")
 
             for row in rows:
                 name = row.xpath('.//td[contains(@id, "_nama")]/text()').get()
