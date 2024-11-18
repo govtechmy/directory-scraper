@@ -2,7 +2,7 @@ import os
 import json
 from directory_scraper.src.google_sheets.google_sheets_utils import GoogleSheetManager
 from dotenv import load_dotenv
-from utils.file_utils import load_spreadsheets_config
+from directory_scraper.src.utils.file_utils import load_spreadsheets_config
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_GSHEETS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
