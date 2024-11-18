@@ -7,7 +7,6 @@ import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
 from google_sheets_api.utils.utils_gsheet import GoogleSheetManager
-from google_sheets_api.utils.utils_elasticsearch import upload_data
 from data_processing.process_data import data_processing_pipeline
 
 # Setup
@@ -37,7 +36,7 @@ def process_json_data(input_data):
         raise e
 
 
-def compare_data(sheet_id:str, username:str) -> None:
+def compare_data(sheet_id:str, user_name:str) -> None:
     """
     Loads latest data from google sheet and compares the SHA256 hexdigest of the current data with the previous hexdigest.
     If there are any changes, validate the data and push to ElasticSearch.
@@ -61,14 +60,12 @@ def compare_data(sheet_id:str, username:str) -> None:
         
         # Append new hash to "Edit Logs" worksheet
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        edit_logs.append_row([username, document_hash, current_time], table_range=f"A{2+last_row}")
+        edit_logs.append_row([user_name, document_hash, current_time], table_range=f"A{2+last_row}")
 
-        # Upload data to es
-        upload_data(data=cleaned_data)
     else:
         print("No changes made.")
     
-    return sheet_data
+    return cleaned_data
 
 if __name__ == "__main__":
     ROOT_DIR = Path(os.path.abspath(__file__)).parents[2]
