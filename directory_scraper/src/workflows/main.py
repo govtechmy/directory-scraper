@@ -20,7 +20,7 @@ from directory_scraper.src.elasticsearch_upload.data_to_es import main as data_t
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 CLEAN_DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
-SPIDERS_OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_SPIDERS_OUTPUT_FOLDER)
+RAW_OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_SPIDERS_OUTPUT_FOLDER)
 BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")  
 
 
@@ -28,7 +28,7 @@ def main():
     print("IMPORTANT: The newer data will overwrite existing data for the same 'org_id' in Elasticsearch.")
     print("Ensure the uploaded file is complete and represents the latest information.")
     # Step 1: Ensure directories exist
-    os.makedirs(SPIDERS_OUTPUT_FOLDER, exist_ok=True)
+    os.makedirs(RAW_OUTPUT_FOLDER, exist_ok=True)
     os.makedirs(CLEAN_DATA_FOLDER, exist_ok=True)
     os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
@@ -39,10 +39,10 @@ def main():
     
     try:
         # Run spiders and proceed based on the presence of output files
-        run_spiders_main(output_folder=SPIDERS_OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
+        run_spiders_main(output_folder=RAW_OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
 
         # Check if any files were generated in the output folder
-        if not os.listdir(SPIDERS_OUTPUT_FOLDER):
+        if not os.listdir(RAW_OUTPUT_FOLDER):
             print("No spiders were run or no data was collected. Skipping data processing and upload.")
             return
     except Exception as e:
@@ -52,7 +52,7 @@ def main():
     # Step 3: Process spiders output into clean data
     try:
         print("\nSpiders ran successfully. Proceeding with data processing...")
-        process_all_json_files(input_folder=SPIDERS_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
+        process_all_json_files(input_folder=RAW_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
     except Exception as e:
         print("Data processing failed:", e)
         return
