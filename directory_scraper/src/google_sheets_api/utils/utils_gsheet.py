@@ -6,7 +6,7 @@ from google.oauth2.service_account import Credentials
 from google_sheets.google_sheets_utils import GoogleSheetManager
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename="gsheet_api.log", filemode="a", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename="gsheet_api.log", filemode="a", level=logging.INFO, format='%(asctime)s - %(pathname)s - Line %(lineno)d - %(levelname)s - %(message)s')
 
 load_dotenv()
 
@@ -21,6 +21,13 @@ class GoogleSheetManager(GoogleSheetManager):
         client = gspread.authorize(creds)
         sheet = client.open_by_key(self.sheet_id)
         return sheet
+    
+    # Overwrite get_all_data function add sheet selection functionality
+    def get_all_data(self, sheet_id):
+        """
+        Retrieves all data from the worksheet.
+        """
+        return self.worksheet.get_worksheet(sheet_id).get_all_values()
     
     def setup_editsheet(self) -> bool:
         """

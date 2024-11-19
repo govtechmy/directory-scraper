@@ -5,9 +5,11 @@ import hashlib
 import datetime
 import pandas as pd
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from google_sheets_api.utils.utils_gsheet import GoogleSheetManager
 from data_processing.process_data import data_processing_pipeline
+from elasticsearch_upload.data_to_es import calculate_sha256_for_file
 
 # Setup
 load_dotenv()
@@ -16,7 +18,7 @@ GOOGLE_SERVICE_ACCOUNT_CREDS = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDS')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename="gsheet_api.log", filemode="a", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename="gsheet_api.log", filemode="a", level=logging.INFO, format='%(asctime)s - %(pathname)s - Line %(lineno)d - %(levelname)s - %(message)s')
 
 
 # Replaces process_json_data from data_processing.process_data
@@ -36,19 +38,25 @@ def process_json_data(input_data):
         raise e
 
 
-def compare_data(sheet_id:str, user_name:str) -> None:
+def clean_data(sheet_id:str, user_name:str) -> None:
     """
     Loads latest data from google sheet and compares the SHA256 hexdigest of the current data with the previous hexdigest.
     If there are any changes, validate the data and push to ElasticSearch.
     """
     # Setup google sheet
     sheet_manager = GoogleSheetManager(GOOGLE_SERVICE_ACCOUNT_CREDS, sheet_id, SCOPES)
-    sheet_data = sheet_manager.get_all_data()
+    sheet_data = sheet_manager.get_all_data(sheet_id=0)
 
     # Extract data and generate document hash
     sheet_df = pd.DataFrame(sheet_data)
-    sheet_df = sheet_df.rename(columns=sheet_df.iloc[0]).drop(index=0, columns="last_uploaded").reset_index(drop=True)
-    document_hash = hashlib.sha256(sheet_df.to_csv().encode("utf-8")).hexdigest()
+    sheet_df = (
+        sheet_df
+        .rename(columns=sheet_df.iloc[0])
+        .drop(index=0, columns="last_uploaded")
+        .reset_index(drop=True)
+        .astype({"org_sort": int, "division_sort": int, "position_sort": int})
+    )
+    document_hash = calculate_sha256_for_file(sheet_df.to_dict(orient="records"))
 
     # Extract latest hash from "Edit Logs" for comparison
     edit_logs = sheet_manager.connect_to_sheet().worksheet("Edit Logs")
@@ -59,13 +67,15 @@ def compare_data(sheet_id:str, user_name:str) -> None:
         cleaned_data = process_json_data(sheet_df.to_dict(orient="records"))
         
         # Append new hash to "Edit Logs" worksheet
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S")
         edit_logs.append_row([user_name, document_hash, current_time], table_range=f"A{2+last_row}")
+        logging.info("Changes detected, updating 'Edit Logs' sheet.")
 
     else:
-        print("No changes made.")
-    
-    return cleaned_data
+        cleaned_data = sheet_df.to_dict(orient="records")
+        logging.info("No changes made.")
+
+    return {"cleaned_data": cleaned_data, "document_hash": document_hash, "previous_hash": previous_hash, "current_hash": document_hash}
 
 if __name__ == "__main__":
     ROOT_DIR = Path(os.path.abspath(__file__)).parents[2]
