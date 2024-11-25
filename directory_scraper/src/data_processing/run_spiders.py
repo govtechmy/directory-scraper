@@ -87,21 +87,21 @@ def filter_custom_logs(LOG_FILE_PATH=LOG_FILE_PATH):
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 
-def setup_output_folder(folder_path, spider_names):
+def setup_output_folder(folder_path, spider_names, folder_group):
     """
-    - Prepares the output folder for storing spider results.
-    - Creates the output folder if it doesn't exist.
-    - Deletes any files or directories in the folder that match the spider names.
+    Prepares the output folder for storing spider results in subfolders.
 
     Args:
-    folder_path (str): The path to the folder where spider output will be stored.
-    spider_names (list): List of spider names whose related files/folders need to be removed.
+        folder_path (str): The base path to the output folder.
+        spider_names (list): List of spider names whose related files/folders need to be removed.
+        folder_group (str): The folder group (e.g., 'ministry', 'non_ministry', etc.).
     """
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
+    group_folder_path = os.path.join(folder_path, folder_group)  # Create subfolder for group
+    if not os.path.exists(group_folder_path):
+        os.makedirs(group_folder_path)
     else:
-        for f in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, f)
+        for f in os.listdir(group_folder_path):
+            file_path = os.path.join(group_folder_path, f)
             file_name, file_ext = os.path.splitext(f)
             try:
                 if file_name in spider_names and os.path.isfile(file_path):
@@ -112,7 +112,7 @@ def setup_output_folder(folder_path, spider_names):
                     logger.info(f"Deleted directory: {file_path}")
             except Exception as e:
                 logger.warning(f"Failed to delete {file_path}. Reason: {e}")
-        logger.info(f"Done deleting relevant files in {folder_path}")
+        logger.info(f"Done deleting relevant files in {group_folder_path}")
 
 def backup_spider_outputs(output_folder, spider_names, backup_folder, max_backups=3):
     """
@@ -197,21 +197,25 @@ class RunSpiderPipeline:
 
     Attributes:
         results (dict): Stores scraped items for each spider.
+        output_folder (str): Base output folder.
+        folder_group (str): Subfolder name for the group (e.g., 'ministry', 'bahagian').
 
     Methods:
         open_spider(spider): Initializes results for the spider and logs its start.
         process_item(item, spider): Appends scraped items to the spider's results.
         close_spider(spider): Writes results to a JSON file if data was collected, or logs a failure.
     """
-    def __init__(self,output_folder):
+    def __init__(self, output_folder, folder_group):
         self.results = {}
         self.output_folder = output_folder
+        self.folder_group = folder_group  # Store the folder group
 
     @classmethod
     def from_crawler(cls, crawler):
-        # Get output_folder from settings
+        # Get output_folder and folder_group from settings
         output_folder = crawler.settings.get('OUTPUT_FOLDER')
-        return cls(output_folder=output_folder)
+        folder_group = crawler.settings.get('FOLDER_GROUP')
+        return cls(output_folder=output_folder, folder_group=folder_group)
 
     def open_spider(self, spider):
         self.start_time = datetime.now()
@@ -229,7 +233,12 @@ class RunSpiderPipeline:
         logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
 
         if self.results[spider.name]:
-            output_file = os.path.join(self.output_folder, f"{spider.name}.json")
+            # Save to the correct subfolder
+            group_folder = os.path.join(self.output_folder, self.folder_group)
+            os.makedirs(group_folder, exist_ok=True)  # Ensure the group subfolder exists
+            output_file = os.path.join(group_folder, f"{spider.name}.json")
+
+            # Write results to the JSON file
             with open(output_file, 'w') as f:
                 f.write("[\n")
                 for idx, result in enumerate(self.results[spider.name]):
@@ -239,18 +248,26 @@ class RunSpiderPipeline:
                     else:
                         f.write("\n")
                 f.write("]\n")
+
             global success_count, success_spiders
             success_count += 1
             if spider.name not in success_spiders:
                 success_spiders.append(spider.name)
-            logger.info(f"Spider '{spider.name}' finished successfully.")
-        else:  # Spider failed
+            logger.info(f"Spider '{spider.name}' finished successfully and saved to {output_file}.")
+        else:
             global fail_count, fail_spiders
             fail_count += 1
             if spider.name not in fail_spiders:
                 fail_spiders.append(spider.name)
             logger.warning(f"Spider '{spider.name}' finished without results.")
 
+def identify_folder_group(spider_name):
+    spider_tree = build_spider_tree()
+    for folder_group, spiders in spider_tree.items():
+        if spider_name in spiders.get('spiders', []):
+            return folder_group
+    return None
+    
 def run_spiders(spider_list, output_folder, backup_folder):
     global success_count, fail_count, success_spiders, fail_spiders
     success_count, fail_count = 0, 0
@@ -259,20 +276,22 @@ def run_spiders(spider_list, output_folder, backup_folder):
     spider_loader = SpiderLoader.from_settings(get_project_settings())
     all_spiders = spider_loader.list()
 
-    backup_spider_outputs(output_folder=output_folder, spider_names=spider_list, backup_folder=backup_folder)
-    setup_output_folder(folder_path=output_folder, spider_names=spider_list)
-
-    process = setup_crawler(spider_list)
-    #process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
-    process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
-    process.settings.set('OUTPUT_FOLDER', output_folder)  # Pass output_folder to pipeline settings
-
     for spider_name in spider_list:
-        if spider_name in all_spiders:
-            spider_cls = spider_loader.load(spider_name)
-            process.crawl(spider_cls)
-        else:
-            logger.warning(f"Spider '{spider_name}' not found. Skipping...")
+        folder_group = identify_folder_group(spider_name)  # Function to map spider to its folder group
+        if not folder_group:
+            logger.warning(f"Spider '{spider_name}' does not belong to any group. Skipping...")
+            continue
+
+        backup_spider_outputs(output_folder=output_folder, spider_names=[spider_name], backup_folder=backup_folder)
+        setup_output_folder(folder_path=output_folder, spider_names=[spider_name], folder_group=folder_group)
+
+        process = setup_crawler([spider_name])
+        process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
+        process.settings.set('OUTPUT_FOLDER', output_folder)
+        process.settings.set('FOLDER_GROUP', folder_group)  # Pass group to pipeline settings
+
+        spider_cls = spider_loader.load(spider_name)
+        process.crawl(spider_cls)
 
     process.start()
     logger.info(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
@@ -299,6 +318,7 @@ def validate_path(spider_tree, *path_parts):
 def build_spider_tree(base_dir=None):
     """
     Builds the spider tree (dictionary) based on the folder structure under `spiders/`.
+    Groups spiders into their respective folders such as `ministry`, `non_ministry`, and `bahagian`.
     """
     settings = get_project_settings()
     spider_loader = SpiderLoader.from_settings(settings)
@@ -320,24 +340,35 @@ def build_spider_tree(base_dir=None):
         spider_file_path = os.path.abspath(spider_module.replace(".", os.sep) + ".py")
         relative_spider_file_path = os.path.relpath(spider_file_path, base_dir)
 
+        # Split path to group spiders by folder (ministry, non_ministry, etc.)
         path_parts = relative_spider_file_path.split(os.sep)
-        current_level = spider_tree
-        for part in path_parts[:-1]:  # Ignore the file itself
-            current_level = current_level.setdefault(part, {})
-        current_level.setdefault("spiders", []).append(spider_name)
+        folder_group = path_parts[0]  # Top-level folder
+
+        if folder_group not in spider_tree:
+            spider_tree[folder_group] = {"spiders": []}
+
+        spider_tree[folder_group]["spiders"].append(spider_name)
 
     return spider_tree
 
-def extract_spiders_from_path(spider_tree, *path_parts):
+def extract_spiders_from_path(spider_tree, folder_group):
     """
-    Navigates the spider tree to extract all spiders at the specified path level,
-    collecting spiders from any nested subdirectories.
+    Extracts all spiders from the specified folder group.
+
+    Args:
+        spider_tree (dict): The spider tree dictionary.
+        folder_group (str): The folder group to extract spiders from (e.g., 'ministry').
+
+    Returns:
+        list: List of spiders in the specified folder group.
     """
-    _, level = validate_path(spider_tree, *path_parts)
-    if not level:
+    if folder_group not in spider_tree:
         return []
 
     spiders = []
+    group = spider_tree[folder_group]
+
+    # Collect spiders from the folder group
     def collect_spiders(level):
         if isinstance(level, list):  # If level is a list, directly add its items
             spiders.extend(level)
@@ -347,7 +378,7 @@ def extract_spiders_from_path(spider_tree, *path_parts):
             for sub_level in level.values():
                 collect_spiders(sub_level)
 
-    collect_spiders(level)
+    collect_spiders(group)
     return spiders
 
 def get_all_spiders():
@@ -493,6 +524,7 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
 
     print(f"Running spiders: {spider_list}")
     run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
+    print(f"Spiders stored in : {OUTPUT_FOLDER}")
     filter_custom_logs()
 
 if __name__ == "__main__":
