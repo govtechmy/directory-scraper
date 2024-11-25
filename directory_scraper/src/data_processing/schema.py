@@ -7,7 +7,7 @@ Each category may have a unique schema or share a schema with other categories.
 ### Schema Sharing Across Categories
 - **Shared Schema**: Multiple data categories can use the same schema if their structure is similar.
   - For example, both "ministry" and "non_ministry" categories might share the `DIRECTORY` schema.
-  - To enable this, simply map these categories to the same processor class or schema definition in `SCHEMA_MAPPING` and `SCHEMA_REGISTRY`.
+  - To enable this, simply map these categories to the same processor class or schema definition in `CATEGORY_SCHEMA_MAPPING` and `SCHEMA_CLASS_REGISTRY`.
 
 - **Distinct Schema**: If a category has unique requirements, define a separate schema for it.
   - Add a new schema to `SCHEMA_DEFINITIONS`.
@@ -43,29 +43,29 @@ SCHEMA_DEFINITIONS = { ... "NewCategory": { "key_name": {"type": str, "nullable"
       - `nullable`: Whether the field can be `None`.
          - For `nullable=False`, missing or invalid fields will use default values (`""` for strings, `0` for integers).
 
-4. Update Mappings for the New Processor:
+4. Update the Processor Registry:
 
-- Add the category and processor name to `SCHEMA_MAPPING`:
+- Add an entry in the SCHEMA_CLASS_REGISTRY dictionary
 '''
-SCHEMA_MAPPING = {
+SCHEMA_CLASS_REGISTRY = {
+    ...
+    "NewProcessorName": NewProcessorClass,
+}
+'''
+- NewProcessorName: Define a unique short name for class
+- NewProcessorClass: The class you defined in Step 2.
+
+5. Update Mappings for the New Processor:
+
+- Add the category and processor name to `CATEGORY_SCHEMA_MAPPING`:
+'''
+CATEGORY_SCHEMA_MAPPING = {
     ...
     "new_category_folder": "NewProcessorName",
 }
 '''
 - new_category_folder: Name of the folder under spiders/ corresponding to the new data category.
-- NewProcessorName: The name of the processor class you defined in Step 2.
-
-5. Update the Processor Registry:
-
-- Add an entry in the SCHEMA_REGISTRY dictionary
-'''
-SCHEMA_REGISTRY = {
-    ...
-    "NewProcessorName": NewProcessorClass,
-}
-'''
-- NewProcessorName: Must match the name in SCHEMA_MAPPING.
-- NewProcessorClass: The class you defined in Step 2.
+- NewProcessorName: Must match the short name you defined in Step 4.
 
 6. Test the New Category:
 - Run the full pipeline with test data.
@@ -89,8 +89,9 @@ from directory_scraper.src.data_processing.utils.utils_process import (
     remove_keys,
 )
 
-
+# ================================================================================
 # ============================== SCHEMA DEFINITIONS ==============================
+# ================================================================================
 
 DIRECTORY_SCHEMA = {
     "org_sort": {"type": int, "nullable": False},
@@ -117,13 +118,15 @@ BAHAGIAN_SCHEMA = { #EXAMPLE
 }
 
 SCHEMA_DEFINITIONS = {
-    "DIRECTORY": DIRECTORY_SCHEMA,
-    "BAHAGIAN": BAHAGIAN_SCHEMA,
+    "DIRECTORY_SCHEMA": DIRECTORY_SCHEMA,
+    "BAHAGIAN_SCHEMA": BAHAGIAN_SCHEMA,
 }
 
-# ============================== END OF SCHEMA DEFINITIONS ==============================
+# ========================== END OF SCHEMA DEFINITIONS ===========================
 
-# ============================== VALIDATION FUNCTIONS ==============================
+# ================================================================================
+# ============================== VALIDATION FUNCTIONS ============================
+# ================================================================================
 
 def validate_required_keys(record, schema_name):
     """
@@ -167,17 +170,19 @@ def validate_required_keys(record, schema_name):
             else:
                 record[key] = meta["type"]()  # Generic default for other types
 
-# ============================== END OF VALIDATION FUNCTIONS ==============================
+# ========================= END OF VALIDATION FUNCTIONS =========================
 
-# ============================== PROCESSORS ==============================
+# ================================================================================
+# ============================== PROCESSORS ======================================
+# ================================================================================
 
 def get_processor(schema_name):
     """
     Get the processor explicitly based on the schema name.
     """
-    processor = SCHEMA_REGISTRY.get(schema_name)
+    processor = SCHEMA_CLASS_REGISTRY.get(schema_name)
     if not processor:
-        raise ValueError(f"Schema '{schema_name}' not found in registry.")
+        raise ValueError(f"Schema name '{schema_name}' not found in SCHEMA_CLASS_REGISTRY.")
     return processor
 
 class BaseProcessor:
@@ -190,15 +195,17 @@ class BaseProcessor:
     def process_pipeline(self, data):
         raise NotImplementedError
 
-# ============================== END OF PROCESSORS ==============================
+# ============================= END OF PROCESSORS ================================
 
-# ============================== PROCESSORS CLASS ==============================
+# ================================================================================
+# ============================== PROCESSORS CLASS ================================
+# ================================================================================
 
 class DirectoryProcessor(BaseProcessor):
     """
     Processor for Directory data schema.
     """
-    SCHEMA_NAME = "DIRECTORY"
+    SCHEMA_NAME = "DIRECTORY_SCHEMA"
 
     def process_record(self, record):
         validate_required_keys(record, self.SCHEMA_NAME)
@@ -244,7 +251,7 @@ class BahagianProcessor(BaseProcessor):
     """
     Processor for Bahagian data schema.
     """
-    SCHEMA_NAME = "BAHAGIAN"
+    SCHEMA_NAME = "BAHAGIAN_SCHEMA"
 
     def process_record(self, record):
         validate_required_keys(record, self.SCHEMA_NAME)
@@ -258,20 +265,23 @@ class BahagianProcessor(BaseProcessor):
         processed_data = [self.process_record(record) for record in data]
         return processed_data
 
-# ============================== END OF PROCESSORS CLASS ==============================
+# =========================  END OF PROCESSORS CLASS =============================
 
-#=============================== SCHEMA MAPPING ==============================
 
-SCHEMA_MAPPING = {
+# ================================================================================
+# ============================== SCHEMA MAPPING ==================================
+# ================================================================================
+
+SCHEMA_CLASS_REGISTRY = {
+    "Directory": DirectoryProcessor,
+    "FungsiBahagian": BahagianProcessor,
+}
+
+CATEGORY_SCHEMA_MAPPING = {
     "ministry": "Directory",
     "non_ministry": "Directory",
     "bahagian_unit": "FungsiBahagian",
 }
 
-SCHEMA_REGISTRY = {
-    "Directory": DirectoryProcessor,
-    "FungsiBahagian": BahagianProcessor,
-}
-
-#=============================== END OF SCHEMA MAPPING ========================
+#============================= END OF SCHEMA MAPPING =============================
 

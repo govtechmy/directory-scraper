@@ -6,7 +6,7 @@ import shutil
 import logging
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
-from directory_scraper.src.data_processing.schema import SCHEMA_MAPPING, SCHEMA_REGISTRY
+from directory_scraper.src.data_processing.schema import CATEGORY_SCHEMA_MAPPING, SCHEMA_CLASS_REGISTRY
 from directory_scraper.src.data_processing.utils.utils_process import (
     load_json,
     save_json
@@ -28,7 +28,7 @@ def process_json_file(json_file_path, output_folder, schema_name):
 
     try:
         data = load_json(json_file_path)
-        processor_class = SCHEMA_REGISTRY[schema_name]  # Lookup processor
+        processor_class = SCHEMA_CLASS_REGISTRY[schema_name]  # Lookup processor
         processor = processor_class()
 
         if isinstance(data, list):
@@ -64,7 +64,7 @@ def process_all_json_files(input_folder, output_folder):
     for root, dirs, files in os.walk(input_folder):
         # Determine schema based on the subfolder name
         folder_name = os.path.basename(root)
-        schema_name = SCHEMA_MAPPING.get(folder_name)
+        schema_name = CATEGORY_SCHEMA_MAPPING.get(folder_name)
 
         if not schema_name:
             logging.warning(f"No matching schema for folder: {folder_name}. Skipping.")
