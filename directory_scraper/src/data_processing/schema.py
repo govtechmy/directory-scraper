@@ -4,7 +4,7 @@ This schema.py is expected to be updated if new data category is introduced.
 Each data category corresponds to a specific folder under spiders/ (e.g., ministry, bahagian_unit) and has a unique schema and processing logic. 
 This script ensures seamless integration of these data categories into the relevant processing pipeline.
 
-*********************Adding a New Data Category*********************
+********************* Adding a New Data Category *********************
 To add support for a new data category, follow these steps:
 
 1. Create a Utility Script (if needed):
@@ -18,7 +18,25 @@ file: utils_process.py
     -> process_record(record): Processes a single record (e.g., validate fields, transform data).
     -> process_pipeline(data): Processes an entire dataset (e.g., apply sorting, remove invalid records).
 
-3. Update the Schema Mapping:
+3. Update the Schema Mapping and Definitions:
+- Add a new schema definition in the SCHEMA_DEFINITIONS dictionary for the new category:
+'''
+SCHEMA_DEFINITIONS = {
+    ...
+    "NewCategory": {
+        "key_name": {"type": str, "nullable": False},
+        ...
+    },
+}
+'''
+
+- **Key Rules for Schema Definitions**:
+    - `type`: Specifies the expected data type (e.g., `str`, `int`, etc.).
+    - `nullable`: Indicates whether the field can be `None`.
+        - If `False`, missing or invalid fields will be set to default values:
+            - `""` for `str`, `0` for `int`, or as defined in the code.
+    - Add meaningful keys to ensure the output aligns with the schema.
+
 - Add an entry in the SCHEMA_MAPPING dictionary:
 '''
 SCHEMA_MAPPING = {
