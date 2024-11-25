@@ -2,19 +2,7 @@
 This schema.py should be updated whenever a new data category is added.
 Data category is defined as the specific folder under spiders/ (e.g., ministry, ministry_orgs, non_ministry, bahagian_unit).
 
-Each category may have a unique schema or share a schema with other categories. 
-
-### Schema Sharing Across Categories
-- **Shared Schema**: Multiple data categories can use the same schema if their structure is similar.
-  - For example, both "ministry" and "non_ministry" categories might share the `DIRECTORY` schema.
-  - To enable this, simply map these categories to the same processor class or schema definition in `CATEGORY_SCHEMA_MAPPING` and `SCHEMA_CLASS_REGISTRY`.
-
-- **Distinct Schema**: If a category has unique requirements, define a separate schema for it.
-  - Add a new schema to `SCHEMA_DEFINITIONS`.
-  - Create a processor class tailored to its specific validation and processing needs.
-
-This flexibility allows schema definitions to remain modular and reusable, reducing duplication when multiple categories share similar structures.
-This is also to ensure seamless integration of new categories into the processing pipeline.
+This ensures seamless integration of new categories into the processing pipeline.
 
 ********************* Adding a New Data Category *********************
 
@@ -72,6 +60,21 @@ CATEGORY_SCHEMA_MAPPING = {
 - Confirm that outputs conform to the schema and appear in the expected output folder.
 
 ************************End of Adding a New Data Category*********************
+
+Disclaimer:
+
+Each category may have a unique schema or share a schema with other categories. 
+
+- **Shared Schema**: Multiple data categories can use the same schema if their structure is similar.
+  - For example, both "ministry" and "non_ministry" categories might share the `DIRECTORY` schema.
+  - To enable this, simply map these categories to the same processor class or schema definition in `CATEGORY_SCHEMA_MAPPING` and `SCHEMA_CLASS_REGISTRY`.
+
+- **Distinct Schema**: If a category has unique requirements, define a separate schema for it.
+  - Add a new schema to `SCHEMA_DEFINITIONS`.
+  - Create a processor class tailored to its specific validation and processing needs.
+
+This flexibility allows schema definitions to remain modular and reusable, reducing duplication when multiple categories share similar structures.
+
 """
 
 import logging
