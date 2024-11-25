@@ -1,43 +1,51 @@
 """
-This schema.py is expected to be updated if new data category is introduced.
+This schema.py should be updated whenever a new data category is added.
+Data category is defined as the specific folder under spiders/ (e.g., ministry, ministry_orgs, non_ministry, bahagian_unit).
 
-Each data category corresponds to a specific folder under spiders/ (e.g., ministry, bahagian_unit) and has a unique schema and processing logic. 
-This script ensures seamless integration of these data categories into the relevant processing pipeline.
+Each category may have a unique schema or share a schema with other categories. 
+
+### Schema Sharing Across Categories
+- **Shared Schema**: Multiple data categories can use the same schema if their structure is similar.
+  - For example, both "ministry" and "non_ministry" categories might share the `DIRECTORY` schema.
+  - To enable this, simply map these categories to the same processor class or schema definition in `SCHEMA_MAPPING` and `SCHEMA_REGISTRY`.
+
+- **Distinct Schema**: If a category has unique requirements, define a separate schema for it.
+  - Add a new schema to `SCHEMA_DEFINITIONS`.
+  - Create a processor class tailored to its specific validation and processing needs.
+
+This flexibility allows schema definitions to remain modular and reusable, reducing duplication when multiple categories share similar structures.
+This is also to ensure seamless integration of new categories into the processing pipeline.
 
 ********************* Adding a New Data Category *********************
-To add support for a new data category, follow these steps:
 
-1. Create a Utility Script (if needed):
-- Create a new utility script/functions (if needed) in the utils/ folder for the new category.
-- The utility script should contain the data validation, transformation, and cleaning functions specific to that category.
-file: utils_process.py
+A new data category is introduced when a new folder is added in spiders/ folder.
+To add a new data category in this script, follow these steps:
 
-2. Define a Processor Class:
-- Create a new processor class in schema.py that extends BaseProcessor.
-- Implement two required methods in the class:
-    -> process_record(record): Processes a single record (e.g., validate fields, transform data).
-    -> process_pipeline(data): Processes an entire dataset (e.g., apply sorting, remove invalid records).
+1. Create or Update Utility Functions:
+   - If needed, create a new utility script in the `utils/` folder for the new category.
+   - Or, update the utils/utils_process.py
+   - The script should include validation, transformation, and cleaning functions for that category.
 
-3. Update the Schema Mapping and Definitions:
-- Add a new schema definition in the SCHEMA_DEFINITIONS dictionary for the new category:
+2. Define a New Processor Class:
+   - Add a processor class to schema.py that extends `BaseProcessor`.
+   - Implement these methods:
+     - `process_record(record)`: Processes a single record (e.g., validate fields, transform data).
+     - `process_pipeline(data)`: Processes an entire dataset (e.g., apply sorting, remove invalid records).
+
+3. Add a New Schema Definition:
+   - Define the schema in `SCHEMA_DEFINITIONS`:
+
 '''
-SCHEMA_DEFINITIONS = {
-    ...
-    "NewCategory": {
-        "key_name": {"type": str, "nullable": False},
-        ...
-    },
-}
+SCHEMA_DEFINITIONS = { ... "NewCategory": { "key_name": {"type": str, "nullable": False}, ... }, }
 '''
+   - Key Notes for Defining Schemas:
+      - `type`: Expected data type (e.g., `str`, `int`).
+      - `nullable`: Whether the field can be `None`.
+         - For `nullable=False`, missing or invalid fields will use default values (`""` for strings, `0` for integers).
 
-- **Key Rules for Schema Definitions**:
-    - `type`: Specifies the expected data type (e.g., `str`, `int`, etc.).
-    - `nullable`: Indicates whether the field can be `None`.
-        - If `False`, missing or invalid fields will be set to default values:
-            - `""` for `str`, `0` for `int`, or as defined in the code.
-    - Add meaningful keys to ensure the output aligns with the schema.
+4. Update Mappings for the New Processor:
 
-- Add an entry in the SCHEMA_MAPPING dictionary:
+- Add the category and processor name to `SCHEMA_MAPPING`:
 '''
 SCHEMA_MAPPING = {
     ...
@@ -47,7 +55,8 @@ SCHEMA_MAPPING = {
 - new_category_folder: Name of the folder under spiders/ corresponding to the new data category.
 - NewProcessorName: The name of the processor class you defined in Step 2.
 
-4. Update the Processor Registry:
+5. Update the Processor Registry:
+
 - Add an entry in the SCHEMA_REGISTRY dictionary
 '''
 SCHEMA_REGISTRY = {
@@ -58,15 +67,13 @@ SCHEMA_REGISTRY = {
 - NewProcessorName: Must match the name in SCHEMA_MAPPING.
 - NewProcessorClass: The class you defined in Step 2.
 
-5. Test the Integration:
-
-- Ensure the new category works as expected by running the entire pipeline with test data.
-- Validate outputs in the relevant output folder under data/output/
+6. Test the New Category:
+- Run the full pipeline with test data.
+- Confirm that outputs conform to the schema and appear in the expected output folder.
 
 ************************End of Adding a New Data Category*********************
-
-
 """
+
 import logging
 
 from directory_scraper.src.data_processing.utils.utils_process import (
