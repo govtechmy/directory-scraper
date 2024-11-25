@@ -53,10 +53,13 @@ def main():
     try:
         print("\nSpiders ran successfully. Proceeding with data processing...")
         process_all_json_files(input_folder=RAW_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
+        if not os.listdir(CLEAN_DATA_FOLDER):
+            print("No data was cleaned nor processed. Skipping load data to Elasticsearch")
+            return
     except Exception as e:
         print("Data processing failed:", e)
         return
-    
+
     # Step 4: Check SHA and upload to Elasticsearch if there are changes
     try:
         print("\nChecking for changes and uploading to Elasticsearch...")
