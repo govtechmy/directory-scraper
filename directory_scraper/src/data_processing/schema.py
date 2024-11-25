@@ -230,7 +230,8 @@ class BahagianProcessor(BaseProcessor):
         """
         The full processing pipeline for Bahagian data.
         """
-        return data
+        processed_data = [self.process_record(record) for record in data]
+        return processed_data
 
 # ============================== END OF PROCESSORS CLASS ==============================
 
