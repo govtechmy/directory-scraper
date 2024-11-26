@@ -6,11 +6,16 @@ from elasticsearch.helpers import bulk
 from datetime import datetime
 import sys
 from dotenv import load_dotenv
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
+from directory_scraper.src.utils.discord_bot import send_discord_notification
 
 load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
+
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ES_URL = os.getenv('ES_URL') #ES_URL
@@ -68,13 +73,21 @@ mapping = {
 }
 
 api_key_info = ES_API_KEY
-if api_key_info:
-    es = Elasticsearch(
-        ES_URL,
-        api_key=ES_API_KEY
-    )
-else:
-    es = Elasticsearch(ES_URL)
+# if api_key_info:
+#     es = Elasticsearch(
+#         ES_URL,
+#         api_key=ES_API_KEY
+#     )
+# else:
+#     es = Elasticsearch(ES_URL)
+
+es = Elasticsearch(
+    ES_URL,
+    api_key=api_key_info if api_key_info else None,
+    timeout=30,  # Timeout in seconds for each request
+    max_retries=3,  # Number of retries for failed requests
+    retry_on_timeout=True  # Automatically retry if a timeout occurs
+)
 
 def calculate_sha256_for_document(doc):
     """
@@ -110,17 +123,34 @@ def check_and_update_file_sha(file_path):
         print(f'Status index "{ES_SHA_INDEX}" | {os.path.basename(file_path)}: NO CHANGES')
     return False  # No changes
 
+# def check_sha_and_update(data_folder):
+#     """
+#     Check if there are any changes in the files' SHA-256 hashes.
+#     Returns a list of files with changed SHAs.
+#     """    
+#     changed_files = []
+#     for file_name in os.listdir(data_folder):
+#         file_path = os.path.join(data_folder, file_name)
+#         if file_name.endswith(".json") and check_and_update_file_sha(file_path):
+#             print(f'Status file | {file_name}: CHANGES DETECTED')
+#             changed_files.append(file_path)
+#     return changed_files
+
 def check_sha_and_update(data_folder):
     """
-    Check if there are any changes in the files' SHA-256 hashes.
+    Check if there are any changes in the files' SHA-256 hashes across all category subfolders.
     Returns a list of files with changed SHAs.
-    """    
+    """
     changed_files = []
-    for file_name in os.listdir(data_folder):
-        file_path = os.path.join(data_folder, file_name)
-        if file_name.endswith(".json") and check_and_update_file_sha(file_path):
-            print(f'Status file | {file_name}: CHANGES DETECTED')
-            changed_files.append(file_path)
+    
+    # Traverse subfolders within the data folder
+    for root, _, files in os.walk(data_folder):
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            if file_name.endswith(".json") and check_and_update_file_sha(file_path):
+                print(f'Status file | {file_name}: CHANGES DETECTED in {root}')
+                changed_files.append(file_path)
+    
     return changed_files
 
 def delete_documents_by_org_id(org_id):
@@ -138,8 +168,10 @@ def delete_documents_by_org_id(org_id):
     except Exception as e:
         print(f"Error deleting documents with org_id {org_id}: {e}")
 
-def upload_clean_data_to_es(files_to_upload):
+def upload_clean_data_to_es(files_to_upload, batch_size=500):
     """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
+    all_summaries = [] 
+
     for file_path in files_to_upload:
         file_name = os.path.basename(file_path)
         
@@ -210,19 +242,39 @@ def upload_clean_data_to_es(files_to_upload):
                 })
                 deleted_count += 1
 
-            # Execute bulk actions for this org_id
+            # # Execute bulk actions for this org_id
+            # if actions:
+            #     print(f"Processing {len(actions)} actions for org_id {org_id}...")
+            #     success, failed = bulk(es, actions)
+            #     print(f"Successfully processed {success} actions.")
+            #     if failed:
+            #         print("\nSome actions failed:", failed)
+
+            # Execute bulk actions for this org_id in batches
             if actions:
-                print(f"Processing {len(actions)} actions for org_id {org_id}...")
-                success, failed = bulk(es, actions)
-                print(f"Successfully processed {success} actions.")
-                if failed:
-                    print("\nSome actions failed:", failed)
+                print(f"Processing {len(actions)} actions for org_id {org_id} in batches of {batch_size}...")
+                for i in range(0, len(actions), batch_size):
+                    batch = actions[i:i + batch_size]
+                    try:
+                        success, failed = bulk(es, batch)
+                        print(f"Batch {i // batch_size + 1}: Successfully processed {success} actions.")
+                        if failed:
+                            print("\nSome actions failed:", failed)
+                    except Exception as e:
+                        print(f"Error processing batch {i // batch_size + 1}: {e}")
 
             # Print summary for each org_id in the file
             print(f"Summary for org_id {org_id}:")
-            print(f"  - Added: {added_count}")
-            print(f"  - Updated: {updated_count}")
-            print(f"  - Deleted: {deleted_count}")
+            print(f"- Added: {added_count}")
+            print(f"- Updated: {updated_count}")
+            print(f"- Deleted: {deleted_count}")
+
+            summary = (
+                f"🛢️ {org_id} - Added: {added_count}, Updated: {updated_count}, Deleted: {deleted_count}"
+                )
+            all_summaries.append(summary)
+
+    return all_summaries
 
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
@@ -254,14 +306,29 @@ def main(data_folder=None):
 
     if not get_elasticsearch_info():
         print("Skipping indexing due to Elasticsearch connection issues.")
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"Skipping indexing due to Elasticsearch connection issues.", DISCORD_WEBHOOK_URL, THREAD_ID)
+        else:
+            print("Discord webhook URL not provided. Skipping notifications.")    
         return
         
     if create_index_if_not_exists():
         changed_files = check_sha_and_update(data_folder)
         if changed_files:
-            upload_clean_data_to_es(changed_files)
+            all_summaries = upload_clean_data_to_es(changed_files)
+
+            # Consolidate and send a single Discord notification
+            if all_summaries:
+                final_summary_message = "\n".join(all_summaries)
+                print("Final Summary:\n", final_summary_message)
+                if DISCORD_WEBHOOK_URL:
+                    send_discord_notification(final_summary_message, DISCORD_WEBHOOK_URL, THREAD_ID)
+                else:
+                    print("Discord webhook URL not provided. Skipping notifications.")
         else:
             print("\nNo changes detected in data. Skipping upload.")
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🛢️ No changes detected in data. Skipping upload to ES.", DISCORD_WEBHOOK_URL, THREAD_ID)
     else:
         print("Skipping indexing due to index creation issues.")
 

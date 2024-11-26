@@ -12,7 +12,12 @@ import inspect
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_SPIDERS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
+from directory_scraper.src.utils.discord_bot import send_discord_notification
+from dotenv import load_dotenv
+load_dotenv()
 
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
 #=========================Folder setup=======================================
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 LOG_DIR = DEFAULT_LOG_DIR
@@ -167,7 +172,7 @@ def setup_crawler(spiders):
     settings.set('DOWNLOAD_TIMEOUT', 60)
     settings.set('DOWNLOAD_DELAY', 1)
     settings.set('LOG_FILE', LOG_FILE_PATH)
-    settings.set('LOG_LEVEL', 'INFO')
+    settings.set('LOG_LEVEL', 'WARNING')
 
     set_playwright_settings(settings, spiders)
     process = CrawlerProcess(settings)
@@ -276,6 +281,9 @@ def run_spiders(spider_list, output_folder, backup_folder):
     spider_loader = SpiderLoader.from_settings(get_project_settings())
     all_spiders = spider_loader.list()
 
+    # Create a single CrawlerProcess instance
+    process = setup_crawler(spider_list)
+
     for spider_name in spider_list:
         folder_group = identify_folder_group(spider_name)  # Function to map spider to its folder group
         if not folder_group:
@@ -285,19 +293,34 @@ def run_spiders(spider_list, output_folder, backup_folder):
         backup_spider_outputs(output_folder=output_folder, spider_names=[spider_name], backup_folder=backup_folder)
         setup_output_folder(folder_path=output_folder, spider_names=[spider_name], folder_group=folder_group)
 
-        process = setup_crawler([spider_name])
-        process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
-        process.settings.set('OUTPUT_FOLDER', output_folder)
-        process.settings.set('FOLDER_GROUP', folder_group)  # Pass group to pipeline settings
+        try:
+            # Set pipeline and additional settings
+            process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
+            process.settings.set('OUTPUT_FOLDER', output_folder)
+            process.settings.set('FOLDER_GROUP', folder_group)  # Pass group to pipeline settings
 
-        spider_cls = spider_loader.load(spider_name)
-        process.crawl(spider_cls)
+            spider_cls = spider_loader.load(spider_name)
+            process.crawl(spider_cls)
+        except Exception as e:
+            logger.error(f"Error while setting up spider '{spider_name}': {e}")
+            fail_spiders.append(spider_name)
 
-    process.start()
+    try:
+        process.start()  # Start the crawling process
+    except Exception as e:
+        logger.error(f"Error during crawling: {e}")
+        print(f"Error during crawling: {e}")
+
     logger.info(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
     logger.info(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
     print(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
     print(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+
+    if DISCORD_WEBHOOK_URL:
+        send_discord_notification(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        send_discord_notification(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+    else:
+        print("Discord webhook URL not provided. Skipping notifications.")
 
 #========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
@@ -521,8 +544,16 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
             is_valid, _ = validate_path(spider_tree, *path_parts)
 
             spider_list = extract_spiders_from_path(spider_tree, *path_parts)
+        
+        spider_list = list(set(spider_list))
 
-    print(f"Running spiders: {spider_list}")
+    print(f"Running {len(spider_list)} spiders: {spider_list}")
+
+    if DISCORD_WEBHOOK_URL:
+        send_discord_notification(f"Running {len(spider_list)} spiders: {spider_list}", DISCORD_WEBHOOK_URL, THREAD_ID)
+    else:
+        print("Discord webhook URL not provided. Skipping notifications.")
+
     run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
     print(f"Spiders stored in : {OUTPUT_FOLDER}")
     filter_custom_logs()
