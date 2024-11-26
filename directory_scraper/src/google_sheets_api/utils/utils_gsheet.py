@@ -3,7 +3,7 @@ import os
 import gspread
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
-from google_sheets.google_sheets_utils import GoogleSheetManager
+from directory_scraper.src.google_sheets.google_sheets_utils import GoogleSheetManager
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="gsheet_api.log", filemode="a", level=logging.INFO, format='%(asctime)s - %(pathname)s - Line %(lineno)d - %(levelname)s - %(message)s')

@@ -7,9 +7,9 @@ import pandas as pd
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
-from google_sheets_api.utils.utils_gsheet import GoogleSheetManager
-from data_processing.process_data import data_processing_pipeline
-from elasticsearch_upload.data_to_es import calculate_sha256_for_file
+from directory_scraper.src.google_sheets_api.utils.utils_gsheet import GoogleSheetManager
+from directory_scraper.src.data_processing.process_data import data_processing_pipeline
+from directory_scraper.src.elasticsearch_upload.data_to_es import calculate_sha256_for_file
 
 # Setup
 load_dotenv()
