@@ -50,7 +50,7 @@ jobs:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           THREAD_ID: ${{ secrets.THREAD_ID }}
-        run: python $DIRECTORY_SRC/workflows/main_spiders.py jpm
+        run: python $DIRECTORY_SRC/workflows/main_spiders.py list
 
       # - name: Upload spider output as artifact
       #   uses: actions/upload-artifact@v3
@@ -62,8 +62,8 @@ jobs:
       - name: Upload cleaned data as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: clean-data
-          path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
+          name: clean-data/ministry
+          path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data/ministry
           retention-days: 5
 
       - name: Upload run_spiders.log as an artifact
