@@ -62,7 +62,7 @@ jobs:
       - name: Upload cleaned data as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: clean-data/ministry
+          name: clean-data_ministry
           path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data/ministry
           retention-days: 5
 
