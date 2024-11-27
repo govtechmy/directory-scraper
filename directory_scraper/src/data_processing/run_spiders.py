@@ -172,7 +172,7 @@ def setup_crawler(spiders):
     settings.set('DOWNLOAD_TIMEOUT', 60)
     settings.set('DOWNLOAD_DELAY', 1)
     settings.set('LOG_FILE', LOG_FILE_PATH)
-    settings.set('LOG_LEVEL', 'WARNING')
+    settings.set('LOG_LEVEL', 'INFO')
 
     set_playwright_settings(settings, spiders)
     process = CrawlerProcess(settings)
@@ -272,55 +272,89 @@ def identify_folder_group(spider_name):
         if spider_name in spiders.get('spiders', []):
             return folder_group
     return None
-    
-def run_spiders(spider_list, output_folder, backup_folder):
+
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=3):
+    """
+    Run spiders with retry logic for failures.
+
+    Args:
+        spider_list (list): List of spider names to run.
+        output_folder (str): Path to the output folder for spider results.
+        backup_folder (str): Path to the folder for backing up spider outputs.
+        max_retries (int): Maximum number of retry attempts for failed spiders.
+    """
     global success_count, fail_count, success_spiders, fail_spiders
     success_count, fail_count = 0, 0
-    success_spiders, fail_spiders = [], []
+    success_spiders, fail_spiders = [], []  # Reset state for each run
 
-    spider_loader = SpiderLoader.from_settings(get_project_settings())
-    all_spiders = spider_loader.list()
+    retries = 0
+    remaining_spiders = spider_list
 
-    # Create a single CrawlerProcess instance
-    process = setup_crawler(spider_list)
+    while remaining_spiders and retries <= max_retries:
+        #print(f"\nRunning attempt {retries + 1} with spiders: {remaining_spiders}")
+        logger.info(f"\nRunning attempt {retries + 1} with spiders: {remaining_spiders}")
 
-    for spider_name in spider_list:
-        folder_group = identify_folder_group(spider_name)  # Function to map spider to its folder group
-        if not folder_group:
-            logger.warning(f"Spider '{spider_name}' does not belong to any group. Skipping...")
-            continue
+        # Create a single CrawlerProcess instance for the current batch
+        process = setup_crawler(remaining_spiders)
 
-        backup_spider_outputs(output_folder=output_folder, spider_names=[spider_name], backup_folder=backup_folder)
-        setup_output_folder(folder_path=output_folder, spider_names=[spider_name], folder_group=folder_group)
+        for spider_name in remaining_spiders:
+            folder_group = identify_folder_group(spider_name)
+            if not folder_group:
+                logger.warning(f"Spider '{spider_name}' does not belong to any group. Skipping...")
+                continue
+
+            backup_spider_outputs(output_folder=output_folder, spider_names=[spider_name], backup_folder=backup_folder)
+            setup_output_folder(folder_path=output_folder, spider_names=[spider_name], folder_group=folder_group)
+
+            try:
+                # Configure the pipeline and additional settings
+                process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
+                process.settings.set('OUTPUT_FOLDER', output_folder)
+                process.settings.set('FOLDER_GROUP', folder_group)
+
+                spider_cls = SpiderLoader.from_settings(get_project_settings()).load(spider_name)
+                process.crawl(spider_cls)
+            except Exception as e:
+                logger.error(f"Error while setting up spider '{spider_name}': {e}")
+                fail_spiders.append(spider_name)
 
         try:
-            # Set pipeline and additional settings
-            process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
-            process.settings.set('OUTPUT_FOLDER', output_folder)
-            process.settings.set('FOLDER_GROUP', folder_group)  # Pass group to pipeline settings
-
-            spider_cls = spider_loader.load(spider_name)
-            process.crawl(spider_cls)
+            process.start()
         except Exception as e:
-            logger.error(f"Error while setting up spider '{spider_name}': {e}")
-            fail_spiders.append(spider_name)
+            logger.error(f"Error during crawling: {e}")
+            # print(f"Error during crawling: {e}")
+            fail_spiders.extend(remaining_spiders)  # Mark all remaining as failed if process fails
 
-    try:
-        process.start()  # Start the crawling process
-    except Exception as e:
-        logger.error(f"Error during crawling: {e}")
-        print(f"Error during crawling: {e}")
+        # Log results for this attempt
+        logger.info(f"Attempt {retries + 1}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+        logger.info(f"Attempt {retries + 1}: FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+        # print(f"Attempt {retries + 1}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+        # print(f"Attempt {retries + 1}: FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
 
-    logger.info(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
-    logger.info(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
-    print(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
-    print(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+        # Retry only failed spiders in the next iteration
+        remaining_spiders = fail_spiders[:]
+        retries += 1
+        fail_spiders.clear()  # Reset fail_spiders for the next attempt
+
+    # Final summary
+    if remaining_spiders:
+        logger.error(f"\nSpiders failed after {max_retries} retries: {remaining_spiders}")
+        print(f"\nSpiders failed after {max_retries} retries: {remaining_spiders}")
+    else:
+        print("All spiders ran successfully.")
+
+    logger.info(f"\nSUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+    logger.info(f"FAILED: {len(remaining_spiders)} spiders. Spiders: {remaining_spiders}")
+    print(f"\nSUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+    print(f"FAILED: {len(remaining_spiders)} spiders. Spiders: {remaining_spiders}")
 
     if DISCORD_WEBHOOK_URL:
-        send_discord_notification(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
-        send_discord_notification(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        send_discord_notification(f"✅ SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        if remaining_spiders:
+            send_discord_notification(f"❌ FAILED: {len(remaining_spiders)} spiders. Spiders: {remaining_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
     else:
         print("Discord webhook URL not provided. Skipping notifications.")
+
 
 #========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
@@ -518,7 +552,7 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
         all_spiders = get_all_spiders()
         logger.debug(f"Spider tree: {spider_tree}")
 
-        LIST_OF_SPIDERS_TO_RUN = ["jpm", "mof", "nadma", "felda", "perkeso", "niosh", "banknegara", "petronas"]
+        LIST_OF_SPIDERS_TO_RUN = ["rurallink_pkd", 'ekonomi', 'petra']
 
         #================== ARGS VALIDATION =====================
         if not validate_arg_name(args.name, all_spiders, spider_tree):
