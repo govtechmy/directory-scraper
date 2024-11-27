@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
 from directory_scraper.src.utils.discord_bot import send_discord_notification
+from directory_scraper.src.elasticsearch_upload.schema import get_index_for_category
+from directory_scraper.src.elasticsearch_upload.schema import get_index_definition
 
 load_dotenv()
 from dotenv import load_dotenv
@@ -19,7 +21,7 @@ THREAD_ID = os.getenv('THREAD_ID')
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ES_URL = os.getenv('ES_URL') #ES_URL
-ES_INDEX = os.getenv('ES_INDEX')
+# ES_INDEX = os.getenv('ES_INDEX')
 ES_SHA_INDEX = os.getenv('ES_SHA_INDEX')
 ES_API_KEY = os.getenv('ES_API_KEY') #""
 DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
@@ -31,62 +33,13 @@ COLUMNS_TO_HASH = [
     "parent_org_id"
 ]
 
-mapping = {
-    "properties": {
-        "org_id": {"type": "keyword"},
-        "org_name": {
-            "type": "search_as_you_type",
-            "fields": {
-                "keyword": {
-                    "type": "keyword"
-                }
-            }
-        },
-        "org_sort": {"type": "integer"},
-        "org_type": {"type": "keyword"},
-        "division_name": {
-            "type": "search_as_you_type",
-            "fields": {
-                "keyword": {
-                    "type": "keyword"
-                }
-            }
-        },
-        "division_sort": {"type": "integer"},
-        "subdivision_name": {
-            "type": "search_as_you_type",
-            "fields": {
-                "keyword": {
-                    "type": "keyword"
-                }
-            }
-        },
-        "position_name": {"type": "search_as_you_type"},
-        "person_name": {"type": "search_as_you_type"},
-        "person_email": {"type": "keyword", "null_value": "NULL"},
-        "person_fax": {"type": "keyword", "null_value": "NULL"},
-        "person_phone": {"type": "keyword", "null_value": "NULL"},
-        "position_sort": {"type": "integer"},
-        "parent_org_id": {"type": "keyword", "null_value": "NULL"},
-        "sha_256_hash": {"type": "keyword"},
-    }
-}
-
 api_key_info = ES_API_KEY
-# if api_key_info:
-#     es = Elasticsearch(
-#         ES_URL,
-#         api_key=ES_API_KEY
-#     )
-# else:
-#     es = Elasticsearch(ES_URL)
-
 es = Elasticsearch(
     ES_URL,
     api_key=api_key_info if api_key_info else None,
-    timeout=30,  # Timeout in seconds for each request
-    max_retries=3,  # Number of retries for failed requests
-    retry_on_timeout=True  # Automatically retry if a timeout occurs
+    timeout=30, 
+    max_retries=3, 
+    retry_on_timeout=True
 )
 
 def calculate_sha256_for_document(doc):
@@ -123,19 +76,6 @@ def check_and_update_file_sha(file_path):
         print(f'Status index "{ES_SHA_INDEX}" | {os.path.basename(file_path)}: NO CHANGES')
     return False  # No changes
 
-# def check_sha_and_update(data_folder):
-#     """
-#     Check if there are any changes in the files' SHA-256 hashes.
-#     Returns a list of files with changed SHAs.
-#     """    
-#     changed_files = []
-#     for file_name in os.listdir(data_folder):
-#         file_path = os.path.join(data_folder, file_name)
-#         if file_name.endswith(".json") and check_and_update_file_sha(file_path):
-#             print(f'Status file | {file_name}: CHANGES DETECTED')
-#             changed_files.append(file_path)
-#     return changed_files
-
 def check_sha_and_update(data_folder):
     """
     Check if there are any changes in the files' SHA-256 hashes across all category subfolders.
@@ -148,33 +88,34 @@ def check_sha_and_update(data_folder):
         for file_name in files:
             file_path = os.path.join(root, file_name)
             if file_name.endswith(".json") and check_and_update_file_sha(file_path):
-                print(f'Status file | {file_name}: CHANGES DETECTED in {root}')
+                print(f'Status file | {file_name}: CHANGES DETECTED') #in {root}')
                 changed_files.append(file_path)
     
     return changed_files
 
-def delete_documents_by_org_id(org_id):
-    """Delete all documents in Elasticsearch with the specified org_id."""
-    delete_query = {
-        "query": {
-            "term": {
-                "org_id": org_id
-            }
-        }
-    }
-    try:
-        es.delete_by_query(index=ES_INDEX, body=delete_query)
-        print(f"Deleted existing documents with org_id : {org_id}")
-    except Exception as e:
-        print(f"Error deleting documents with org_id {org_id}: {e}")
-
 def upload_clean_data_to_es(files_to_upload, batch_size=500):
     """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
-    all_summaries = [] 
+    all_summaries = []
 
     for file_path in files_to_upload:
         file_name = os.path.basename(file_path)
-        
+        # Extract category (subdirectory) from the file path
+        category = os.path.basename(os.path.dirname(file_path))
+        if not category or not get_index_for_category(category):
+            print(f"Invalid or unmapped category '{category}' for file: {file_name}. Skipping.")
+            continue
+
+        # Determine the appropriate Elasticsearch index for the category
+        try:
+            es_index = get_index_for_category(category)
+
+            if not create_index_if_not_exists(es_index):
+                print(f"Error ensuring index '{es_index}' exists. Skipping file {file_path}.")
+                continue
+        except ValueError as e:
+            print(f"Error: {e}. Skipping file {file_path}.")
+            continue
+
         with open(file_path, 'r') as f:
             new_data = json.load(f)
 
@@ -189,12 +130,12 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
         # Process each org_id group separately
         for org_id, docs in org_id_groups.items():
             print(f"\nChecking org_id: {org_id} in file: {file_name}")
-            
+
             # Load existing documents for this org_id
             existing_docs_query = {"query": {"term": {"org_id": org_id}}, "size": 10000}
-            existing_docs = es.search(index=ES_INDEX, body=existing_docs_query)
+            existing_docs = es.search(index=es_index, body=existing_docs_query)
             existing_docs_by_id = {hit['_id']: hit['_source']['sha_256_hash'] for hit in existing_docs['hits']['hits']}
-            
+
             actions = []
             processed_ids = set()
 
@@ -207,25 +148,25 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
                 sha_256_hash = calculate_sha256_for_document(doc)
                 doc['sha_256_hash'] = sha_256_hash
                 document_id = f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}"
-                
+
                 # Mark this document as processed, even if unchanged
                 processed_ids.add(document_id)
 
                 if document_id in existing_docs_by_id:
                     # Update if SHA differs
                     if existing_docs_by_id[document_id] != sha_256_hash:
-                        print(f"Updating document: {document_id}")
+                        # print(f"Updating document: {document_id}")
                         actions.append({
-                            "_index": ES_INDEX,
+                            "_index": es_index,
                             "_id": document_id,
                             "_source": doc
                         })
                         updated_count += 1
                 else:
                     # Add new document
-                    print(f"Adding new document: {document_id}")
+                    # print(f"Adding new document: {document_id}")
                     actions.append({
-                        "_index": ES_INDEX,
+                        "_index": es_index,
                         "_id": document_id,
                         "_source": doc
                     })
@@ -234,21 +175,13 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
             # Identify and delete stale documents (those in Elasticsearch but not in new_data)
             stale_docs = set(existing_docs_by_id.keys()) - processed_ids
             for stale_id in stale_docs:
-                print(f"Deleting stale document: {stale_id}")
+                # print(f"Deleting stale document: {stale_id}")
                 actions.append({
                     "_op_type": "delete",
-                    "_index": ES_INDEX,
+                    "_index": es_index,
                     "_id": stale_id
                 })
                 deleted_count += 1
-
-            # # Execute bulk actions for this org_id
-            # if actions:
-            #     print(f"Processing {len(actions)} actions for org_id {org_id}...")
-            #     success, failed = bulk(es, actions)
-            #     print(f"Successfully processed {success} actions.")
-            #     if failed:
-            #         print("\nSome actions failed:", failed)
 
             # Execute bulk actions for this org_id in batches
             if actions:
@@ -271,10 +204,11 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
 
             summary = (
                 f"🛢️ {org_id} - Added: {added_count}, Updated: {updated_count}, Deleted: {deleted_count}"
-                )
+            )
             all_summaries.append(summary)
 
     return all_summaries
+
 
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
@@ -287,17 +221,20 @@ def get_elasticsearch_info():
         print(f"Error getting Elasticsearch info: {e}")
         return False
 
-def create_index_if_not_exists():
-    """Create the Elasticsearch index if it does not exist."""
+def create_index_if_not_exists(index_name):
+    """
+    Create the Elasticsearch index for a given index_name if it does not exist.
+    """
     try:
-        if es.indices.exists(index=ES_INDEX):
-            print(f'Index "{ES_INDEX}" already exists.')
+        if es.indices.exists(index=index_name):
+            print(f'Index "{index_name}" already exists.')
         else:
-            es.indices.create(index=ES_INDEX, body={"mappings": mapping})
-            print(f'Index "{ES_INDEX}" created with the provided mapping.')
+            index_definition = get_index_definition(index_name)  # Get index settings and mappings
+            es.indices.create(index=index_name, body=index_definition)
+            print(f'Index "{index_name}" created with the provided mapping.')
         return True
     except Exception as e:
-        print(f"Error creating or checking index: {e}")
+        print(f"Error creating or checking index '{index_name}': {e}")
         return False
 
 def main(data_folder=None):
@@ -312,25 +249,22 @@ def main(data_folder=None):
             print("Discord webhook URL not provided. Skipping notifications.")    
         return
         
-    if create_index_if_not_exists():
-        changed_files = check_sha_and_update(data_folder)
-        if changed_files:
-            all_summaries = upload_clean_data_to_es(changed_files)
+    changed_files = check_sha_and_update(data_folder)
+    if changed_files:
+        all_summaries = upload_clean_data_to_es(changed_files)
 
-            # Consolidate and send a single Discord notification
-            if all_summaries:
-                final_summary_message = "\n".join(all_summaries)
-                print("Final Summary:\n", final_summary_message)
-                if DISCORD_WEBHOOK_URL:
-                    send_discord_notification(final_summary_message, DISCORD_WEBHOOK_URL, THREAD_ID)
-                else:
-                    print("Discord webhook URL not provided. Skipping notifications.")
-        else:
-            print("\nNo changes detected in data. Skipping upload.")
+        # Consolidate and send a single Discord notification
+        if all_summaries:
+            final_summary_message = "\n".join(all_summaries)
+            print("Final Summary:\n", final_summary_message)
             if DISCORD_WEBHOOK_URL:
-                send_discord_notification(f"🛢️ No changes detected in data. Skipping upload to ES.", DISCORD_WEBHOOK_URL, THREAD_ID)
+                send_discord_notification(final_summary_message, DISCORD_WEBHOOK_URL, THREAD_ID)
+            else:
+                print("Discord webhook URL not provided. Skipping notifications.")
     else:
-        print("Skipping indexing due to index creation issues.")
+        print("\nNo changes detected in data. Skipping upload.")
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"🛢️ No changes detected in data. Skipping upload to ES.", DISCORD_WEBHOOK_URL, THREAD_ID)
 
 if __name__ == "__main__":
     main()
