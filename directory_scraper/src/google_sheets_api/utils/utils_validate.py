@@ -60,7 +60,7 @@ def clean_data(sheet_id:str, user_name:str) -> dict:
 
     # Extract latest hash from "Edit Logs" for comparison
     edit_logs = sheet_manager.connect_to_sheet().worksheet("Edit Logs")
-    last_row = max(2, edit_logs.acell("D2").numeric_value)
+    last_row = max(0, edit_logs.acell("D2").numeric_value)
     previous_hash = edit_logs.acell(f"B{1+last_row}").value
 
     if document_hash != previous_hash:
