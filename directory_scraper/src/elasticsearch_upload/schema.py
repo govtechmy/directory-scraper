@@ -114,6 +114,25 @@ CATEGORY_INDEX_MAPPING = {
 # ============================= UTILITY FUNCTIONS ================================
 # ================================================================================
 
+# Add this at the end of es_schema.py
+
+# =========================== ID GENERATION MAPPING ===========================
+ID_GENERATION_MAPPING = {
+    "directory": lambda doc: f"{doc.get('org_id')}_{str(doc.get('division_sort', 0)).zfill(3)}_{str(doc.get('position_sort', 0)).zfill(6)}",
+    "bahagian-unit": lambda doc: f"{doc.get('org_id')}_{doc.get('division_name').lower()}",
+}
+
+# ======================== END OF ID GENERATION MAPPING ========================
+
+def generate_id(index_name, document):
+    """
+    Generate a unique _id for a document based on the index and schema logic.
+    """
+    generator = ID_GENERATION_MAPPING.get(index_name)
+    if not generator:
+        raise ValueError(f"No _id generation logic defined for index '{index_name}'.")
+    return generator(document)
+
 def get_index_for_category(category):
     """
     Get the Elasticsearch index name for a given category (subdirectory).

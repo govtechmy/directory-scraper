@@ -11,6 +11,7 @@ from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
 from directory_scraper.src.utils.discord_bot import send_discord_notification
 from directory_scraper.src.elasticsearch_upload.schema import get_index_for_category
 from directory_scraper.src.elasticsearch_upload.schema import get_index_definition
+from directory_scraper.src.elasticsearch_upload.schema import generate_id
 
 load_dotenv()
 from dotenv import load_dotenv
@@ -94,7 +95,16 @@ def check_sha_and_update(data_folder):
     return changed_files
 
 def upload_clean_data_to_es(files_to_upload, batch_size=500):
-    """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
+    """
+    Upload JSON documents to Elasticsearch, using new files as the source of truth.
+
+    Args:
+        files_to_upload (list): List of file paths containing data to be uploaded.
+        batch_size (int): Number of documents to process in each batch for bulk upload.
+
+    Returns:
+        list: Summaries of actions performed (added, updated, deleted).
+    """
     all_summaries = []
 
     for file_path in files_to_upload:
@@ -109,6 +119,7 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
         try:
             es_index = get_index_for_category(category)
 
+            # Ensure index exists or create it dynamically
             if not create_index_if_not_exists(es_index):
                 print(f"Error ensuring index '{es_index}' exists. Skipping file {file_path}.")
                 continue
@@ -116,6 +127,7 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
             print(f"Error: {e}. Skipping file {file_path}.")
             continue
 
+        # Read data from the file
         with open(file_path, 'r') as f:
             new_data = json.load(f)
 
@@ -134,6 +146,7 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
             # Load existing documents for this org_id
             existing_docs_query = {"query": {"term": {"org_id": org_id}}, "size": 10000}
             existing_docs = es.search(index=es_index, body=existing_docs_query)
+            # Extract existing document IDs and their corresponding SHA hashes
             existing_docs_by_id = {hit['_id']: hit['_source']['sha_256_hash'] for hit in existing_docs['hits']['hits']}
 
             actions = []
@@ -145,9 +158,16 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
             deleted_count = 0
 
             for doc in docs:
+                # Calculate the SHA-256 hash for the document
                 sha_256_hash = calculate_sha256_for_document(doc)
                 doc['sha_256_hash'] = sha_256_hash
-                document_id = f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}"
+
+                # Dynamically generate a unique _id based on index-specific logic
+                try:
+                    document_id = generate_id(es_index, doc)
+                except ValueError as e:
+                    print(f"Error generating ID for document: {e}. Skipping.")
+                    continue
 
                 # Mark this document as processed, even if unchanged
                 processed_ids.add(document_id)
@@ -155,6 +175,7 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
                 if document_id in existing_docs_by_id:
                     # Update if SHA differs
                     if existing_docs_by_id[document_id] != sha_256_hash:
+                        # Uncomment this for debugging
                         # print(f"Updating document: {document_id}")
                         actions.append({
                             "_index": es_index,
@@ -164,6 +185,7 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
                         updated_count += 1
                 else:
                     # Add new document
+                    # Uncomment this for debugging
                     # print(f"Adding new document: {document_id}")
                     actions.append({
                         "_index": es_index,
@@ -175,6 +197,7 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
             # Identify and delete stale documents (those in Elasticsearch but not in new_data)
             stale_docs = set(existing_docs_by_id.keys()) - processed_ids
             for stale_id in stale_docs:
+                # Uncomment this for debugging
                 # print(f"Deleting stale document: {stale_id}")
                 actions.append({
                     "_op_type": "delete",
@@ -192,7 +215,9 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
                         success, failed = bulk(es, batch)
                         print(f"Batch {i // batch_size + 1}: Successfully processed {success} actions.")
                         if failed:
-                            print("\nSome actions failed:", failed)
+                            # Uncomment this for debugging
+                            # print("\nSome actions failed:", failed)
+                            pass
                     except Exception as e:
                         print(f"Error processing batch {i // batch_size + 1}: {e}")
 
@@ -208,7 +233,6 @@ def upload_clean_data_to_es(files_to_upload, batch_size=500):
             all_summaries.append(summary)
 
     return all_summaries
-
 
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
