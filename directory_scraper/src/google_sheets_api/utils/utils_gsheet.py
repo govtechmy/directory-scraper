@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 import gspread
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
@@ -40,6 +41,7 @@ class GoogleSheetManager(GoogleSheetManager):
             logging.info(f"Successfully created `Edit Logs` sheet for worksheet: {self.sheet_id}")
 
             edit_sheet = sheet.worksheet("Edit Logs")
+            print(edit_sheet.id)
 
             # Appending headers and worksheet metadata
             edit_sheet.append_row(["user", "checksum", "last_updated", "row_count"])
@@ -47,14 +49,14 @@ class GoogleSheetManager(GoogleSheetManager):
             logging.info(f"Populated worksheet headers and rowcount metadata.")
             
             # Protecting sheets from edits
-            ADMIN_EMAILS = os.getenv("ADMIN_EMAILS")
+            ADMIN_EMAILS = json.loads(os.getenv("ADMIN_EMAILS"))
             request_body = {
                 "requests": [
                     {
                         "addProtectedRange": {
                             "protectedRange": {
                                 "range": {
-                                    "sheetId": self.sheet_id
+                                    "sheetId": edit_sheet.id
                                 },
                                 "editors": {
                                     "domainUsersCanEdit": False,
@@ -67,7 +69,7 @@ class GoogleSheetManager(GoogleSheetManager):
                     {
                         'updateSheetProperties': {
                             'properties': {
-                                'sheetId': self.sheet_id,
+                                'sheetId': edit_sheet.id,
                                 'hidden': True
                             },
                             'fields': 'hidden'
@@ -77,7 +79,7 @@ class GoogleSheetManager(GoogleSheetManager):
             }
 
             sheet.batch_update(request_body)
-            logging.info(f"Protected sheet from edits")
+            logging.info("Protected sheet from edits")
             return True
 
         else:

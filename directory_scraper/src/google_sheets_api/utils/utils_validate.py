@@ -38,7 +38,7 @@ def process_json_data(input_data):
         raise e
 
 
-def clean_data(sheet_id:str, user_name:str) -> None:
+def clean_data(sheet_id:str, user_name:str) -> dict:
     """
     Loads latest data from google sheet and compares the SHA256 hexdigest of the current data with the previous hexdigest.
     If there are any changes, validate the data and push to ElasticSearch.
@@ -60,7 +60,7 @@ def clean_data(sheet_id:str, user_name:str) -> None:
 
     # Extract latest hash from "Edit Logs" for comparison
     edit_logs = sheet_manager.connect_to_sheet().worksheet("Edit Logs")
-    last_row = edit_logs.acell("D2").numeric_value
+    last_row = max(2, edit_logs.acell("D2").numeric_value)
     previous_hash = edit_logs.acell(f"B{1+last_row}").value
 
     if document_hash != previous_hash:
