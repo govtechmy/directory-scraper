@@ -200,7 +200,7 @@ def upload_clean_data_to_es(files_to_upload, log_changes=True):
                     # Update if SHA differs
                     existing_doc = existing_docs_by_id[document_id]
                     if existing_doc['sha_256_hash'] != sha_256_hash:
-                        print(f"Updating document: {document_id}")
+                        # print(f"Updating document: {document_id}")
                         actions.append({
                             "_index": ES_INDEX,
                             "_id": document_id,
@@ -215,7 +215,7 @@ def upload_clean_data_to_es(files_to_upload, log_changes=True):
                         updated_count += 1
                 else:
                     # Add new document
-                    print(f"Adding new document: {document_id}")
+                    # print(f"Adding new document: {document_id}")
                     actions.append({
                         "_index": ES_INDEX,
                         "_id": document_id,
@@ -231,7 +231,7 @@ def upload_clean_data_to_es(files_to_upload, log_changes=True):
             # Identify and delete stale documents (those in Elasticsearch but not in new_data)
             stale_docs = set(existing_docs_by_id.keys()) - processed_ids
             for stale_id in stale_docs:
-                print(f"Deleting stale document: {stale_id}")
+                # print(f"Deleting stale document: {stale_id}")
                 actions.append({
                     "_op_type": "delete",
                     "_index": ES_INDEX,
