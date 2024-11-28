@@ -142,10 +142,10 @@ def delete_documents_by_org_id(org_id):
     except Exception as e:
         print(f"Error deleting documents with org_id {org_id}: {e}")
 
-def upload_clean_data_to_es(files_to_upload):
+def upload_clean_data_to_es(files_to_upload, log_changes=True):
     """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
     all_summaries = [] 
-    changes_log = {}
+    changes_log = {} if log_changes else None
 
     for file_path in files_to_upload:
         file_name = os.path.basename(file_path)
@@ -199,11 +199,12 @@ def upload_clean_data_to_es(files_to_upload):
                             "_id": document_id,
                             "_source": doc
                         })
-                        changes_log[org_id]["updated"].append({
-                            "_id": document_id,
-                            "before": existing_doc,
-                            "after": doc
-                        })
+                        if log_changes:
+                            changes_log[org_id]["updated"].append({
+                                "_id": document_id,
+                                "before": existing_doc,
+                                "after": doc
+                            })
                         updated_count += 1
                 else:
                     # Add new document
@@ -213,10 +214,11 @@ def upload_clean_data_to_es(files_to_upload):
                         "_id": document_id,
                         "_source": doc
                     })
-                    changes_log[org_id]["added"].append({
-                        "_id": document_id,
-                        "doc": doc
-                    })
+                    if log_changes:
+                        changes_log[org_id]["added"].append({
+                            "_id": document_id,
+                            "doc": doc
+                        })
                     added_count += 1
 
             # Identify and delete stale documents (those in Elasticsearch but not in new_data)
@@ -228,10 +230,11 @@ def upload_clean_data_to_es(files_to_upload):
                     "_index": ES_INDEX,
                     "_id": stale_id
                 })
-                changes_log[org_id]["deleted"].append({
-                    "_id": stale_id,
-                    "doc": existing_docs_by_id[stale_id]
-                })
+                if log_changes:
+                    changes_log[org_id]["deleted"].append({
+                        "_id": stale_id,
+                        "doc": existing_docs_by_id[stale_id]
+                    })
                 deleted_count += 1
 
             # Execute bulk actions for this org_id
@@ -252,8 +255,9 @@ def upload_clean_data_to_es(files_to_upload):
             all_summaries.append(summary)
 
     # Save the changes log to a JSON file
-    with open("es_changes_log.json", "w") as log_file:
-        json.dump(changes_log, log_file, indent=4)
+    if log_changes and changes_log:
+        with open("es_changes_log.json", "w") as log_file:
+            json.dump(changes_log, log_file, indent=4)
 
     return all_summaries
 
