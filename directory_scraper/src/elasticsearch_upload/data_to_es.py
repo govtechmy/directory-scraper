@@ -9,8 +9,12 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
+from directory_scraper.src.utils.discord_bot import send_discord_notification
 
 load_dotenv()
+
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ES_URL = os.getenv('ES_URL') #ES_URL
@@ -140,6 +144,7 @@ def delete_documents_by_org_id(org_id):
 
 def upload_clean_data_to_es(files_to_upload):
     """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
+    all_summaries = [] 
     for file_path in files_to_upload:
         file_name = os.path.basename(file_path)
         
@@ -224,6 +229,11 @@ def upload_clean_data_to_es(files_to_upload):
             print(f"  - Updated: {updated_count}")
             print(f"  - Deleted: {deleted_count}")
 
+            summary = (f"🛢️ {org_id} - Added: {added_count}, Updated: {updated_count}, Deleted: {deleted_count}")
+            all_summaries.append(summary)
+
+    return all_summaries
+
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
     try:
@@ -254,14 +264,28 @@ def main(data_folder=None):
 
     if not get_elasticsearch_info():
         print("Skipping indexing due to Elasticsearch connection issues.")
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"Skipping indexing due to Elasticsearch connection issues.", DISCORD_WEBHOOK_URL, THREAD_ID)
+        else:
+            print("Discord webhook URL not provided. Skipping notifications.") 
         return
         
     if create_index_if_not_exists():
         changed_files = check_sha_and_update(data_folder)
         if changed_files:
-            upload_clean_data_to_es(changed_files)
+            all_summaries = upload_clean_data_to_es(changed_files)
+            # Consolidate and send a single Discord notification
+            if all_summaries:
+                final_summary_message = "\n".join(all_summaries)
+                print("Final Summary:\n", final_summary_message)
+                if DISCORD_WEBHOOK_URL:
+                    send_discord_notification(final_summary_message, DISCORD_WEBHOOK_URL, THREAD_ID)
+                else:
+                    print("Discord webhook URL not provided. Skipping notifications.")
         else:
             print("\nNo changes detected in data. Skipping upload.")
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🛢️ No changes detected in data. Skipping upload to ES.", DISCORD_WEBHOOK_URL, THREAD_ID)
     else:
         print("Skipping indexing due to index creation issues.")
 
