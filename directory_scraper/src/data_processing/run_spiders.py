@@ -490,8 +490,11 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
             is_valid, _ = validate_path(spider_tree, *path_parts)
 
             spider_list = extract_spiders_from_path(spider_tree, *path_parts)
+            
+        spider_list = list(set(spider_list))
 
-    print(f"Running spiders: {spider_list}")
+    print(f"Running {len(spider_list)} spiders: {spider_list}")
+
     run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
     filter_custom_logs()
 
