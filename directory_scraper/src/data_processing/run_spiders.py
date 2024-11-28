@@ -12,6 +12,12 @@ import inspect
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_SPIDERS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
+from directory_scraper.src.utils.discord_bot import send_discord_notification
+from dotenv import load_dotenv
+load_dotenv()
+
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
 
 #=========================Folder setup=======================================
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -280,6 +286,12 @@ def run_spiders(spider_list, output_folder, backup_folder):
     print(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
     print(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
 
+    if DISCORD_WEBHOOK_URL:
+        send_discord_notification(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        send_discord_notification(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+    else:
+        print("Discord webhook URL not provided. Skipping notifications.")
+
 #========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
 def validate_path(spider_tree, *path_parts):
@@ -494,6 +506,11 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
         spider_list = list(set(spider_list))
 
     print(f"Running {len(spider_list)} spiders: {spider_list}")
+
+    if DISCORD_WEBHOOK_URL:
+        send_discord_notification(f"Running {len(spider_list)} spiders: {spider_list}", DISCORD_WEBHOOK_URL, THREAD_ID)
+    else:
+        print("Discord webhook URL not provided. Skipping notifications.")
 
     run_spiders(spider_list, output_folder=OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
     filter_custom_logs()
