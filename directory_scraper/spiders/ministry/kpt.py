@@ -76,6 +76,7 @@ class KPTSpider(CrawlSpider):
     
     none_handler = lambda self, condition: result.strip() if (result := condition) else None
     position_handler = lambda self, condition: result.replace("•", "").strip() if (result := condition) else None
+    name_handler = lambda self, txt_lst: result[0] if (result := [txt.strip() for txt in txt_lst if txt.strip()]) else None
     sort_handler = lambda self, condition: result.strip()[:-1] if (result := condition) else None
 
     def parse_item(self, response):
@@ -107,7 +108,7 @@ class KPTSpider(CrawlSpider):
                     "division_name": division,
                     "subdivision_name": current_unit,
                     "position_sort": self.sort_handler(row.xpath("td[1]/text()").get()),
-                    "person_name": self.none_handler(row.xpath("td[2]/text()").get()),
+                    "person_name": self.name_handler(row.xpath("td[2]/text()").getall()),
                     "position_name": self.position_handler(row.xpath("td[2]/font/text()").get()),
                     "person_phone": phone_number,
                     "person_email": email_handler(row.xpath("td[3]/text()").get()),
