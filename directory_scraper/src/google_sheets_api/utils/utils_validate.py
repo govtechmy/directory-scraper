@@ -1,12 +1,12 @@
 import os
 import json
 import logging
-import hashlib
 import datetime
 import pandas as pd
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+from directory_scraper.src.elasticsearch_upload.data_to_es import ES_LOG_INDEX, es
 from directory_scraper.src.google_sheets_api.utils.utils_gsheet import GoogleSheetManager
 from directory_scraper.src.data_processing.process_data import data_processing_pipeline
 from directory_scraper.src.elasticsearch_upload.data_to_es import calculate_sha256_for_file
@@ -38,6 +38,16 @@ def process_json_data(input_data):
         raise e
 
 
+def check_document_hash(sheet_id:str) -> bool:
+    previous_hash = es.search(
+        index=ES_LOG_INDEX,
+        query={"match": {"sheet_id": {"query": sheet_id}}},
+        sort=[{"timestamp": {"order": "desc", "mode": "max"}}],
+        size=1
+    )
+    return previous_hash["hits"]["hits"][0]["_source"]["sha_256_hash"]
+
+
 def clean_data(sheet_id:str, user_name:str) -> dict:
     """
     Loads latest data from google sheet and compares the SHA256 hexdigest of the current data with the previous hexdigest.
@@ -58,19 +68,33 @@ def clean_data(sheet_id:str, user_name:str) -> dict:
     )
     document_hash = calculate_sha256_for_file(sheet_df.to_dict(orient="records"))
 
-    # Extract latest hash from "Edit Logs" for comparison
-    edit_logs = sheet_manager.connect_to_sheet().worksheet("Edit Logs")
-    last_row = max(0, edit_logs.acell("D2").numeric_value)
-    previous_hash = edit_logs.acell(f"B{1+last_row}").value
+    # Extract latest hash from edit logs for comparison
+    previous_hash = check_document_hash(sheet_id=sheet_id)
 
-    if document_hash != previous_hash:
+    if previous_hash == document_hash:
         cleaned_data = process_json_data(sheet_df.to_dict(orient="records"))
         
-        # Append new hash to "Edit Logs" worksheet
-        current_time = datetime.datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S")
-        edit_logs.append_row([user_name, document_hash, current_time], table_range=f"A{2+last_row}")
-        logging.info("Changes detected, updating 'Edit Logs' sheet.")
+        # Append new hash to "Edit Logs" index
+        edit_log = {
+            "person_email": user_name,
+            "sha_256_hash": document_hash,
+            "sheet_id": sheet_id,
+            "timestamp": datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%m:%S")
+        }
+        current_time = datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y%m%d%H%m%S")
+        log_id = f"{current_time}:{sheet_id}:{document_hash}"
 
+        try:
+            es.index(
+                index="edit_logs",
+                id=log_id,
+                document=edit_log
+            )
+            logging.info("Changes detected, updating 'Edit Logs' sheet.")
+
+        except Exception as e:
+            logging.error(f"Error, unable to update edit log. {e}")
+            return {"cleaned_data": None, "document_hash": None, "previous_hash": None, "current_hash": None}
     else:
         cleaned_data = sheet_df.to_dict(orient="records")
         logging.info("No changes made.")
