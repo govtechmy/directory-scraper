@@ -1,10 +1,10 @@
 name: Run Spider & Load to ES Pipeline
 
 on:
-  # push:
-  #   branches: [ "feat/actions" ]
-  # schedule:
-  #   - cron: '0 0 * * *'
+  push:
+    branches: [ "feat/discord" ]
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -48,7 +48,9 @@ jobs:
       - name: Run main
         env:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
-        run: python $DIRECTORY_SRC/workflows/main_spiders.py kpkt
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          THREAD_ID: ${{ secrets.THREAD_ID }}
+        run: python $DIRECTORY_SRC/workflows/main_spiders.py mof
 
       # - name: Upload spider output as artifact
       #   uses: actions/upload-artifact@v3
