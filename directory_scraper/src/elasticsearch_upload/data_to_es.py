@@ -68,13 +68,13 @@ mapping = {
 }
 
 api_key_info = ES_API_KEY
-if api_key_info:
-    es = Elasticsearch(
-        ES_URL,
-        api_key=ES_API_KEY
-    )
-else:
-    es = Elasticsearch(ES_URL)
+es = Elasticsearch(
+    ES_URL,
+    api_key=api_key_info if api_key_info else None,
+    timeout=30,
+    max_retries=3,
+    retry_on_timeout=True
+)
 
 def calculate_sha256_for_document(doc):
     """
