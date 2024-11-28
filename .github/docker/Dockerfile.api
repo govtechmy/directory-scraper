@@ -1,0 +1,19 @@
+FROM python:3.11-bullseye
+
+WORKDIR /code
+
+COPY directory_scraper/ /code/directory_scraper/
+
+ENV PYTHONPATH="/code/directory_scraper"
+ENV PYTHONUNBUFFERED=1
+
+COPY ./directory_scraper/src/google_sheets_api/requirements_api.txt /code/requirements.txt
+COPY ./directory_scraper /code/directory_scraper
+COPY ./directory_scraper/api_setup.py /code/setup.py
+
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install -e .
+
+    EXPOSE 80
+
+CMD ["fastapi", "run", "/code/directory_scraper/src/google_sheets_api/app/main.py", "--port", "80"]
