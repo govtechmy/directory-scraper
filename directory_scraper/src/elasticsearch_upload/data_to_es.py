@@ -17,6 +17,7 @@ load_dotenv()
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ES_URL = os.getenv('ES_URL') #ES_URL
 ES_INDEX = os.getenv('ES_INDEX')
+ES_LOG_INDEX = os.getenv('ES_LOG_INDEX')
 ES_SHA_INDEX = os.getenv('ES_SHA_INDEX')
 ES_API_KEY = os.getenv('ES_API_KEY') #""
 DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
@@ -66,6 +67,18 @@ mapping = {
         "position_sort": {"type": "integer"},
         "parent_org_id": {"type": "keyword", "null_value": "NULL"},
         "sha_256_hash": {"type": "keyword"},
+    }
+}
+
+logs_mapping = {
+    "properties": {
+        "sheet_id": {"type": "keyword"},
+        "person_email": {"type": "keyword", "null_value": "NULL"},
+        "sha_256_hash": {"type": "keyword"},
+        "@timestamp": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss"
+        }
     }
 }
 
@@ -292,6 +305,19 @@ def create_index_if_not_exists():
         print(f"Error creating or checking index: {e}")
         return False
 
+def create_logs_if_not_exists():
+    """Create the Elasticsearch edit logs index if it does not exist."""
+    try:
+        if es.indices.exists(index=ES_LOG_INDEX):
+            print(f'Index "{ES_LOG_INDEX}" already exists.')
+        else:
+            es.indices.create(index=ES_LOG_INDEX, body={"mappings": logs_mapping})
+            print(f'Index "{ES_LOG_INDEX}" created with the provided mapping.')
+        return True            
+    except Exception as e:
+        print(f"Error creating or checking index: {e}")
+        return False
+
 def main(data_folder=None):
     """
     Main function to check for changes and upload data to Elasticsearch.
@@ -305,7 +331,7 @@ def main(data_folder=None):
         print("Skipping indexing due to Elasticsearch connection issues.")
         return
         
-    if create_index_if_not_exists():
+    if create_index_if_not_exists() and create_logs_if_not_exists():
         changed_files = check_sha_and_update(data_folder)
         if changed_files:
             upload_clean_data_to_es(changed_files)
