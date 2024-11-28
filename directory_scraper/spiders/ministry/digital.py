@@ -44,7 +44,7 @@ class DIGITALSpider(scrapy.Spider):
             if not rows:
                 self.logger.error("No rows found in the table!")
             else:
-                print(f"Found {len(rows)} rows in page {page_count}.")
+                self.logger.debug(f"Found {len(rows)} rows in page {page_count}.")
 
             for row in rows:
                 name = row.xpath('.//td[contains(@id, "_nama")]/text()').get()
@@ -101,7 +101,7 @@ class DIGITALSpider(scrapy.Spider):
                 next_button = await page.query_selector('button[aria-label="Seterusnya"]:not([disabled])')
 
                 if next_button:
-                    print(f"Clicking the 'Seterusnya' (Next) button to load page {page_count + 1}...")
+                    #print(f"Clicking the 'Seterusnya' (Next) button to load page {page_count + 1}...")
                     await next_button.click()
                     await page.wait_for_selector('table')  # Wait for the next page's table to load
                     #await page.wait_for_timeout(2000)  # delay to ensure the table loads fully
