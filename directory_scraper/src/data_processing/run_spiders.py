@@ -257,40 +257,90 @@ class RunSpiderPipeline:
                 fail_spiders.append(spider.name)
             logger.warning(f"Spider '{spider.name}' finished without results.")
 
-def run_spiders(spider_list, output_folder, backup_folder):
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=3):
+    """
+    Run spiders with retry logic for failures.
+
+    Args:
+        spider_list (list): List of spider names to run.
+        output_folder (str): Path to the output folder for spider results.
+        backup_folder (str): Path to the folder for backing up spider outputs.
+        max_retries (int): Maximum number of retry attempts for failed spiders.
+    """
     global success_count, fail_count, success_spiders, fail_spiders
     success_count, fail_count = 0, 0
-    success_spiders, fail_spiders = [], []
+    success_spiders, fail_spiders = [], []  # Reset state for each run
 
+    retries = 0
+    remaining_spiders = spider_list
     spider_loader = SpiderLoader.from_settings(get_project_settings())
     all_spiders = spider_loader.list()
 
-    backup_spider_outputs(output_folder=output_folder, spider_names=spider_list, backup_folder=backup_folder)
-    setup_output_folder(folder_path=output_folder, spider_names=spider_list)
+    # Backup outputs and set up folders for remaining spiders
+    backup_spider_outputs(output_folder=output_folder, spider_names=remaining_spiders, backup_folder=backup_folder)
+    setup_output_folder(folder_path=output_folder, spider_names=remaining_spiders)
 
-    process = setup_crawler(spider_list)
-    #process.settings.set('ITEM_PIPELINES', {'__main__.RunSpiderPipeline': 1})
-    process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
-    process.settings.set('OUTPUT_FOLDER', output_folder)  # Pass output_folder to pipeline settings
+    while remaining_spiders and retries <= max_retries:
+        logger.info(f"\nRunning attempt {retries + 1} with {len(remaining_spiders)} spiders: {remaining_spiders}")
+        print(f"\nRunning attempt {retries + 1} with {len(remaining_spiders)} spiders: {remaining_spiders}")
 
-    for spider_name in spider_list:
-        if spider_name in all_spiders:
-            spider_cls = spider_loader.load(spider_name)
-            process.crawl(spider_cls)
-        else:
-            logger.warning(f"Spider '{spider_name}' not found. Skipping...")
+        process = setup_crawler(remaining_spiders)
+        process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
+        process.settings.set('OUTPUT_FOLDER', output_folder)
 
-    process.start()
-    logger.info(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
-    logger.info(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
-    print(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
-    print(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+        current_failures = []  # Temporary storage for failed spiders in this attempt
+
+        for spider_name in remaining_spiders:
+            if spider_name in all_spiders:
+                try:
+                    spider_cls = spider_loader.load(spider_name)
+                    process.crawl(spider_cls)
+                except Exception as e:
+                    logger.error(f"Error while setting up spider '{spider_name}': {e}")
+                    current_failures.append(spider_name)
+            else:
+                logger.warning(f"Spider '{spider_name}' not found. Skipping...")
+                if spider_name not in fail_spiders:
+                    fail_spiders.append(spider_name)
+
+        try:
+            process.start()
+        except Exception as e:
+            logger.error(f"Error during crawling: {e}")
+            current_failures.extend(remaining_spiders)  # If the process fails, all are considered failed
+
+        # Update success and failure logs
+        for spider in current_failures:
+            if spider not in fail_spiders:
+                fail_spiders.append(spider)
+
+        # Remove successes from failure and remaining lists
+        remaining_spiders = [spider for spider in remaining_spiders if spider not in success_spiders]
+
+        retries += 1
+
+        logger.info(f"Attempt {retries}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+        logger.info(f"Attempt {retries}: FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+        print(f"Attempt {retries}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+        print(f"Attempt {retries}: FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+
+    # Final summary
+    if remaining_spiders:
+        logger.error(f"\nSpiders failed after {max_retries} retries: {remaining_spiders}")
+    else:
+        logger.info("All spiders ran successfully.")
+
+    print(f"\nSUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
+    print(f"FAILED: {len(remaining_spiders)} spiders. Spiders: {remaining_spiders}")
 
     if DISCORD_WEBHOOK_URL:
-        send_discord_notification(f"SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
-        send_discord_notification(f"FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        send_discord_notification(f"✅ SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        if remaining_spiders:
+            send_discord_notification(f"❌ FAILED: {len(remaining_spiders)} spiders. Spiders: {remaining_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
     else:
         print("Discord webhook URL not provided. Skipping notifications.")
+
+
 
 #========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
@@ -476,7 +526,7 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
         all_spiders = get_all_spiders()
         logger.debug(f"Spider tree: {spider_tree}")
 
-        LIST_OF_SPIDERS_TO_RUN = ['kkr', 'kbs', 'komunikasi', 'miti']
+        LIST_OF_SPIDERS_TO_RUN =  ['rurallink_anggota', 'kpkm', 'kuskop', 'kkr', 'rurallink_pkd', 'komunikasi', 'ekonomi', 'petra', 'moe', 'mod']
 
         #================== ARGS VALIDATION =====================
         if not validate_arg_name(args.name, all_spiders, spider_tree):
