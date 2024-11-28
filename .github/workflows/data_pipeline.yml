@@ -1,10 +1,10 @@
 name: Run Spider & Load to ES Pipeline
 
 on:
-  push:
-    branches: [ "feat/discord" ]
-  schedule:
-    - cron: '0 0 * * *'
+  # push:
+  #   branches: [ "feat/discord" ]
+  # schedule:
+  #   - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
