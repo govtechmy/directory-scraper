@@ -526,7 +526,7 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
         all_spiders = get_all_spiders()
         logger.debug(f"Spider tree: {spider_tree}")
 
-        LIST_OF_SPIDERS_TO_RUN =  ['rurallink_anggota', 'kpkm', 'kuskop', 'kkr', 'rurallink_pkd', 'komunikasi', 'ekonomi', 'petra', 'moe', 'mod']
+        LIST_OF_SPIDERS_TO_RUN =  ['rurallink_anggota', 'kpkm','kkr','rurallink_pkd', 'komunikasi', 'ekonomi']
 
         #================== ARGS VALIDATION =====================
         if not validate_arg_name(args.name, all_spiders, spider_tree):
