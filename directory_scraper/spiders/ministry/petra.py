@@ -4,8 +4,8 @@ import re
 class PetraSpider(scrapy.Spider):
     name = 'petra'
     
-    base_url = "https://www.petra.gov.my/portal-main/directory?frontendpage=directory&params=&search_dept={dept}&keyword=&page={page}&per-page=10"
-
+    base_url ="https://www.petra.gov.my/v2/directory?search_dept=&search_dept={dept}&keyword=&page={page}&per-page=10" 
+    
     #list of departments to loop through
     departments = [
         'ment', 'timb', 'ksu', 'uuu', 'bpsha', 'ukk', 'uad', 'ui', 'tksutas', 
