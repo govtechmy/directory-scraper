@@ -250,12 +250,16 @@ class RunSpiderPipeline:
             if spider.name not in success_spiders:
                 success_spiders.append(spider.name)
             logger.info(f"Spider '{spider.name}' finished successfully.")
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🟢 Spider '{spider.name}' finished successfully. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
         else:  # Spider failed
             global fail_count, fail_spiders
             fail_count += 1
             if spider.name not in fail_spiders:
                 fail_spiders.append(spider.name)
             logger.warning(f"Spider '{spider.name}' finished without results.")
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
 
 def run_spiders(spider_list, output_folder, backup_folder, max_retries=3):
     """
@@ -526,7 +530,7 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
         all_spiders = get_all_spiders()
         logger.debug(f"Spider tree: {spider_tree}")
 
-        LIST_OF_SPIDERS_TO_RUN =  ['rurallink_anggota', 'kpkm', 'kuskop', 'kkr', 'rurallink_pkd', 'komunikasi', 'ekonomi', 'petra', 'moe', 'mod']
+        LIST_OF_SPIDERS_TO_RUN = ['digital', 'ekonomi', 'jpm', 'kbs', 'kkr', 'kln', 'komunikasi', 'kpdn', 'kpk', 'kpkm', 'kpkt', 'kpn', 'kpt', 'kpwkm', 'kuskop', 'miti', 'mof', 'moh', 'moha', 'mohr', 'mosti', 'mot', 'motac', 'nres', 'petra', 'rurallink_anggota', 'rurallink_pkd'] #['mod', 'moe',]
 
         #================== ARGS VALIDATION =====================
         if not validate_arg_name(args.name, all_spiders, spider_tree):
