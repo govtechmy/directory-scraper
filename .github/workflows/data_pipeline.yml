@@ -45,6 +45,9 @@ jobs:
           sudo apt-get install -y tesseract-ocr
           tesseract --version
 
+      - name: Install Playwright Browsers
+        run: playwright install
+
       - name: Run main
         env:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
