@@ -53,38 +53,38 @@ jobs:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           THREAD_ID: ${{ secrets.THREAD_ID }}
-        run: python $DIRECTORY_SRC/workflows/main_spiders.py mof
+        run: python $DIRECTORY_SRC/workflows/main_spiders.py petra
 
       # - name: Upload spider output as artifact
-      #   uses: actions/upload-artifact@v3
+      #   uses: actions/upload-artifact@v4
       #   with:
       #     name: spider-output
       #     path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
       #     retention-days: 5
 
       - name: Upload cleaned data as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: clean-data
           path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
           retention-days: 5
 
       - name: Upload run_spiders.log as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: run_spiders-log
           path: ${{ github.workspace}}/logs/run_spiders.log
           retention-days: 5
 
       - name: Upload custom run_spiders.log as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: custom_run_spiders-log
           path: ${{ github.workspace}}/logs/run_spiders_custom.log
           retention-days: 5
 
       - name: Archive es_changes_log.json
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: es-changes-log
           path: ${{ github.workspace }}/es_changes_log.json
