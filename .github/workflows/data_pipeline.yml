@@ -2,7 +2,7 @@ name: Run Spider & Load to ES Pipeline
 
 on:
   # push:
-  #   branches: [ "feat/track-es-changes" ]
+  #   branches: [ "test-workflow" ]
   # schedule:
   #   - cron: '0 0 * * *'
   workflow_dispatch:
@@ -10,6 +10,7 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     env:
       TZ: Asia/Kuala_Lumpur
@@ -45,43 +46,50 @@ jobs:
           sudo apt-get install -y tesseract-ocr
           tesseract --version
 
+      - name: Install Playwright Browsers
+        run: playwright install
+
       - name: Run main
         env:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           THREAD_ID: ${{ secrets.THREAD_ID }}
-        run: python $DIRECTORY_SRC/workflows/main_spiders.py mof
+        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders.py list # timeout (seconds)
+        continue-on-error: true
 
       # - name: Upload spider output as artifact
-      #   uses: actions/upload-artifact@v3
+      #   uses: actions/upload-artifact@v4
       #   with:
       #     name: spider-output
       #     path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
       #     retention-days: 5
 
       - name: Upload cleaned data as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: clean-data
           path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
           retention-days: 5
 
       - name: Upload run_spiders.log as an artifact
-        uses: actions/upload-artifact@v3
+        if: always() # Always run this step
+        uses: actions/upload-artifact@v4
         with:
           name: run_spiders-log
           path: ${{ github.workspace}}/logs/run_spiders.log
           retention-days: 5
 
       - name: Upload custom run_spiders.log as an artifact
-        uses: actions/upload-artifact@v3
+        if: always() # Always run this step
+        uses: actions/upload-artifact@v4
         with:
           name: custom_run_spiders-log
           path: ${{ github.workspace}}/logs/run_spiders_custom.log
           retention-days: 5
 
       - name: Archive es_changes_log.json
-        uses: actions/upload-artifact@v3
+        if: success() # Run if all previous steps succeeded
+        uses: actions/upload-artifact@v4
         with:
           name: es-changes-log
           path: ${{ github.workspace }}/es_changes_log.json

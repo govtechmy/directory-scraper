@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_SPIDERS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
 from directory_scraper.src.utils.discord_bot import send_discord_notification
+from threading import Timer
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -229,55 +230,86 @@ class RunSpiderPipeline:
         self.results[spider.name].append(item)
         return item
 
+
+class RunSpiderPipeline:
+    """
+    Pipeline to collect and store the results when a spider crawls website.
+
+    Attributes:
+        results (dict): Stores scraped items for each spider.
+
+    Methods:
+        open_spider(spider): Initializes results for the spider and logs its start.
+        process_item(item, spider): Appends scraped items to the spider's results.
+        close_spider(spider): Writes results to a JSON file if data was collected, or logs a failure.
+    """
+    def __init__(self, output_folder):
+        self.results = {}
+        self.output_folder = output_folder
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # Get output_folder from settings
+        output_folder = crawler.settings.get('OUTPUT_FOLDER')
+        return cls(output_folder=output_folder)
+
+    def open_spider(self, spider):
+        self.start_time = datetime.now()
+        global success_count, fail_count, success_spiders, fail_spiders, timed_out_spiders
+        self.results[spider.name] = []
+        logger.info(f"Running spider '{spider.name}' ...")
+
+    def process_item(self, item, spider):
+        self.results[spider.name].append(item)
+        return item
+
     def close_spider(self, spider):
+        global success_spiders, fail_spiders, timed_out_spiders
+
         end_time = datetime.now()
         duration = end_time - self.start_time
         logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
 
-        if self.results[spider.name]:
+        if spider.name in timed_out_spiders:
+            # Ensure timed-out spiders are not processed further
+            logger.warning(f"Spider '{spider.name}' was previously timed out. No data saved.")
+            return
+
+        if self.results[spider.name]: # Spider successful
             output_file = os.path.join(self.output_folder, f"{spider.name}.json")
             with open(output_file, 'w') as f:
-                f.write("[\n")
-                for idx, result in enumerate(self.results[spider.name]):
-                    json.dump(result, f)
-                    if idx < len(self.results[spider.name]) - 1:
-                        f.write(",\n")
-                    else:
-                        f.write("\n")
-                f.write("]\n")
-            global success_count, success_spiders
-            success_count += 1
-            if spider.name not in success_spiders:
-                success_spiders.append(spider.name)
+                json.dump(self.results[spider.name], f, indent=4)
+            success_spiders.add(spider.name)
             logger.info(f"Spider '{spider.name}' finished successfully.")
-        else:  # Spider failed
-            global fail_count, fail_spiders
-            fail_count += 1
-            if spider.name not in fail_spiders:
-                fail_spiders.append(spider.name)
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🟢 Spider '{spider.name}' finished successfully. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
+        else: # Spider failed
+            fail_spiders.add(spider.name)
             logger.warning(f"Spider '{spider.name}' finished without results.")
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
 
-def run_spiders(spider_list, output_folder, backup_folder, max_retries=3):
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=3, timeout=300):
     """
-    Run spiders with retry logic for failures.
+    Run spiders with retry logic for failures and enforce a timeout for all spiders.
 
     Args:
         spider_list (list): List of spider names to run.
         output_folder (str): Path to the output folder for spider results.
         backup_folder (str): Path to the folder for backing up spider outputs.
         max_retries (int): Maximum number of retry attempts for failed spiders.
+        timeout (int): Maximum time (in seconds) for the entire process.
     """
-    global success_count, fail_count, success_spiders, fail_spiders
+    global success_count, fail_count, success_spiders, fail_spiders, timed_out_spiders
     success_count, fail_count = 0, 0
-    success_spiders, fail_spiders = [], []  # Reset state for each run
+    success_spiders, fail_spiders, timed_out_spiders = set(), set(), set()
 
     retries = 0
     remaining_spiders = spider_list
     spider_loader = SpiderLoader.from_settings(get_project_settings())
     all_spiders = spider_loader.list()
 
-    # Backup outputs and set up folders for remaining spiders
-    backup_spider_outputs(output_folder=output_folder, spider_names=remaining_spiders, backup_folder=backup_folder)
+    # backup_spider_outputs(output_folder=output_folder, spider_names=remaining_spiders, backup_folder=backup_folder)
     setup_output_folder(folder_path=output_folder, spider_names=remaining_spiders)
 
     while remaining_spiders and retries <= max_retries:
@@ -287,42 +319,66 @@ def run_spiders(spider_list, output_folder, backup_folder, max_retries=3):
         process = setup_crawler(remaining_spiders)
         process.settings.set('ITEM_PIPELINES', {'directory_scraper.src.data_processing.run_spiders.RunSpiderPipeline': 1})
         process.settings.set('OUTPUT_FOLDER', output_folder)
+        process.settings.set('CLOSESPIDER_TIMEOUT', timeout)  # spider timeout
+        process.settings.set('DOWNLOAD_TIMEOUT', timeout)  # spider's per-request timeout
 
-        current_failures = []  # Temporary storage for failed spiders in this attempt
+        spiders_to_time_out = set(remaining_spiders)  # Track all spiders for timeout
 
-        for spider_name in remaining_spiders:
-            if spider_name in all_spiders:
-                try:
-                    spider_cls = spider_loader.load(spider_name)
-                    process.crawl(spider_cls)
-                except Exception as e:
-                    logger.error(f"Error while setting up spider '{spider_name}': {e}")
-                    current_failures.append(spider_name)
-            else:
-                logger.warning(f"Spider '{spider_name}' not found. Skipping...")
-                if spider_name not in fail_spiders:
-                    fail_spiders.append(spider_name)
+        def timeout_handler():
+            nonlocal spiders_to_time_out
+            still_running = spiders_to_time_out - success_spiders - fail_spiders 
+            if still_running:
+                print(f"⚠️ Timeout reached ({timeout} seconds). Stopping these spiders: {still_running}")
+                logger.error(f"⚠️ Timeout reached ({timeout} seconds). Stopping these spiders: {still_running}")
+                timed_out_spiders.update(still_running)
 
+                # Manually invoke close_spider for timed-out spiders
+                for spider_name in still_running:
+                    logger.warning(f"Manually closing spider '{spider_name}' due to timeout.")
+                    fail_spiders.add(spider_name)  # Mark as failed
+                    if DISCORD_WEBHOOK_URL:
+                        send_discord_notification(f"⏳ Spider '{spider_name}' timed out.", DISCORD_WEBHOOK_URL, THREAD_ID)
+
+                process.stop()
+
+        timer = Timer(timeout, timeout_handler)
         try:
-            process.start()
+            timer.start()
+            for spider_name in remaining_spiders:
+                if spider_name in all_spiders:
+                    try:
+                        spider_cls = spider_loader.load(spider_name)
+                        process.crawl(spider_cls)
+                    except Exception as e:
+                        logger.error(f"Error while setting up spider '{spider_name}': {e}")
+                        fail_spiders.add(spider_name)
+                        spiders_to_time_out.discard(spider_name)
+                else:
+                    logger.warning(f"Spider '{spider_name}' not found. Skipping...")
+                    fail_spiders.add(spider_name)
+                    spiders_to_time_out.discard(spider_name)
+
+            process.start()  # Runs all spiders concurrently
         except Exception as e:
             logger.error(f"Error during crawling: {e}")
-            current_failures.extend(remaining_spiders)  # If the process fails, all are considered failed
+            fail_spiders.update(spiders_to_time_out)  # If the process fails, all remaining are considered failed
+        finally:
+            timer.cancel()  # Cancel the timer after process ends
 
-        # Update success and failure logs
-        for spider in current_failures:
-            if spider not in fail_spiders:
-                fail_spiders.append(spider)
+        # Clean up spiders_to_time_out
+        spiders_to_time_out.difference_update(success_spiders, fail_spiders)
 
-        # Remove successes from failure and remaining lists
-        remaining_spiders = [spider for spider in remaining_spiders if spider not in success_spiders]
+        # Update remaining spiders
+        remaining_spiders = [spider for spider in remaining_spiders if spider not in success_spiders and spider not in timed_out_spiders]
 
         retries += 1
 
-        logger.info(f"Attempt {retries}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
-        logger.info(f"Attempt {retries}: FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
-        print(f"Attempt {retries}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
-        print(f"Attempt {retries}: FAILED: {len(fail_spiders)} spiders. Spiders: {fail_spiders}")
+        logger.info(f"Attempt {retries}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {list(success_spiders)}")
+        logger.info(f"Attempt {retries}: FAILED: {len(fail_spiders - timed_out_spiders)} spiders. Spiders: {list(fail_spiders - timed_out_spiders)}")
+        logger.info(f"Attempt {retries}: TIMED OUT: {len(timed_out_spiders)} spiders. Spiders: {list(timed_out_spiders)}")
+        print(f"Attempt {retries}: SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {list(success_spiders)}")
+        print(f"Attempt {retries}: FAILED: {len(fail_spiders - timed_out_spiders)} spiders. Spiders: {list(fail_spiders - timed_out_spiders)}")
+        print(f"Attempt {retries}: TIMED OUT: {len(timed_out_spiders)} spiders. Spiders: {list(timed_out_spiders)}")
 
     # Final summary
     if remaining_spiders:
@@ -330,17 +386,18 @@ def run_spiders(spider_list, output_folder, backup_folder, max_retries=3):
     else:
         logger.info("All spiders ran successfully.")
 
-    print(f"\nSUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}")
-    print(f"FAILED: {len(remaining_spiders)} spiders. Spiders: {remaining_spiders}")
+    fail_spiders.difference_update(success_spiders, timed_out_spiders)  # Remove successful and timeout spiders from failures list
+    print(f"\n✅ SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {list(success_spiders)}")
+    print(f"❌ FAILED: {len(fail_spiders)} spiders. Spiders: {list(fail_spiders)}")
+    print(f"⏳ TIMED OUT: {len(timed_out_spiders)} spiders. Spiders: {list(timed_out_spiders)}")
 
     if DISCORD_WEBHOOK_URL:
-        send_discord_notification(f"✅ SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {success_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
-        if remaining_spiders:
-            send_discord_notification(f"❌ FAILED: {len(remaining_spiders)} spiders. Spiders: {remaining_spiders}", DISCORD_WEBHOOK_URL, THREAD_ID)
-    else:
-        print("Discord webhook URL not provided. Skipping notifications.")
-
-
+        if success_spiders:
+            send_discord_notification(f"✅ SUCCESSFUL: {len(success_spiders)} spiders. Spiders: {list(success_spiders)}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        if fail_spiders:
+            send_discord_notification(f"❌ FAILED: {len(fail_spiders)} spiders. Spiders: {list(fail_spiders)}", DISCORD_WEBHOOK_URL, THREAD_ID)
+        if timed_out_spiders:
+            send_discord_notification(f"⏳ TIMED OUT: {len(timed_out_spiders)} spiders. Spiders: {list(timed_out_spiders)}", DISCORD_WEBHOOK_URL, THREAD_ID)
 
 #========= SPIDER TREE FUNCTIONS based on spiders/ folder hierarchy ===============
 
@@ -526,7 +583,7 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
         all_spiders = get_all_spiders()
         logger.debug(f"Spider tree: {spider_tree}")
 
-        LIST_OF_SPIDERS_TO_RUN =  ['rurallink_anggota', 'kpkm', 'kuskop', 'kkr', 'rurallink_pkd', 'komunikasi', 'ekonomi', 'petra', 'moe', 'mod']
+        LIST_OF_SPIDERS_TO_RUN = ['digital', 'ekonomi', 'kbs', 'kkr', 'kln', 'komunikasi', 'kpdn', 'kpk', 'kpkm', 'kpkt', 'kpn', 'kpt', 'kpwkm', 'kuskop', 'miti', 'mof', 'moh', 'moha', 'mosti', 'mot', 'motac', 'nres', 'petra', 'rurallink_anggota', 'rurallink_pkd'] #['jpm', 'mohr', 'mod', 'moe',]
 
         #================== ARGS VALIDATION =====================
         if not validate_arg_name(args.name, all_spiders, spider_tree):
