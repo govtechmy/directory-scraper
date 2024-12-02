@@ -1,7 +1,7 @@
 name: Run Spider & Load to ES Pipeline
 
 on:
-  push:
+  # push:
   #   branches: [ "test-workflow" ]
   # schedule:
   #   - cron: '0 0 * * *'
