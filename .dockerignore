@@ -20,9 +20,13 @@
 **/.hypothesis
 **/*.json
 **/*.md
+**/*.txt
+**/*.cfg
+**/.dockerignore
 
 # Ignore all folders and files in src directory not needed for API image
-
+.github
+archive
 directory_scraper
 !directory_scraper/src
 !directory_scraper/api_setup.py
