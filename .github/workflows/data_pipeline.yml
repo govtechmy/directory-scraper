@@ -54,7 +54,7 @@ jobs:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           THREAD_ID: ${{ secrets.THREAD_ID }}
-        run: timeout 120 python $DIRECTORY_SRC/workflows/main_spiders.py list # timeout (seconds)
+        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders.py list # timeout (seconds)
 
       # - name: Upload spider output as artifact
       #   uses: actions/upload-artifact@v4
@@ -67,6 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: clean-data
+          if: success() # Run if all previous steps succeeded
           path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
           retention-days: 5
 
@@ -74,6 +75,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: run_spiders-log
+          if: always() # Always run this step
           path: ${{ github.workspace}}/logs/run_spiders.log
           retention-days: 5
 
@@ -81,6 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: custom_run_spiders-log
+          if: always() # Always run this step
           path: ${{ github.workspace}}/logs/run_spiders_custom.log
           retention-days: 5
 
@@ -88,5 +91,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: es-changes-log
+          if: success() # Run if all previous steps succeeded
           path: ${{ github.workspace }}/es_changes_log.json
           retention-days: 5
