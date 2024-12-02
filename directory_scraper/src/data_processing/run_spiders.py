@@ -289,7 +289,7 @@ class RunSpiderPipeline:
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
 
-def run_spiders(spider_list, output_folder, backup_folder, max_retries=3, timeout=300):
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=3, timeout=600): # timeout (seconds)
     """
     Run spiders with retry logic for failures and enforce a timeout for all spiders.
 
@@ -583,7 +583,7 @@ def main(spider_list=None, output_folder=None, backup_folder=None):
         all_spiders = get_all_spiders()
         logger.debug(f"Spider tree: {spider_tree}")
 
-        LIST_OF_SPIDERS_TO_RUN = ['digital', 'ekonomi', 'kbs', 'kkr', 'kln', 'komunikasi', 'kpdn', 'kpk', 'kpkm', 'kpkt', 'kpn', 'kpt', 'kpwkm', 'kuskop', 'miti', 'mof', 'moh', 'moha', 'mosti', 'mot', 'motac', 'nres', 'petra', 'rurallink_anggota', 'rurallink_pkd'] #['jpm', 'mohr', 'mod', 'moe',]
+        LIST_OF_SPIDERS_TO_RUN = ['digital', 'ekonomi', 'kbs', 'kkr', 'kln', 'komunikasi', 'kpdn', 'kpk', 'kpkm', 'kpkt', 'kpn', 'kpt', 'kpwkm', 'kuskop', 'miti', 'mof', 'moh', 'moha', 'mosti', 'mot', 'motac', 'nres', 'petra', 'rurallink_anggota', 'rurallink_pkd', 'jpm', 'mohr', 'mod', 'moe']
 
         #================== ARGS VALIDATION =====================
         if not validate_arg_name(args.name, all_spiders, spider_tree):
