@@ -1,8 +1,8 @@
-FROM python:3.11-bullseye
+FROM python:3.11-slim-bullseye
 
 WORKDIR /code
 
-COPY directory_scraper/ /code/directory_scraper/
+COPY ./directory_scraper/ /code/directory_scraper/
 
 ENV PYTHONPATH="/code/directory_scraper"
 ENV PYTHONUNBUFFERED=1
