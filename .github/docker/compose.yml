@@ -1,0 +1,12 @@
+services:
+  gsheet-api:
+    build:
+      context: ../../
+      dockerfile: ./.github/docker/Dockerfile.api
+    ports:
+      - 80:80
+    develop:
+      watch:
+        - action: sync
+          path: ./directory_scraper
+          target: /code
