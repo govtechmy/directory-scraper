@@ -10,6 +10,7 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     env:
       TZ: Asia/Kuala_Lumpur
@@ -53,7 +54,7 @@ jobs:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           THREAD_ID: ${{ secrets.THREAD_ID }}
-        run: python $DIRECTORY_SRC/workflows/main_spiders.py list
+        run: timeout 120 python $DIRECTORY_SRC/workflows/main_spiders.py list # timeout (seconds)
 
       # - name: Upload spider output as artifact
       #   uses: actions/upload-artifact@v4
