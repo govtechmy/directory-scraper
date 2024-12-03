@@ -1,10 +1,10 @@
 name: Run Spider & Load to ES Pipeline
 
 on:
-  # push:
-  #   branches: [ "test-workflow" ]
-  # schedule:
-  #   - cron: '0 0 * * *'
+  push:
+    branches: [ "test-workflow" ]
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
