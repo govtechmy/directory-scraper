@@ -175,11 +175,6 @@ def setup_crawler(spiders):
     settings.set('DOWNLOAD_DELAY', 1)
     settings.set('LOG_FILE', LOG_FILE_PATH)
     settings.set('LOG_LEVEL', 'INFO')
-    settings.set('USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
-    settings.set('DOWNLOADER_MIDDLEWARES', {
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 400,
-    })
 
     set_playwright_settings(settings, spiders)
     process = CrawlerProcess(settings)
