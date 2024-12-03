@@ -29,6 +29,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Test connectivity to JPM
+        run: curl -I https://direktori.jpm.gov.my
+        
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
