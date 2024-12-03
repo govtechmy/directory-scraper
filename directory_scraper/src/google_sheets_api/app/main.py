@@ -3,14 +3,10 @@ import sys
 import logging
 from pathlib import Path
 from fastapi import FastAPI
-from datetime import datetime
-from zoneinfo import ZoneInfo
-from elasticsearch import Elasticsearch
 
 PATH_ROOT = Path(__file__).parents[4]
 sys.path.append(str(PATH_ROOT))
 
-from directory_scraper.src.elasticsearch_upload.data_to_es import es
 from directory_scraper.src.google_sheets_api.utils.utils_validate import clean_data
 from directory_scraper.src.google_sheets_api.utils.utils_gsheet import GoogleSheetManager
 from directory_scraper.src.elasticsearch_upload.data_to_es import main as elasticsearch_upload
