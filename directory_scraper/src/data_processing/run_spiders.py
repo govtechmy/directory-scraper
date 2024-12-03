@@ -175,6 +175,11 @@ def setup_crawler(spiders):
     settings.set('DOWNLOAD_DELAY', 1)
     settings.set('LOG_FILE', LOG_FILE_PATH)
     settings.set('LOG_LEVEL', 'INFO')
+    settings.set('USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+    settings.set('DOWNLOADER_MIDDLEWARES', {
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 400,
+    })
 
     set_playwright_settings(settings, spiders)
     process = CrawlerProcess(settings)
@@ -256,7 +261,7 @@ class RunSpiderPipeline:
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
 
-def run_spiders(spider_list, output_folder, backup_folder, max_retries=0, timeout=600): # timeout (seconds)
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=0, timeout=60): # timeout (seconds)
     """
     Run spiders with retry logic for failures and enforce a timeout for all spiders.
 
