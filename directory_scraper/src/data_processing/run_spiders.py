@@ -46,8 +46,8 @@ logger.propagate = True
 # Global success and fail counters
 success_count = 0
 fail_count = 0
-success_spiders = []
-fail_spiders = []
+success_spiders, fail_spiders, timed_out_spiders = set(), set(), set()
+
 
 def setup_folders():
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -210,7 +210,7 @@ class RunSpiderPipeline:
         process_item(item, spider): Appends scraped items to the spider's results.
         close_spider(spider): Writes results to a JSON file if data was collected, or logs a failure.
     """
-    def __init__(self,output_folder):
+    def __init__(self, output_folder):
         self.results = {}
         self.output_folder = output_folder
 
@@ -222,7 +222,7 @@ class RunSpiderPipeline:
 
     def open_spider(self, spider):
         self.start_time = datetime.now()
-        global success_count, fail_count, success_spiders, fail_spiders
+        global success_count, fail_count, success_spiders, fail_spiders, timed_out_spiders
         self.results[spider.name] = []
         logger.info(f"Running spider '{spider.name}' ...")
 
@@ -289,7 +289,7 @@ class RunSpiderPipeline:
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
 
-def run_spiders(spider_list, output_folder, backup_folder, max_retries=3, timeout=600): # timeout (seconds)
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=2, timeout=600): # timeout (seconds)
     """
     Run spiders with retry logic for failures and enforce a timeout for all spiders.
 
