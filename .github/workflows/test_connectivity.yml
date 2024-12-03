@@ -14,15 +14,19 @@ jobs:
 
     steps:
       - name: Test connectivity to JPM
+        if: always() # Always run this step
         run: curl -I --max-time 10 https://direktori.jpm.gov.my
 
       - name: Test connectivity to MOHR
+        if: always() # Always run this step
         run: curl -I --max-time 10 'https://app1.mohr.gov.my/staff/staff_name.php?department='
 
       - name: Test connectivity to MOD
+        if: always() # Always run this step
         run: curl -I --max-time 10 https://direktori.mod.gov.my
 
       - name: Test connectivity to MOE
+        if: always() # Always run this step
         run: curl -I --max-time 10 'https://direktori.moe.gov.my/ajax/public/getdir.php?id=1&textsearch=&selectsearch='
 
   
