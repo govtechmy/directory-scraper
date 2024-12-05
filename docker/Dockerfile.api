@@ -6,7 +6,6 @@ WORKDIR /code
 RUN mkdir -p /code/secrets
 
 COPY ./directory_scraper/ /code/directory_scraper/
-COPY ./GOOGLE_AUTH_2.json /code/GOOGLE_AUTH_2.json
 
 ENV PYTHONPATH="/code/directory_scraper"
 ENV PYTHONUNBUFFERED=1

@@ -17,9 +17,7 @@ services:
         - action: sync
           path: "${PWD}/directory_scraper/src/google_sheets_api"
           target: /code/directory_scraper/src/google_sheets_api
-    volumes:
-      - ./GOOGLE_AUTH_2.json:/code/GOOGLE_AUTH_2.json
 
 secrets:
   GOOGLE_AUTH_2:
-    file: "${PWD}/GOOGLE_AUTH_2.json"
+    file: "${PWD}/secrets/GOOGLE_AUTH_2.json"
