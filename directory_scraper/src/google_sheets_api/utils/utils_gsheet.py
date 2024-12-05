@@ -50,39 +50,7 @@ class GoogleSheetManager(GoogleSheetManager):
             edit_sheet.append_row(["user", "checksum", "last_updated", "row_count"])
             edit_sheet.update_acell("D2", "=COUNTA(A2:A)") # Keeps track of row count to avoid loading the entire edit log
             logging.info(f"Populated worksheet headers and rowcount metadata.")
-            
-            # Protecting sheets from edits
-            ADMIN_EMAILS = json.loads(os.getenv("ADMIN_EMAILS", "[]").replace("'", '"'))
-            request_body = {
-                "requests": [
-                    {
-                        "addProtectedRange": {
-                            "protectedRange": {
-                                "range": {
-                                    "sheetId": edit_sheet.id
-                                },
-                                "editors": {
-                                    "domainUsersCanEdit": False,
-                                    "users": ADMIN_EMAILS
-                                },
-                                "warningOnly": False
-                            }
-                        }
-                    },
-                    {
-                        'updateSheetProperties': {
-                            'properties': {
-                                'sheetId': edit_sheet.id,
-                                'hidden': True
-                            },
-                            'fields': 'hidden'
-                        }
-                    }
-                ]
-            }
 
-            sheet.batch_update(request_body)
-            logging.info("Protected sheet from edits")
             return True
 
         else:
