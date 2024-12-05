@@ -19,7 +19,7 @@ class GoogleSheetManager(GoogleSheetManager):
         Connects to Google Sheets using service account credentials.
         """
         creds = Credentials.from_service_account_file(
-            "/code/GOOGLE_AUTH_2.json",  # Use absolute path
+            self.creds_file,  # Use absolute path
             scopes=self.scopes
         )
         client = gspread.authorize(creds)
