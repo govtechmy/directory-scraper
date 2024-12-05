@@ -28,7 +28,7 @@ async def setup_logs(sheet_id:str) -> dict:
     """
     Function to setup google sheet edit log worksheet
     """
-    creds = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDS')
+    creds = os.getenv('GOOGLE_AUTH_FILE')
     scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
     try:
