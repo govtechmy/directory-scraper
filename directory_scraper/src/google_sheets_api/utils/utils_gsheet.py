@@ -18,7 +18,10 @@ class GoogleSheetManager(GoogleSheetManager):
         """
         Connects to Google Sheets using service account credentials.
         """
-        creds = Credentials.from_service_account_file(self.creds_file, scopes=self.scopes)
+        creds = Credentials.from_service_account_file(
+            self.creds_file,  # Use absolute path
+            scopes=self.scopes
+        )
         client = gspread.authorize(creds)
         sheet = client.open_by_key(self.sheet_id)
         return sheet
@@ -49,7 +52,7 @@ class GoogleSheetManager(GoogleSheetManager):
             logging.info(f"Populated worksheet headers and rowcount metadata.")
             
             # Protecting sheets from edits
-            ADMIN_EMAILS = json.loads(os.getenv("ADMIN_EMAILS"))
+            ADMIN_EMAILS = json.loads(os.getenv("ADMIN_EMAILS", "[]").replace("'", '"'))
             request_body = {
                 "requests": [
                     {
