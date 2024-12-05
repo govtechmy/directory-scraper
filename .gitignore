@@ -8,6 +8,8 @@ env/
 venv/
 .venv/
 
+GOOGLE_AUTH_2.json
+
 .env
 
 output/
