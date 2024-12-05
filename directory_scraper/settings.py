@@ -17,7 +17,7 @@ NEWSPIDER_MODULE = "directory_scraper.spiders"
 #USER_AGENT = "directory_scraper (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -50,10 +50,12 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    "directory_scraper.middlewares.DirectoryScraperDownloaderMiddleware": 543,
-#}
-
+DOWNLOADER_MIDDLEWARES = {
+   "directory_scraper.middlewares.DirectoryScraperDownloaderMiddleware": 543,
+    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 110,
+    'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
+    'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
+}
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
 #EXTENSIONS = {
@@ -110,4 +112,31 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'ERROR'
+
+import os
+import json
+from dotenv import load_dotenv
+load_dotenv()
+
+try:
+    proxies_json = os.getenv("PROXIES_JSON")
+    if not proxies_json:
+        raise ValueError("PROXIES_JSON is not set in the environment or is empty.")
+    ROTATING_PROXY_LIST = json.loads(proxies_json)
+except Exception as e:
+    raise RuntimeError(f"Error loading PROXIES_JSON: {e}")
+
+ROTATING_PROXY_BAN_POLICY = 'rotating_proxies.policy.BanDetectionPolicy'
+
+RETRY_TIMES = 5
+ROTATING_PROXY_PAGE_RETRY_TIMES = 0
+
+DOWNLOAD_TIMEOUT = 200 # seconds
+CONCURRENT_REQUESTS = 16 
+
+ROTATING_PROXY_BACKOFF_BASE = 3
+ROTATING_PROXY_BACKOFF_CAP = 60
+
+ROTATING_PROXY_REANIMATION_ENABLED = False
+ROTATING_PROXY_CLOSE_ON_BAN = True

@@ -1,10 +1,10 @@
 name: Run Spider & Load to ES Pipeline
 
 on:
-  # push:
-  #   branches: [ "test-workflow" ]
-  # schedule:
-  #   - cron: '0 0 * * *'
+  push:
+    branches: [ "test-workflow" ]
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -54,20 +54,22 @@ jobs:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           THREAD_ID: ${{ secrets.THREAD_ID }}
-        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders.py list # timeout (seconds)
+          PROXIES_JSON: ${{ secrets.PROXIES_JSON }}
+        run: timeout 500 python $DIRECTORY_SRC/workflows/main_spiders.py list # timeout (seconds)
         continue-on-error: true
 
-      # - name: Upload spider output as artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: spider-output
-      #     path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
-      #     retention-days: 5
+      - name: Upload spider output as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spider-output
+          path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
+          retention-days: 5
 
       - name: Upload cleaned data as artifact
         uses: actions/upload-artifact@v4
         with:
           name: clean-data
+          if: success() # Run if all previous steps succeeded
           path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
           retention-days: 5
 
