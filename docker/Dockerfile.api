@@ -2,6 +2,9 @@ FROM python:3.11-slim-bullseye
 
 WORKDIR /code
 
+# Create secrets directory
+RUN mkdir -p /code/secrets
+
 COPY ./directory_scraper/ /code/directory_scraper/
 
 ENV PYTHONPATH="/code/directory_scraper"
@@ -14,6 +17,6 @@ COPY ./directory_scraper/api_setup.py /code/setup.py
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install -e .
 
-    EXPOSE 80
+EXPOSE 80
 
 CMD ["fastapi", "run", "/code/directory_scraper/src/google_sheets_api/app/main.py", "--port", "80"]

@@ -1,0 +1,23 @@
+services:
+  gsheet-api:
+    build:
+      context: "${PWD}"
+      dockerfile: "${PWD}/docker/Dockerfile.api"
+    env_file: "${PWD}/.env"
+    environment:
+      - GOOGLE_AUTH_FILE=/code/secrets/GOOGLE_AUTH_2.json
+    secrets:
+      - source: GOOGLE_AUTH_2
+        target: /code/secrets/GOOGLE_AUTH_2.json
+        mode: 0444  # Read-only permission
+    ports:
+      - 80:80
+    develop:
+      watch:
+        - action: sync
+          path: "${PWD}/directory_scraper/src/google_sheets_api"
+          target: /code/directory_scraper/src/google_sheets_api
+
+secrets:
+  GOOGLE_AUTH_2:
+    file: "${PWD}/GOOGLE_AUTH_2.json"
