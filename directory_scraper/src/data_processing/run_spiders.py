@@ -237,9 +237,13 @@ class RunSpiderPipeline:
         duration = end_time - self.start_time
         logger.info(f"Finished spider '{spider.name}'. Duration: {duration}")
 
+        item_count = spider.crawler.stats.get_value('item_scraped_count', 0)
+
         if spider.name in timed_out_spiders:
             # Ensure timed-out spiders are not processed further
             logger.warning(f"Spider '{spider.name}' was previously timed out. No data saved.")
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🟡 Spider '{spider.name}' timed out. Scraped {item_count} record. [Duration: {duration}] (no data saved)", DISCORD_WEBHOOK_URL, THREAD_ID)
             return
 
         if self.results[spider.name]: # Spider successful
@@ -249,12 +253,12 @@ class RunSpiderPipeline:
             success_spiders.add(spider.name)
             logger.info(f"Spider '{spider.name}' finished successfully.")
             if DISCORD_WEBHOOK_URL:
-                send_discord_notification(f"🟢 Spider '{spider.name}' finished successfully. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
+                send_discord_notification(f"🟢 Spider '{spider.name}' finished successfully. Scraped {item_count} records. [Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
         else: # Spider failed
             fail_spiders.add(spider.name)
             logger.warning(f"Spider '{spider.name}' finished without results.")
             if DISCORD_WEBHOOK_URL:
-                send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. (Duration: {duration})", DISCORD_WEBHOOK_URL, THREAD_ID)
+                send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. Scraped {item_count} records. [Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
 
 def run_spiders(spider_list, output_folder, backup_folder, max_retries=2, timeout=600): # timeout (seconds)
     """
@@ -295,16 +299,18 @@ def run_spiders(spider_list, output_folder, backup_folder, max_retries=2, timeou
             nonlocal spiders_to_time_out
             still_running = spiders_to_time_out - success_spiders - fail_spiders 
             if still_running:
-                print(f"⚠️ Timeout reached ({timeout} seconds). Stopping these spiders: {still_running}")
-                logger.error(f"⚠️ Timeout reached ({timeout} seconds). Stopping these spiders: {still_running}")
+                print(f"Timeout reached ({timeout} seconds). Stopping these spiders: {still_running}")
+                logger.error(f"Timeout reached ({timeout} seconds). Stopping these spiders: {still_running}")
+                if DISCORD_WEBHOOK_URL:
+                    send_discord_notification(f"Timeout reached ({timeout} seconds)", DISCORD_WEBHOOK_URL, THREAD_ID)
                 timed_out_spiders.update(still_running)
 
                 # Manually invoke close_spider for timed-out spiders
                 for spider_name in still_running:
                     logger.warning(f"Manually closing spider '{spider_name}' due to timeout.")
                     fail_spiders.add(spider_name)  # Mark as failed
-                    if DISCORD_WEBHOOK_URL:
-                        send_discord_notification(f"⏳ Spider '{spider_name}' timed out.", DISCORD_WEBHOOK_URL, THREAD_ID)
+                    # if DISCORD_WEBHOOK_URL:
+                    #     send_discord_notification(f"⏳ Spider '{spider_name}' timed out.", DISCORD_WEBHOOK_URL, THREAD_ID)
 
                 process.stop()
 
