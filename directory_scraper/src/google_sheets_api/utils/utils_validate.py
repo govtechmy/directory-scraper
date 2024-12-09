@@ -39,13 +39,18 @@ def process_json_data(input_data):
 
 
 def check_document_hash(sheet_id:str) -> bool:
-    previous_hash = es.search(
+    hash_search = es.search(
         index=ES_LOG_INDEX,
         query={"match": {"sheet_id": {"query": sheet_id}}},
         sort=[{"timestamp": {"order": "desc", "mode": "max"}}],
         size=1
     )
-    return previous_hash["hits"]["hits"][0]["_source"]["sha_256_hash"]
+    hash_list = hash_search["hits"]["hits"]
+    if hash_list:
+        previous_hash = hash_list[0]["_source"]["sha_256_hash"]
+    else:
+        previous_hash = None
+    return previous_hash
 
 
 def clean_data(sheet_id:str, user_name:str) -> dict:
