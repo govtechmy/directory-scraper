@@ -23,23 +23,6 @@ app = FastAPI(
 async def root():
     return {"message": "Hello World!"}
 
-@app.get("/gsheet/setup_logs")
-async def setup_logs(sheet_id:str) -> dict:
-    """
-    Function to setup google sheet edit log worksheet
-    """
-    creds = os.getenv('GOOGLE_AUTH_FILE')
-    scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-
-    try:
-        sheet_manager = GoogleSheetManager(creds, sheet_id, scopes)
-        sheet_manager.setup_editsheet()
-    except Exception as e:
-        logging.error("Unable to create 'Edit Logs' sheet for google sheet. Check your `sheet_id` and ensure it is correct.")
-        raise e
-    
-    return {"sheet_id": sheet_id}
-
 @app.get("/gsheet/upload_data")
 async def upload_to_elasticsearch(sheet_id: str, user_name: str) -> dict:
     """
