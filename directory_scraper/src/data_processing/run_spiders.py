@@ -261,7 +261,7 @@ class RunSpiderPipeline:
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. Scraped {item_count} records. [Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
 
-def run_spiders(spider_list, output_folder, backup_folder, max_retries=2, timeout=600): # timeout (seconds)
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=2, timeout=900): # timeout (seconds)
     """
     Run spiders with retry logic for failures and enforce a timeout for all spiders.
 
