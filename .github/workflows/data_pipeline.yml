@@ -54,7 +54,7 @@ jobs:
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           THREAD_ID: ${{ secrets.THREAD_ID }}
-        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders.py list # timeout (seconds)
+        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders.py ministry # timeout (seconds)
         continue-on-error: true
 
       # - name: Upload spider output as artifact
