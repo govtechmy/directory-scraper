@@ -19,6 +19,11 @@ class JPMSpider(scrapy.Spider):
         'https://direktori.jpm.gov.my/jpm/13'
     ]
 
+    custom_settings = {
+        'RETRY_TIMES': 2,                # Retry failed requests 2x
+        'CLOSESPIDER_TIMEOUT': 300,      # Stop the spider after 5 mins
+    }
+
     person_sort_order = 0 
 
     def start_requests(self):
@@ -28,9 +33,13 @@ class JPMSpider(scrapy.Spider):
             yield scrapy.Request(
                 url=url,
                 callback=self.parse_static,
+                errback=self.handle_error,
                 meta={'division_sort': division_sort},  # Pass division_sort to the callback
                 priority=priority_value  #set priority for ordering
             )
+
+    def handle_error(self, failure):
+        self.logger.error(f"Request failed for {failure.request.url}: {repr(failure)}")
 
     def parse_static(self, response):
         division_sort = response.meta['division_sort']
