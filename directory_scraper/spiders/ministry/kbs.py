@@ -63,7 +63,7 @@ class KbsSpider(scrapy.Spider):
                 "position_sort_order": position_sort_order,
                 "subdivision_name": final_subdivision_name, 
                 "person_name": row.xpath('.//td[contains(@class, "direktori_staff___nama")]/text()').get().strip(),
-                "person_position": row.xpath('.//td[contains(@class, "direktori_staff___jawatan")]/text()').get().strip(),
+                "position_name": row.xpath('.//td[contains(@class, "direktori_staff___jawatan")]/text()').get().strip(),
                 "person_phone": row.xpath('.//td[contains(@class, "direktori_staff___no_telefon")]/text()').get().strip(),
                 "person_email": final_person_email,
                 "person_fax": None,
