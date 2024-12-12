@@ -14,9 +14,7 @@ def send_discord_notification(message, webhook_url, thread_id=None):
     payload = {"content": message}
     try:
         response = requests.post(webhook_url, json=payload)
-        if response.status_code == 204:
-            print("Notification sent to Discord successfully.")
-        else:
+        if response.status_code != 204:
             print(f"Failed to send notification. Status code: {response.status_code}. Response: {response.text}")
     except Exception as e:
         print(f"Error sending notification to Discord: {e}")
