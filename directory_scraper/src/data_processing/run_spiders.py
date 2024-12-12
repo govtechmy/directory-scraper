@@ -242,6 +242,7 @@ class RunSpiderPipeline:
         if spider.name in timed_out_spiders:
             # Ensure timed-out spiders are not processed further
             logger.warning(f"Spider '{spider.name}' was previously timed out. No data saved.")
+            f"🟢 Spider '{spider.name}' timed out. Scraped {item_count} records. [Duration: {duration}]"
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🟡 Spider '{spider.name}' timed out. Scraped {item_count} records. [Duration: {duration}] (no data saved)", DISCORD_WEBHOOK_URL, THREAD_ID)
             return
@@ -253,11 +254,13 @@ class RunSpiderPipeline:
                 json.dump(self.results[spider.name], f, indent=4)
             success_spiders.add(spider.name)
             logger.info(f"Spider '{spider.name}' finished successfully.")
+            print(f"🟢 Spider '{spider.name}' finished successfully. Scraped {item_count} records. [Duration: {duration}]")
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🟢 Spider '{spider.name}' finished successfully. Scraped {item_count} records. [Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
         else: # Spider failed
             fail_spiders.add(spider.name)
             logger.warning(f"Spider '{spider.name}' finished without results.")
+            print(f"🔴 Spider '{spider.name}' finished without results. Scraped {item_count} records. [Duration: {duration}]")
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. Scraped {item_count} records. [Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
 
