@@ -3,21 +3,7 @@ import re
 
 class JPMSpider(scrapy.Spider):
     name = 'jpm'
-    start_urls = [
-        'https://direktori.jpm.gov.my/jpm/1',
-        'https://direktori.jpm.gov.my/jpm/2',
-        'https://direktori.jpm.gov.my/jpm/3',
-        'https://direktori.jpm.gov.my/jpm/4',
-        'https://direktori.jpm.gov.my/jpm/5',
-        'https://direktori.jpm.gov.my/jpm/6',
-        'https://direktori.jpm.gov.my/jpm/7',
-        'https://direktori.jpm.gov.my/jpm/8',
-        'https://direktori.jpm.gov.my/jpm/9',
-        'https://direktori.jpm.gov.my/jpm/10',
-        'https://direktori.jpm.gov.my/jpm/11',
-        'https://direktori.jpm.gov.my/jpm/12',
-        'https://direktori.jpm.gov.my/jpm/13'
-    ]
+    start_urls = ['https://direktori.jpm.gov.my']
 
     custom_settings = {
         'RETRY_TIMES': 2,                # Retry failed requests 2x
@@ -26,12 +12,17 @@ class JPMSpider(scrapy.Spider):
 
     person_sort_order = 0 
 
-    def start_requests(self):
-        for i, url in enumerate(self.start_urls):
-            division_sort = i + 1  #assign division_sort based on the URL's index
-            priority_value = len(self.start_urls) - i  #set higher priority for earlier URLs
+    def parse(self, response):
+        dynamic_urls = response.css('a.list-group-item::attr(href)').getall()
+
+        # print(f"Extracted URLs: {dynamic_urls}")
+
+        for i, url in enumerate(dynamic_urls):
+            full_url = response.urljoin(url)
+            division_sort = i + 1
+            priority_value = len(dynamic_urls) - i  #set higher priority for earlier URLs
             yield scrapy.Request(
-                url=url,
+                url=full_url,
                 callback=self.parse_static,
                 errback=self.handle_error,
                 meta={'division_sort': division_sort},  # Pass division_sort to the callback
