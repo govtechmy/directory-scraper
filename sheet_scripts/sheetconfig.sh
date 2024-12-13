@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin
 SHEET_NAMES=(
     "compiled"
     "digital"
