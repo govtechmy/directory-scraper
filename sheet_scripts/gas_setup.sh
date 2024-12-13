@@ -1,14 +1,14 @@
 #!/opt/homebrew/bin
 # Setup file for google apps scripts (GAS) directories
 
-# # Installing and setting up clasp
-# curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-# export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+# Installing and setting up clasp
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# nvm install npm
-# nvm install node
-# npm install -g @google/clasp
+nvm install npm
+nvm install node
+npm install -g @google/clasp
 
 # Define cleanup handler, create temporary log directory
 trap '[[ -n "$(jobs -p)" ]] && kill -- -$$; [[ -n "${logdir}" ]] && rm -rf "${logdir}"' EXIT
