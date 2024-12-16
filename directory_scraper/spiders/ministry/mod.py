@@ -45,7 +45,7 @@ class MODSpider(scrapy.Spider):
                 self.logger.info(f"Excluded link found and skipped: {url}")
                 continue
 
-            print(f"Processing division_sort: {valid_sort}, URL: {url}")
+            self.logger.info(f"Processing division_sort: {valid_sort}, URL: {url}")
             yield scrapy.Request(url=url, callback=self.parse_level2_parents, meta={'division_sort': valid_sort})
             valid_sort += 1
 
@@ -62,7 +62,7 @@ class MODSpider(scrapy.Spider):
             self.level2_to_level3_map[level2_name] = []
 
             # Fetch level3 parents from the level2 link
-            print(f"Checking Level 2 link: {level2_url}")
+            self.logger.info(f"Checking Level 2 link: {level2_url}")
             yield scrapy.Request(
                 url=level2_url,
                 callback=self.parse_level3_parents,
@@ -140,6 +140,18 @@ class MODSpider(scrapy.Spider):
                     if subdivision_level3_parent:  # Exit early if a match is found
                         break
 
+            # To identify the missing subdivision_level3_parent using the level2_to_level3_map mapping list, and by checking the value of "final" subdivision_name. So that we can have a hierarchy ">".
+            if not subdivision_level3_parent:
+                for level2, level3_list in self.level2_to_level3_map.items():
+                    for level3_parent in level3_list:
+                        if level3_parent in subdivision_name:
+                            # Cleanup: Replace matching level3 parent name in subdivision_name
+                            subdivision_name = subdivision_name.replace(f"{level3_parent}, ", f"{level3_parent} > ").strip(", ").strip()
+                            subdivision_level3_parent = level3_parent
+                            break
+                    if subdivision_level3_parent:  # Exit early if a match is found
+                        break
+
             subdivision_name_final = " > ".join(filter(None, [subdivision_level2_parent, subdivision_level2, subdivision_level3_parent, subdivision_name]))
             subdivision_name_final = subdivision_name_final if subdivision_name_final.strip() else None
 
@@ -197,7 +209,7 @@ class MODSpider(scrapy.Spider):
 
             if next_page_url not in visited_pages:
                 visited_pages.add(next_page_url)
-                print(f"Following pagination: {next_page_url}")
+                self.logger.info(f"Following pagination: {next_page_url}")
                 yield scrapy.Request(
                     next_page_url,
                     callback=self.parse_items,
