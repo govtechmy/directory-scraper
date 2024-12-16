@@ -6,12 +6,15 @@ import base64
 class MODSpider(scrapy.Spider):
     name = "mod"
     allowed_domains = ["direktori.mod.gov.my"]
-
+    
     # List urls to be excluded from scraping
     excluded_links = [
         "https://direktori.mod.gov.my/index.php/mindef/category/kem-kem-atm-seluruh-negara"
     ]
     excluded_links_found = []
+
+    # Mapping for level2 -> level3 parents
+    level2_to_level3_map = {}
 
     custom_settings = {
         'DOWNLOAD_DELAY': 3,
@@ -43,15 +46,47 @@ class MODSpider(scrapy.Spider):
                 continue
 
             print(f"Processing division_sort: {valid_sort}, URL: {url}")
-            yield scrapy.Request(url=url, callback=self.parse_item, meta={'division_sort': valid_sort, 'position_sort': 1})
+            yield scrapy.Request(url=url, callback=self.parse_level2_parents, meta={'division_sort': valid_sort})
             valid_sort += 1
 
-    def parse_item(self, response):
-        division_name = response.css("h1 ::text").get(default="").strip()
+    def parse_level2_parents(self, response):
         division_sort = response.meta.get('division_sort', -1)
+        level2_links = response.css(".level2.parent > a::attr(href)").getall()
+        level2_names = response.css(".level2.parent > a span::text").getall()
+
+        for level2_name, level2_link in zip(level2_names, level2_links):
+            level2_name = level2_name.strip()
+            level2_url = response.urljoin(level2_link)
+
+            # Initialize the mapping for level2 -> level3
+            self.level2_to_level3_map[level2_name] = []
+
+            # Fetch level3 parents from the level2 link
+            print(f"Checking Level 2 link: {level2_url}")
+            yield scrapy.Request(
+                url=level2_url,
+                callback=self.parse_level3_parents,
+                meta={'level2_name': level2_name, 'division_sort': division_sort}
+            )
+
+        # Parse items on the current level2 page
+        yield from self.parse_items(response, division_sort)
+
+    def parse_level3_parents(self, response):
+        level2_name = response.meta.get('level2_name')
+        level3_links = response.css(".level3.parent > a span::text").getall()
+        level3_names = [link.strip() for link in level3_links]
+
+        # Store the level3 parents in the mapping
+        if level2_name in self.level2_to_level3_map:
+            self.level2_to_level3_map[level2_name].extend(level3_names)
+        
+        print(f"Mapping Level2: {level2_name} -> Level3: {level3_names}")
+
+    def parse_items(self, response, division_sort):
+        division_name = response.css("h1 ::text").get(default="").strip()
         position_sort = response.meta.get('position_sort', 1)
 
-        # Extract level2 parent and level2 for subdivision
         level2_parent_links = response.css(".level2.parent > a span::text").getall()
         level2_parent_names = [link.strip() for link in level2_parent_links]
 
@@ -69,23 +104,46 @@ class MODSpider(scrapy.Spider):
             if division_name in subdivision_name:
                 subdivision_name = subdivision_name.replace(division_name, "").strip(", ").strip()
 
-            # Determine subdivision_level2_parent and subdivision_level2
+            # Determine subdivision_level2_parent
             subdivision_level2_parent = None
             for level2_parent in level2_parent_names:
-                if level2_parent in subdivision_name:
+                if level2_parent in subdivision_name_initial:
                     subdivision_level2_parent = level2_parent
                     subdivision_name = subdivision_name.replace(level2_parent, "").strip(", ").strip()
                     break
 
+            # Determine subdivision_level2
             subdivision_level2 = None
             for level2 in level2_names:
-                if level2 in subdivision_name:
+                # Only set subdivision_level2 if it is different from subdivision_level2_parent
+                if level2 in subdivision_name_initial and level2 != subdivision_level2_parent:
                     subdivision_level2 = level2
                     subdivision_name = subdivision_name.replace(level2, "").strip(", ").strip()
                     break
 
-            subdivision_name_final = " > ".join(filter(None, [subdivision_level2_parent, subdivision_level2, subdivision_name]))
+            # Determine subdivision_level3_parent
+            subdivision_level3_parent = None
+            if subdivision_level2_parent in self.level2_to_level3_map:
+                for level3_parent in self.level2_to_level3_map[subdivision_level2_parent]:
+                    if level3_parent in subdivision_name_initial:
+                        subdivision_level3_parent = level3_parent
+                        subdivision_name = subdivision_name.replace(level3_parent, "").strip(", ").strip()
+                        break
+            else:
+                # If no level2_parent was resolved, search all level3 mappings
+                for level2, level3_list in self.level2_to_level3_map.items():
+                    for level3_parent in level3_list:
+                        if level3_parent in subdivision_name_initial:
+                            subdivision_level3_parent = level3_parent
+                            subdivision_name = subdivision_name.replace(level3_parent, "").strip(", ").strip()
+                            break
+                    if subdivision_level3_parent:  # Exit early if a match is found
+                        break
+
+            subdivision_name_final = " > ".join(filter(None, [subdivision_level2_parent, subdivision_level2, subdivision_level3_parent, subdivision_name]))
             subdivision_name_final = subdivision_name_final if subdivision_name_final.strip() else None
+
+        #=============== END OF CLEANUP ===================
 
             contact_info = data_card.css("ul > li::text").getall()
             person_phone = next((txt.strip() for txt in contact_info if "Telefon" in txt), None)
@@ -112,6 +170,7 @@ class MODSpider(scrapy.Spider):
                 "subdivision_name_initial": subdivision_name_initial,
                 "subdivision_level2_parent": subdivision_level2_parent,
                 "subdivision_level2": subdivision_level2,
+                "subdivision_level3_parent": subdivision_level3_parent,
                 "subdivision_name": subdivision_name_final, 
                 "position_sort": position_sort,
                 "person_name": data_card.css("h2::text").get(default="").strip(),
@@ -127,6 +186,7 @@ class MODSpider(scrapy.Spider):
 
         pagination_links = response.css("ul.uk-pagination li a::attr(href)").getall()
         visited_pages = response.meta.get('visited_pages', set())
+        division_sort = response.meta.get('division_sort', -1) 
 
         for link in pagination_links:
             next_page_url = response.urljoin(link)
@@ -140,10 +200,11 @@ class MODSpider(scrapy.Spider):
                 print(f"Following pagination: {next_page_url}")
                 yield scrapy.Request(
                     next_page_url,
-                    callback=self.parse_item,
+                    callback=self.parse_items,
                     meta={
-                        'division_sort': division_sort,
+                        'division_sort': division_sort,  
                         'position_sort': position_sort,
                         'visited_pages': visited_pages
-                    }
+                    },
+                    cb_kwargs={'division_sort': division_sort} 
                 )
