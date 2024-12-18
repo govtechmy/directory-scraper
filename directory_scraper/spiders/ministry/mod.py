@@ -10,7 +10,7 @@ class MODSpider(scrapy.Spider):
     # List urls to be excluded from scraping
     excluded_links = [
         "https://direktori.mod.gov.my/index.php/mindef/category/kem-kem-atm-seluruh-negara"
-    ]
+        ]
     excluded_links_found = []
 
     # Mapping for level2 -> level3 parents
@@ -205,12 +205,16 @@ class MODSpider(scrapy.Spider):
                         if normalized_level3_parent in normalized_subdivision_name:
                             self.logger.debug(f"Fallback match found: '{level3_parent}' in '{subdivision_name}'")
                             subdivision_name = subdivision_name.replace(level3_parent, "").strip(", ").strip()
-                            subdivision_name = f"{level3_parent} > {subdivision_name}"
+                            # subdivision_name = f"{level3_parent} > {subdivision_name}"
                             subdivision_level3_parent = level3_parent
                             break
-
                     if subdivision_level3_parent:  # Exit early if a match is found
                         break
+
+            # cleanup for cases like "Seksyen Audit Prestasi > Seksyen Audit Prestasi 1 / ICT > 1 / ICT" -> "Seksyen Audit Prestasi > Seksyen Audit Prestasi 1 / ICT"
+            if subdivision_name and subdivision_level3_parent and subdivision_name in subdivision_level3_parent:
+                self.logger.debug(f"Redundant name found in subdivision_name: '{subdivision_name}' matches subdivision_level3_parent: '{subdivision_level3_parent}'")
+                subdivision_name = None
 
             # Final print for debugging - if no match, is fine. Simply bcs there is no level3 mapping found for this subdivision.
             if not subdivision_level3_parent and subdivision_name:
