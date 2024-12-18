@@ -31,7 +31,7 @@ function getSecret_(secret_name) {
  * @return {ImageButton} button_image
  */
 function insertButton(spreadsheet_id, sheet_id) {
-  var image_url = getSecret("button-image"); // Use png of submit button from MyDS
+  var image_url = getSecret_("button-image"); // Use png of submit button from MyDS
   var sheet = SpreadsheetApp.openById(spreadsheet_id).getSheetById(sheet_id);
   var button_image = sheet.insertImage(image_url, 16, 1, 0, 0);
 
@@ -46,7 +46,7 @@ function insertButton(spreadsheet_id, sheet_id) {
 function uploadData(spreadsheet_id, user_email) {
     var sheet_id = SpreadsheetApp.openById(spreadsheet_id).getSheetId();
     var userEmail = Session.getActiveUser().getEmail();
-    var URL_STRING = [getSecret("directory-api-url"), spreadsheet_id, "&user_name=", user_email].join("");
+    var URL_STRING = [getSecret_("directory-api-url"), spreadsheet_id, "&user_name=", user_email].join("");
   
     var response = UrlFetchApp.fetch(URL_STRING);
     var json = response.getContentText();
