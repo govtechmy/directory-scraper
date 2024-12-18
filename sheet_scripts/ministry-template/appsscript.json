@@ -2,10 +2,9 @@
   "timeZone": "America/New_York",
   "dependencies": {
     "libraries":[{
-      "userSymbol": "DirectoryGovMain",
-      "libraryId": "18z3VReKax0LlRuvmHpZ933nU58Lm7Kp3K4bQlGzhsAictGHYyJK2lBfA",
-      "version": "0",
-      "developmentMode": true
+      "userSymbol": "libraryName",
+      "libraryId": "libraryId",
+      "version": "libraryVersion"
     }]
   },
   "exceptionLogging": "STACKDRIVER",
