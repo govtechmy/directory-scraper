@@ -6,7 +6,7 @@ import base64
 class MODSpider(scrapy.Spider):
     name = "mod"
     allowed_domains = ["direktori.mod.gov.my"]
-    
+
     # List urls to be excluded from scraping
     excluded_links = [
         "https://direktori.mod.gov.my/index.php/mindef/category/kem-kem-atm-seluruh-negara"
@@ -51,39 +51,82 @@ class MODSpider(scrapy.Spider):
 
     def parse_level2_parents(self, response):
         division_sort = response.meta.get('division_sort', -1)
-        level2_links = response.css(".level2.parent > a::attr(href)").getall()
-        level2_names = response.css(".level2.parent > a span::text").getall()
+        level2_links = sorted(response.css(".level2.parent > a::attr(href)").getall())
+        level2_names = sorted(response.css(".level2.parent > a span::text").getall())
+
+        # Create a list to store level3 requests
+        level3_requests = []
 
         for level2_name, level2_link in zip(level2_names, level2_links):
             level2_name = level2_name.strip()
             level2_url = response.urljoin(level2_link)
 
-            # Initialize the mapping for level2 -> level3
-            self.level2_to_level3_map[level2_name] = []
+            # Initialize mapping for level2 -> level3
+            if level2_name not in self.level2_to_level3_map:
+                self.level2_to_level3_map[level2_name] = []
 
-            # Fetch level3 parents from the level2 link
             self.logger.info(f"Checking Level 2 link: {level2_url}")
-            yield scrapy.Request(
+
+            # Add level3_parents request to the list
+            level3_requests.append(scrapy.Request(
                 url=level2_url,
                 callback=self.parse_level3_parents,
                 meta={'level2_name': level2_name, 'division_sort': division_sort}
-            )
+            ))
 
-        # Parse items on the current level2 page
-        yield from self.parse_items(response, division_sort)
+        # Yield all level3 requests except the last one
+        for req in level3_requests[:-1]:
+            yield req
+
+        # Yield the last request with parse_items as the final step
+        if level3_requests:
+            last_request = level3_requests[-1]
+            yield scrapy.Request(
+                url=last_request.url,
+                callback=self.parse_level3_parents,
+                meta={
+                    'level2_name': last_request.meta['level2_name'],
+                    'division_sort': last_request.meta['division_sort'],
+                    'response': response,  # Pass original response for parse_items
+                    'final_callback': True  # Mark this request as the final callback
+                }
+            )
+        else:
+            # If no level2 links, directly trigger parse_items
+            yield scrapy.Request(
+                url=response.url,
+                callback=self.parse_items,
+                meta={'division_sort': division_sort},
+                dont_filter=True
+            )
 
     def parse_level3_parents(self, response):
         level2_name = response.meta.get('level2_name')
+        division_sort = response.meta.get('division_sort')
+        is_final_callback = response.meta.get('final_callback', False)
+        original_response = response.meta.get('response', None)
+
         level3_links = response.css(".level3.parent > a span::text").getall()
         level3_names = [link.strip() for link in level3_links]
 
-        # Store the level3 parents in the mapping
         if level2_name in self.level2_to_level3_map:
             self.level2_to_level3_map[level2_name].extend(level3_names)
-        
-        print(f"Mapping Level2: {level2_name} -> Level3: {level3_names}")
 
-    def parse_items(self, response, division_sort):
+        self.logger.info(f"Mapping Level2: {level2_name} -> Level3: {level3_names}")
+
+        # If this is the final callback, trigger parse_items
+        if is_final_callback and original_response:
+            self.logger.info(f"Final level3_parents parsed. Triggering parse_items for division_sort {division_sort}.")
+            yield scrapy.Request(
+                url=original_response.url,
+                callback=self.parse_items,
+                meta={'division_sort': division_sort},
+                dont_filter=True
+            )
+
+
+    def parse_items(self, response):
+        division_sort = response.meta.get('division_sort', -1)
         division_name = response.css("h1 ::text").get(default="").strip()
         position_sort = response.meta.get('position_sort', 1)
 
@@ -95,11 +138,20 @@ class MODSpider(scrapy.Spider):
 
         #=============== SUBDIVISION CLEANUP ===================
 
-        for data_card in response.css("div.uk-overflow-hidden"):
+        data_cards = response.css("div.uk-overflow-hidden")
+
+        # Sort the data cards based on the text in <h2> (person name) as a key
+        sorted_data_cards = sorted(
+            data_cards,
+            key=lambda card: card.css("h2::text").get(default="").strip()
+        )
+
+        # Process sorted data cards
+        for position_sort, data_card in enumerate(sorted_data_cards, start=1):
             subdivision_links = data_card.css("a[href^='/index.php']::text").getall()
             subdivision_name = ", ".join([link.strip() for link in subdivision_links])
             subdivision_name_initial = subdivision_name
-
+            
             # Clean up subdivision name by removing division name
             if division_name in subdivision_name:
                 subdivision_name = subdivision_name.replace(division_name, "").strip(", ").strip()
@@ -141,17 +193,29 @@ class MODSpider(scrapy.Spider):
                         break
 
             # To identify the missing subdivision_level3_parent using the level2_to_level3_map mapping list, and by checking the value of "final" subdivision_name. So that we can have a hierarchy ">".
-            if not subdivision_level3_parent:
+            if not subdivision_level3_parent and subdivision_name:
                 for level2, level3_list in self.level2_to_level3_map.items():
                     for level3_parent in level3_list:
-                        if level3_parent in subdivision_name:
-                            # Cleanup: Replace matching level3 parent name in subdivision_name
-                            subdivision_name = subdivision_name.replace(f"{level3_parent}, ", f"{level3_parent} > ").strip(", ").strip()
+                        normalized_level3_parent = re.sub(r"[^\w\s]", "", level3_parent).lower().strip()
+                        normalized_subdivision_name = re.sub(r"[^\w\s]", "", subdivision_name).lower().strip()
+                        
+                        self.logger.debug(f"Normalized Check: level3_parent='{normalized_level3_parent}' vs subdivision_name='{normalized_subdivision_name}'")
+
+                        # Check for substring match
+                        if normalized_level3_parent in normalized_subdivision_name:
+                            self.logger.debug(f"Fallback match found: '{level3_parent}' in '{subdivision_name}'")
+                            subdivision_name = subdivision_name.replace(level3_parent, "").strip(", ").strip()
+                            subdivision_name = f"{level3_parent} > {subdivision_name}"
                             subdivision_level3_parent = level3_parent
                             break
+
                     if subdivision_level3_parent:  # Exit early if a match is found
                         break
 
+            # Final print for debugging - if no match, is fine. Simply bcs there is no level3 mapping found for this subdivision.
+            if not subdivision_level3_parent and subdivision_name:
+                self.logger.info(f"⚠️ Still no match for '{subdivision_name}'")
+                
             subdivision_name_final = " > ".join(filter(None, [subdivision_level2_parent, subdivision_level2, subdivision_level3_parent, subdivision_name]))
             subdivision_name_final = subdivision_name_final if subdivision_name_final.strip() else None
 
@@ -217,6 +281,5 @@ class MODSpider(scrapy.Spider):
                         'division_sort': division_sort,  
                         'position_sort': position_sort,
                         'visited_pages': visited_pages
-                    },
-                    cb_kwargs={'division_sort': division_sort} 
+                    }
                 )
