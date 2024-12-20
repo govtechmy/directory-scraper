@@ -110,10 +110,9 @@ class GoogleSheetManager:
         # Step 1: Find all the rows that match the org_id
         rows_to_delete = self.find_rows_by_org_id(org_id, org_id_column_index)
         if not rows_to_delete:
-            print(f"No rows found for org_id {org_id}")
+            print(f"No rows found")
             return
-
-        print(f"Found {len(rows_to_delete)} rows to delete for org_id {org_id}")
+        print(f"Found {len(rows_to_delete)} rows to delete")
 
         retries = 0
         while retries < max_retries:
@@ -123,7 +122,7 @@ class GoogleSheetManager:
                     start = rows_to_delete[0]
                     end = rows_to_delete[-1]
                     self.worksheet.delete_rows(start, end)  # Delete all consecutive rows in a range
-                    print(f"Successfully deleted rows {start} to {end} for org_id {org_id}")
+                    print(f"Successfully deleted row {start} to {end}")
                 break  # Exit loop after success
             except gspread.exceptions.APIError as e:
                 if e.response.status_code == 429:  # Rate limit exceeded

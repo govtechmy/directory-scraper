@@ -8,9 +8,12 @@
 import json
 import os
 import argparse
-from google_sheets_utils import GoogleSheetManager
-from process_data import validate_data, group_data_by_org_id, load_data_into_sheet, update_data_in_sheet
-from utils.file_utils import load_spreadsheets_config
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+from directory_scraper.src.google_sheets.google_sheets_utils import GoogleSheetManager
+from directory_scraper.src.google_sheets.process_data import validate_data, group_data_by_org_id, load_data_into_sheet, update_data_in_sheet
+from directory_scraper.src.utils.file_utils import load_spreadsheets_config
+from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,15 +21,16 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 GOOGLE_SERVICE_ACCOUNT_CREDS = os.getenv('GOOGLE_SERVICE_ACCOUNT_CREDS')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-DATA_DIRECTORY = os.path.join(script_dir, '../data_processing/data/output/')
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
 
-def load_org_data(data_file):
+def load_org_data(data_folder, data_file):
     """
-    Load data from the specified JSON file in DATA_DIRECTORY.
+    Load data from the specified JSON file in DATA_FOLDER.
     """
-    file_path = os.path.join(DATA_DIRECTORY, data_file)
+    file_path = os.path.join(data_folder, data_file)
     if not os.path.exists(file_path):
-        print(f"Data file {data_file} not found in {DATA_DIRECTORY}. Skipping.")
+        print(f"Data file {data_file} not found in {data_folder}. Skipping.")
         return None
 
     with open(file_path, 'r') as f:
@@ -34,7 +38,7 @@ def load_org_data(data_file):
     
     return validate_data(data)
 
-def main_process_org(org_id, sheet_id, operation, add_timestamp, org_data):
+def main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data):
     google_sheets_manager = GoogleSheetManager(GOOGLE_SERVICE_ACCOUNT_CREDS, sheet_id, SCOPES)
     if operation == "load":
         google_sheets_manager.clear_sheet()
@@ -43,23 +47,22 @@ def main_process_org(org_id, sheet_id, operation, add_timestamp, org_data):
         update_data_in_sheet(google_sheets_manager, org_data, add_timestamp)
     else:
         print("Wrong operation. Only 'load' or 'update' is allowed.")
-    print(f"Finished processing org_id: {org_id}")
 
-def process_all_orgs(operation="update", add_timestamp=True):
+def process_all_orgs(data_folder, operation="update", add_timestamp=True):
     """Process all organizations in the spreadsheets_config.json."""
     spreadsheets_config = load_spreadsheets_config()
     valid_org_ids = {org['org_id']: (org['sheet_id'], org['data_file']) for org in spreadsheets_config}
 
     for org_id, (sheet_id, data_file) in valid_org_ids.items():
-        org_data = load_org_data(data_file)
+        org_data = load_org_data(data_folder, data_file)
         if org_data:
-            print(f"Processing org_id: {org_id} with sheet_id: {sheet_id}")
-            main_process_org(org_id, sheet_id, operation, add_timestamp, org_data)
+            print(f"\n 🟡 Processing org_id: {org_id} with sheet_id: {sheet_id}")
+            main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data)
         else:
             print(f"Skipping org_id: {org_id} as no matching data found in spider output.")
 
 
-def process_specific_org(org_id, operation="update", add_timestamp=True):
+def process_specific_org(data_folder, org_id, operation="update", add_timestamp=True):
     """Process a specific organization based on org_id."""
     spreadsheets_config = load_spreadsheets_config()
     valid_org_ids = {org['org_id']: (org['sheet_id'], org['data_file']) for org in spreadsheets_config}
@@ -70,16 +73,17 @@ def process_specific_org(org_id, operation="update", add_timestamp=True):
         return
 
     sheet_id, data_file = valid_org_ids[org_id]
-    org_data = load_org_data(data_file)  # Use data_file instead of org_id
+    org_data = load_org_data(data_folder, data_file)  # Use data_file instead of org_id
     if not org_data:
         print(f"No matching data found for org_id: {org_id} in spider output.")
         return
 
-    print(f"Processing org_id: {org_id} with sheet_id: {sheet_id}")
-    main_process_org(org_id, sheet_id, operation, add_timestamp, org_data)
+    print(f"\n 🟡 Processing org_id: {org_id} with sheet_id: {sheet_id}")
+    main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data)
 
 
-def main(operation="update", org_id=None, add_timestamp=True):
+def main(data_folder=None, operation="update", org_id=None, add_timestamp=True):
+    data_folder = data_folder or DATA_FOLDER
     """
     Main function to load or update data for either a specific org or all orgs.
     Args:
