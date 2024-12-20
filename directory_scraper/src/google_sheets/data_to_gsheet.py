@@ -48,21 +48,6 @@ def main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, or
     else:
         print("Wrong operation. Only 'load' or 'update' is allowed.")
 
-# def get_sheet_id(org_id):
-#     """Retrieve the Google Sheet ID for org_id from the GSHEET_ID_MAPPING environment variable."""
-#     sheet_id_mapping = os.getenv("GSHEET_ID_MAPPING")
-#     if not sheet_id_mapping:
-#         raise ValueError("Environment variable GSHEET_ID_MAPPING is not set.")
-
-#     try:
-#         mapping = json.loads(sheet_id_mapping)
-#         sheet_id = mapping.get(org_id)
-#         if not sheet_id:
-#             raise ValueError(f"Sheet ID not found for org_id: {org_id}")
-#         return sheet_id
-#     except json.JSONDecodeError as e:
-#         raise ValueError(f"Failed to decode GSHEET_ID_MAPPING. Ensure it is valid JSON. Error: {e}")
-
 def process_all_orgs(data_folder, operation="update", add_timestamp=True):
     """Process all organizations listed in `spreadsheets_config.json`"""
     spreadsheets_config = load_spreadsheets_config()

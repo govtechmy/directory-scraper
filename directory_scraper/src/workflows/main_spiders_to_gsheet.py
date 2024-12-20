@@ -68,7 +68,6 @@ def main():
             return
 
     # Step 4: Upload data to Google Sheets
-    data_processing_successful = True
     if data_processing_successful:
         print("\n============= Processing data upload to Google Sheets... =============")
         try:
