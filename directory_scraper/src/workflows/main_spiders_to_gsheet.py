@@ -25,7 +25,6 @@ CLEAN_DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
 RAW_OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_SPIDERS_OUTPUT_FOLDER)
 BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")  
 
-
 def main():
     
     # Step 1: Ensure directories exist
@@ -69,6 +68,7 @@ def main():
             return
 
     # Step 4: Upload data to Google Sheets
+    data_processing_successful = True
     if data_processing_successful:
         print("\n============= Processing data upload to Google Sheets... =============")
         try:

@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from directory_scraper.src.google_sheets.google_sheets_utils import GoogleSheetManager
+import os
 
 def validate_data(json_data):
     """
@@ -128,3 +129,18 @@ def update_data_in_sheet(google_sheets_manager, data, add_timestamp=True):
 
         # Step 2: Insert new rows for this org_id
         google_sheets_manager.append_rows(group_rows)
+
+def get_sheet_id(org_id):
+    """Retrieve the Google Sheet ID for org_id from the GSHEET_ID_MAPPING environment variable."""
+    sheet_id_mapping = os.getenv("GSHEET_ID_MAPPING")
+    if not sheet_id_mapping:
+        raise ValueError("Environment variable GSHEET_ID_MAPPING is not set.")
+
+    try:
+        mapping = json.loads(sheet_id_mapping)
+        sheet_id = mapping.get(org_id)
+        if not sheet_id:
+            raise ValueError(f"Sheet ID not found for org_id: {org_id}")
+        return sheet_id
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to decode GSHEET_ID_MAPPING. Ensure it is valid JSON. Error: {e}")

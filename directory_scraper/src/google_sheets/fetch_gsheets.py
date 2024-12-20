@@ -3,6 +3,7 @@ import json
 from directory_scraper.src.google_sheets.google_sheets_utils import GoogleSheetManager
 from dotenv import load_dotenv
 from directory_scraper.src.utils.file_utils import load_spreadsheets_config
+from directory_scraper.src.google_sheets.process_data import get_sheet_id
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_GSHEETS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
@@ -64,19 +65,36 @@ def main(org_id=None, output_folder=None, backup_folder=None):
     # Load spreadsheet configuration
     spreadsheets_config = load_spreadsheets_config()
 
-    # Filter by org_id if specified
+    # Option 1: if org_id is specified in parameter, filter for that specific org_id only (default org_id=None)
     if org_id:
-        spreadsheets_config = [sheet for sheet in spreadsheets_config if sheet["org_id"] == org_id.upper()]
-        if not spreadsheets_config:
-            print(f"No configuration found for org_id={org_id}.")
-            return
+        try:
+            sheet_id = get_sheet_id(org_id)
+            # Filter spreadsheets_config to only include the specified org_id
+            spreadsheets_config = [sheet for sheet in spreadsheets_config if sheet["org_id"] == org_id]
+            if not spreadsheets_config:
+                print(f"No configuration found for org_id={org_id}.")
+                return
+            # Process the single org_id
+            sheet = spreadsheets_config[0]
+            print(f"Fetching {org_id}...")
+            fetch_and_store_gsheet(sheet_id=sheet_id, file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
 
-    # Fetch and store data for the relevant sheets
-    for sheet in spreadsheets_config:
-        print(f"Fetching {sheet['org_id']}...")
-        fetch_and_store_gsheet(sheet_id=sheet["sheet_id"], file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
+        except ValueError as e:
+            print(f"Error: {e}")
+            return
+        
+    # Option 2: if no org_id is specified, process all org_id in spreadsheets_config.json
+    else:
+        for sheet in spreadsheets_config:
+            try:
+                sheet_id = get_sheet_id(sheet["org_id"])
+                print(f"Fetching {sheet['org_id']}...")
+                fetch_and_store_gsheet(sheet_id=sheet_id, file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
+            except ValueError as e:
+                print(f"Error processing org_id {sheet['org_id']}: {e}")
 
 if __name__ == "__main__":
-    # Example usage: specify an org_id or leave it as None to fetch all sheets
+    # Example usage: specify an org_id or leave it as None to fetch all sheets.
+    # e.g python main_gsheet_to_es.py JPM
     org_id = sys.argv[1] if len(sys.argv) > 1 else None
     main(org_id=org_id)
