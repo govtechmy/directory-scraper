@@ -3,9 +3,41 @@ from google.oauth2.service_account import Credentials
 import time
 import random
 
+import os
+import json
+import tempfile
+
+import os
+import json
+import tempfile
+
+def get_credentials():
+    """
+    Retrieve Google service account credentials from the environment variable.
+    If the environment variable contains JSON, save it to a temporary file and return the file path.
+    If the environment variable contains a file path, validate its existence and return it.
+    """
+    creds = os.getenv("GOOGLE_SERVICE_ACCOUNT_CREDS")
+    if not creds:
+        raise ValueError("GOOGLE_SERVICE_ACCOUNT_CREDS environment variable is not set.")
+
+    # Check if the creds is a valid file path
+    if os.path.exists(creds):
+        return creds
+
+    # Assume it's a JSON string, validate and save it to a temporary file
+    try:
+        creds_json = json.loads(creds)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+        temp_file.write(json.dumps(creds_json).encode())
+        temp_file.close()
+        return temp_file.name
+    except json.JSONDecodeError as e:
+        raise ValueError(f"GOOGLE_SERVICE_ACCOUNT_CREDS does not contain valid JSON or a valid file path. Error: {e}")
+
 class GoogleSheetManager:
     def __init__(self, creds_file, sheet_id, scopes):
-        self.creds_file = creds_file
+        self.creds_file = get_credentials()
         self.sheet_id = sheet_id
         self.scopes = scopes
         self.worksheet = self.connect_to_sheet()

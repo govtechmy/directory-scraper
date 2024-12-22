@@ -1,0 +1,98 @@
+name: Run Spider & Load to Google Sheets
+
+on:
+  push:
+    branches: [ "feat/GHA-main_spiders_to_gsheet.py" ]
+#   schedule:
+#     - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    env:
+      TZ: Asia/Kuala_Lumpur
+      DIRECTORY_SRC: directory_scraper/src
+      ES_INDEX: ${{ vars.ES_INDEX }}
+      ES_SHA_INDEX: ${{ vars.ES_SHA_INDEX}}
+      ES_URL: ${{ vars.ES_URL }}
+      TESSERACT_PATH: /usr/bin/tesseract
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.11'
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'directory_scraper/setup.py') }}
+          restore-keys: |
+             ${{ runner.os }}-pip-
+
+      - name: Install package setup.py in editable mode
+        run: pip install -e directory_scraper/
+
+      - name: Install Tesseract OCR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr
+          tesseract --version
+
+      - name: Install Playwright Browsers
+        run: playwright install
+
+      - name: Run main
+        env:
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          THREAD_ID: ${{ secrets.THREAD_ID }}
+          GSHEET_ID_MAPPING: ${{ secrets.GSHEET_ID_MAPPING }} 
+          GOOGLE_SERVICE_ACCOUNT_CREDS: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDS }} 
+        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders_to_gsheet.py digital # timeout (seconds)
+        continue-on-error: true
+
+      # - name: Upload spider output as artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: spider-output
+      #     path: ${{ github.workspace}}/directory_scraper/src/workflows/data/spiders_output
+      #     retention-days: 5
+
+      - name: Upload cleaned data as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clean-data
+          path: ${{ github.workspace}}/directory_scraper/src/workflows/data/clean_data
+          retention-days: 5
+
+      - name: Upload run_spiders.log as an artifact
+        if: always() # Always run this step
+        uses: actions/upload-artifact@v4
+        with:
+          name: run_spiders-log
+          path: ${{ github.workspace}}/logs/run_spiders.log
+          retention-days: 5
+
+    #   - name: Upload custom run_spiders.log as an artifact
+    #     if: always() # Always run this step
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: custom_run_spiders-log
+    #       path: ${{ github.workspace}}/logs/run_spiders_custom.log
+    #       retention-days: 5
+
+      - name: Archive es_changes_log.json
+        if: success() # Run if all previous steps succeeded
+        uses: actions/upload-artifact@v4
+        with:
+          name: es-changes-log
+          path: ${{ github.workspace }}/es_changes_log.json
+          retention-days: 5
