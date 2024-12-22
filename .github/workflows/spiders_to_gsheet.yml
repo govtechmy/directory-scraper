@@ -3,8 +3,8 @@ name: Run Spider & Load to Google Sheets
 on:
   push:
     branches: [ "feat/GHA-main_spiders_to_gsheet.py" ]
-  schedule:
-    - cron: '0 0 * * *'
+#   schedule:
+#     - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
