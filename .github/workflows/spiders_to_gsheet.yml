@@ -1,4 +1,4 @@
-name: Run Spider & Load to ES Pipeline
+name: Run Spider & Load to Google Sheets
 
 on:
   push:
