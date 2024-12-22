@@ -1,12 +1,11 @@
-function uploadData() {
-    var sheet_id = SpreadsheetApp.getActiveSpreadsheet().getSheetId();
-    var user_email = Session.getActiveUser().getEmail();
-    DirectoryGovMain.uploadData(sheet_id, user_email)
+/**
+ * Trigger function to set the default value for the position_sort column
+ */
+function posSort(e) {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  if(e.changeType === 'INSERT_ROW') {
+    var row = sheet.getActiveRange().getRow();
+    var sort_formula = "=IF(INDIRECT(ADDRESS(ROW()-1, 5))=INDIRECT(ADDRESS(ROW(),5)),INDIRECT(ADDRESS(ROW()-1,8))+1,1)";
+    sheet.getRange(row, 8).setValue(sort_formula)
   }
-  
-  function insertButton() {
-    var spreadsheet_id = SpreadsheetApp.getActiveSpreadsheet().getSheetId();
-    var sheet_id = 0;
-    button_image = DirectoryGovMain.insertButton(spreadsheet_id, sheet_id)
-    button_image.assignScript('uploadData');
-  }
+}
