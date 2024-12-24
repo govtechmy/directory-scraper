@@ -1,8 +1,8 @@
 """Script to load or update data from `data/input` to Google Sheets.
 
 - Each `org_id` has its own Google Sheet (spreadsheet, not a specific sheet).
-- This script depends on the configuration file located at `/utils/json/spreadsheets_config.json` for managing and mapping organization IDs to their corresponding Google Sheet IDs.
-- To ensure an organization is recognized as valid, update `spreadsheets_config.json` with the `org_id` and its corresponding Google Sheet ID.
+- This script depends on the configuration file located at `/utils/json/gsheets_config.json` for managing and mapping organization IDs to their corresponding Google Sheet IDs.
+- To ensure an organization is recognized as valid, update `gsheets_config.json` with the `org_id` and its corresponding Google Sheet ID.
 """
 
 import json
@@ -49,7 +49,7 @@ def main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, or
         print("Wrong operation. Only 'load' or 'update' is allowed.")
 
 def process_all_orgs(data_folder, operation="update", add_timestamp=True):
-    """Process all organizations listed in `spreadsheets_config.json`"""
+    """Process all organizations listed in `gsheets_config.json`"""
     spreadsheets_config = load_spreadsheets_config()
 
     for entry in spreadsheets_config:

@@ -83,7 +83,7 @@ def main(org_id=None, output_folder=None, backup_folder=None):
             print(f"Error: {e}")
             return
         
-    # Option 2: if no org_id is specified, process all org_id in spreadsheets_config.json
+    # Option 2: if no org_id is specified, process all org_id in gsheets_config.json
     else:
         for sheet in spreadsheets_config:
             try:
