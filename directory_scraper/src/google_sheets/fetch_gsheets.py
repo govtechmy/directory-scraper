@@ -51,7 +51,7 @@ def fetch_and_store_gsheet(sheet_id, file_name, output_folder, max_retries=5):
             # print(f"Successfully fetched and stored data: {output_file_path}")
             return
         except Exception as e:
-            if "429" in str(e):
+            if "429" or "503" in str(e):
                 if retries < max_retries:
                     wait_time = GoogleSheetManager.exponential_backoff(retries)
                     print(f"Quota exceeded. Retrying in {wait_time:.2f} seconds... (Attempt {retries + 1}/{max_retries})")
