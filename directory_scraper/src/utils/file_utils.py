@@ -31,9 +31,9 @@ def load_org_mapping():
     
 def load_spreadsheets_config():
     """
-    Loads the spreadsheets configuration from the 'spreadsheets_config.json' file.
+    Loads the spreadsheets configuration from the 'gsheets_config.json' file.
     """
-    spreadsheets_config_file = os.path.join(os.path.dirname(__file__), 'json', 'spreadsheets_config.json')
+    spreadsheets_config_file = os.path.join(os.path.dirname(__file__), 'json', 'gsheets_config.json')
     try:
         with open(spreadsheets_config_file, 'r') as f:
             return json.load(f)

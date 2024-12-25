@@ -33,15 +33,15 @@ def main():
     os.makedirs(CLEAN_DATA_FOLDER, exist_ok=True)
     # os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
-    org_id = sys.argv[1] if len(sys.argv) > 1 else None
+    ref_name = sys.argv[1] if len(sys.argv) > 1 else None
     if len(sys.argv) > 2:
-        print("Usage: python main_gsheets.py [org_id]")
+        print("Usage: python main_gsheets.py [ref_name]. Refer to: utils/json/gsheets_config.json for ref_name")
         return
 
     # Step 1: Fetch Google Sheets
     try:
         # Run fetch and proceed based on the presence of output files
-        fetch_gsheet_main(org_id=org_id, output_folder=RAW_OUTPUT_FOLDER, backup_folder=None)
+        fetch_gsheet_main(ref_name=ref_name, output_folder=RAW_OUTPUT_FOLDER, backup_folder=None)
 
         # Check if any files were generated in the output folder
         if not os.listdir(RAW_OUTPUT_FOLDER):

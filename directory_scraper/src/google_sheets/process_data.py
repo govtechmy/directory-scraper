@@ -58,7 +58,7 @@ def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
     """
     grouped_data = group_data_by_org_id(data)
     total_orgs = len(grouped_data)
-    print(f"Total number of org_id to process: {total_orgs}")
+    print(f"Total org_id found in data: {total_orgs}")
 
     # Write the header once, before inserting any data
     header = list(data[0].keys())
@@ -73,7 +73,7 @@ def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
 
     # Process each org_id group and insert the data in batches
     for org_index, (org_id, group_data) in enumerate(grouped_data.items(), start=1):
-        print(f"\nLoading org_id: {org_id} ({org_index}/{total_orgs})")
+        print(f"Loading org_id: {org_id} ({org_index}/{total_orgs})")
         
         # Convert group_data to rows
         group_rows = [list(item.values()) for item in group_data]
@@ -130,17 +130,17 @@ def update_data_in_sheet(google_sheets_manager, data, add_timestamp=True):
         # Step 2: Insert new rows for this org_id
         google_sheets_manager.append_rows(group_rows)
 
-def get_sheet_id(org_id):
-    """Retrieve the Google Sheet ID for org_id from the GSHEET_ID_MAPPING environment variable."""
-    sheet_id_mapping = os.getenv("GSHEET_ID_MAPPING")
-    if not sheet_id_mapping:
+def get_gsheet_id(ref_name):
+    """Retrieve the Google Sheet ID for reference name (org_id) from the GSHEET_ID_MAPPING environment variable."""
+    gsheet_id_mapping = os.getenv("GSHEET_ID_MAPPING")
+    if not gsheet_id_mapping:
         raise ValueError("Environment variable GSHEET_ID_MAPPING is not set.")
 
     try:
-        mapping = json.loads(sheet_id_mapping)
-        sheet_id = mapping.get(org_id)
-        if not sheet_id:
-            raise ValueError(f"Sheet ID not found for org_id: {org_id}")
-        return sheet_id
+        mapping = json.loads(gsheet_id_mapping)
+        gsheet_id = mapping.get(ref_name)
+        if not gsheet_id:
+            raise ValueError(f"Sheet ID not found for org_id: {ref_name}")
+        return gsheet_id
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to decode GSHEET_ID_MAPPING. Ensure it is valid JSON. Error: {e}")
