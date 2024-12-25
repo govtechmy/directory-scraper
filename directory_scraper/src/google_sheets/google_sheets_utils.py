@@ -62,7 +62,6 @@ class GoogleSheetManager:
             print(f"Error clearing Google Sheet: {e}")
             raise e
     
-    @staticmethod
     def exponential_backoff(retries):
         """
         Implements exponential backoff for retrying API calls.
