@@ -7,6 +7,7 @@ from directory_scraper.src.google_sheets.process_data import get_gsheet_id
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_GSHEETS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
+import time
 
 load_dotenv()
 
@@ -22,32 +23,46 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
 
-def fetch_and_store_gsheet(sheet_id, file_name, output_folder):
+def fetch_and_store_gsheet(sheet_id, file_name, output_folder, max_retries=5):
     """
     Fetch data from Google Sheets and store it as a JSON file.
     """
-    try:
-        # Initialize Google Sheet Manager
-        sheet_manager = GoogleSheetManager(CREDS_FILE, sheet_id, SCOPES)
+    retries = 0
+    while retries <= max_retries:
+        try:
+            # Initialize Google Sheet Manager
+            sheet_manager = GoogleSheetManager(CREDS_FILE, sheet_id, SCOPES)
 
-        # Fetch all data
-        data = sheet_manager.get_all_data()
+            # Fetch all data
+            data = sheet_manager.get_all_data()
 
-        # Process column names and data rows
-        column_names, data_without_header = data[0], data[1:]
-        data_as_dict = [
-            {column_names[i]: row[i] for i in range(len(column_names))}
-            for row in data_without_header
-        ]
+            # Process column names and data rows
+            column_names, data_without_header = data[0], data[1:]
+            data_as_dict = [
+                {column_names[i]: row[i] for i in range(len(column_names))}
+                for row in data_without_header
+            ]
 
-        # Save data to JSON file
-        output_file_path = os.path.join(output_folder, file_name)
-        with open(output_file_path, "w") as json_file:
-            json.dump(data_as_dict, json_file, indent=4)
-        print(f"🟢 Successfully fetched gsheet: {file_name}")
-        # print(f"Successfully fetched and stored data: {output_file_path}")
-    except Exception as e:
-        print(f"Error fetching or storing data for file_name={file_name}: {e}")
+            # Save data to JSON file
+            output_file_path = os.path.join(output_folder, file_name)
+            with open(output_file_path, "w") as json_file:
+                json.dump(data_as_dict, json_file, indent=4)
+            print(f"🟢 Successfully fetched gsheet: {file_name}")
+            # print(f"Successfully fetched and stored data: {output_file_path}")
+            return
+        except Exception as e:
+            if "429" in str(e):
+                if retries < max_retries:
+                    wait_time = GoogleSheetManager.exponential_backoff(retries)
+                    print(f"Quota exceeded. Retrying in {wait_time:.2f} seconds... (Attempt {retries + 1}/{max_retries})")
+                    time.sleep(wait_time)
+                    retries += 1
+                else:
+                    print(f"Failed to fetch sheet {file_name}: Quota exceeded after {max_retries} retries.")
+                    break
+            else:
+                print(f"Error fetching or storing data for file_name={file_name}: {e}")
+                break
 
 def main(ref_name=None, output_folder=None, backup_folder=None):
     """

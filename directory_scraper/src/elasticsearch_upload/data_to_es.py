@@ -123,7 +123,7 @@ def check_sha_and_update(data_folder):
     for file_name in os.listdir(data_folder):
         file_path = os.path.join(data_folder, file_name)
         if file_name.endswith(".json") and check_and_update_file_sha(file_path):
-            print(f'Status file | {file_name}: CHANGES DETECTED')
+            # print(f'Status file | {file_name}: CHANGES DETECTED')
             changed_files.append(file_path)
     return changed_files
 
