@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_GSHEETS_OUTPUT_FOLDER, DEFAULT_LOG_DIR, DEFAULT_BACKUP_FOLDER
 import time
+import random
 
 load_dotenv()
 
@@ -22,6 +23,11 @@ BACKUP_FOLDER = os.path.join(BASE_DIR, DEFAULT_BACKUP_FOLDER)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
+def exponential_backoff(retries):
+    """
+    Implements exponential backoff for retrying API calls.
+    """
+    return min(60, (2 ** retries) + random.random())
 
 def fetch_and_store_gsheet(sheet_id, file_name, output_folder, max_retries=5):
     """
@@ -53,8 +59,8 @@ def fetch_and_store_gsheet(sheet_id, file_name, output_folder, max_retries=5):
         except Exception as e:
             if "429" or "503" in str(e):
                 if retries < max_retries:
-                    wait_time = GoogleSheetManager.exponential_backoff(retries)
-                    print(f"Quota exceeded. Retrying in {wait_time:.2f} seconds... (Attempt {retries + 1}/{max_retries})")
+                    wait_time = exponential_backoff(retries)
+                    print(f"Quota exceeded for {file_name}. Retrying in {wait_time:.2f} seconds... (Attempt {retries + 1}/{max_retries})")
                     time.sleep(wait_time)
                     retries += 1
                 else:
