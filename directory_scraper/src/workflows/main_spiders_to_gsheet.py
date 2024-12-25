@@ -71,31 +71,38 @@ def main():
     if data_processing_successful:
         print("\n============= Processing data upload to Google Sheets... =============")
         try:
+            # Load configuration and data files
             spreadsheets_config = load_spreadsheets_config()
             clean_data_files = os.listdir(CLEAN_DATA_FOLDER)
-            
+            processed_items = set()
+            to_process = []  # Collect valid entries for processing
+
+            # Step 1: Generate the full list of entries
             for org_entry in spreadsheets_config:
                 org_id = org_entry['org_id']
                 data_file = org_entry['data_file']
+                ref_name = org_entry['ref_name']
 
-                # Check if the matching data_file exists in CLEAN_DATA_FOLDER
+                # Check if the data file exists
                 if data_file in clean_data_files:
+                    if (ref_name, data_file, org_id) in processed_items:
+                        print(f"Skipping duplicate: {ref_name} (org_id: {org_id}, file: {data_file})")
+                        continue
                     print(f"✅ {org_id} - Found {data_file}. Uploading...")
+                    to_process.append((ref_name, data_file, org_id))  # Add to process later
                 else:
-                    print(f"❌ {org_id} - No matching data file found. Skipping.")
+                    print(f"☑️ {org_id} - No matching data file found. Skipping.")
 
-            for org_entry in spreadsheets_config:
-                org_id = org_entry['org_id']
-                data_file = org_entry['data_file']        
-                
-                if data_file in clean_data_files:
-                    process_specific_org(CLEAN_DATA_FOLDER, org_id=org_id, operation="load", add_timestamp=True)
+            # Step 2: Process valid entries
+            for ref_name, data_file, org_id in to_process:
+                processed_items.add((ref_name, data_file, org_id))
+                process_specific_org(CLEAN_DATA_FOLDER, ref_name, data_file, org_id, operation="load", add_timestamp=True)
 
         except Exception as e:
             print("Error uploading data to Google Sheets:", e)
             return
-        
-        print(f"\nFinished workflow.")
+
+    print("\nFinished workflow.")
 
 if __name__ == "__main__":
     main()

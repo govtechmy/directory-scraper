@@ -11,7 +11,7 @@ import argparse
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.src.google_sheets.google_sheets_utils import GoogleSheetManager
-from directory_scraper.src.google_sheets.process_data import validate_data, group_data_by_org_id, load_data_into_sheet, update_data_in_sheet, get_sheet_id
+from directory_scraper.src.google_sheets.process_data import validate_data, group_data_by_org_id, load_data_into_sheet, update_data_in_sheet, get_gsheet_id
 from directory_scraper.src.utils.file_utils import load_spreadsheets_config
 from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
 from dotenv import load_dotenv
@@ -51,42 +51,49 @@ def main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, or
 def process_all_orgs(data_folder, operation="update", add_timestamp=True):
     """Process all organizations listed in `gsheets_config.json`"""
     spreadsheets_config = load_spreadsheets_config()
+    processed_items = set()  # Track already processed (ref_name, data_file, org_id)
 
     for entry in spreadsheets_config:
-        org_id = entry['org_id']
+        ref_name = entry['ref_name']
         data_file = entry['data_file']
+        org_id = entry['org_id']
+
+        # Skip duplicates
+        if (ref_name, data_file, org_id) in processed_items:
+            print(f"Skipping already processed: {ref_name} (org_id: {org_id}, file: {data_file})")
+            continue
 
         try:
-            sheet_id = get_sheet_id(org_id)
-            org_data = load_org_data(data_folder, data_file)
-            if org_data:
-                print(f"\n 🟡 Processing org_id: {org_id}")
-                main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data)
-            else:
-                print(f"Skipping org_id: {org_id} as no matching data found in spider output.")
-        except ValueError as e:
-            print(f"Error processing org_id {org_id}: {e}")
+            # Call process_specific_org directly for each entry
+            process_specific_org(
+                data_folder=data_folder,
+                ref_name=ref_name,
+                data_file=data_file,
+                org_id=org_id,
+                operation=operation,
+                add_timestamp=add_timestamp
+            )
+            processed_items.add((ref_name, data_file, org_id))  # Mark as processed
+        except Exception as e:
+            print(f"Error processing ref_name {ref_name} (data_file: {data_file}): {e}")
 
-def process_specific_org(data_folder, org_id, operation="update", add_timestamp=True):
-    """Process a specific organization based on org_id."""
-    spreadsheets_config = load_spreadsheets_config()
-    valid_org_ids = {entry['org_id']: entry['data_file'] for entry in spreadsheets_config}
 
-    if org_id not in valid_org_ids:
-        print(f"org_id: {org_id} not found in the config. Skipping.")
-        return
 
+def process_specific_org(data_folder, ref_name, data_file, org_id, operation="update", add_timestamp=True):
+    """Process a specific ref_name and data_file for the given org_id."""
     try:
-        sheet_id = get_sheet_id(org_id)
-        data_file = valid_org_ids[org_id]
+        sheet_id = get_gsheet_id(ref_name)
+
+        # Load the data from the data file
         org_data = load_org_data(data_folder, data_file)
 
         if not org_data:
-            print(f"No matching data found for org_id: {org_id} in spider output.")
+            print(f"No data found for {ref_name} (org_id: {org_id} - data_file: {data_file})")
             return
 
-        print(f"\n 🟡 Processing org_id: {org_id}")
+        print(f"\n 🟡 Processing: {ref_name} (org_id: {org_id})")
         main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data)
+
     except ValueError as e:
         print(f"Error processing org_id {org_id}: {e}")
 
@@ -100,9 +107,16 @@ def main(data_folder=None, operation="update", org_id=None, add_timestamp=True):
         add_timestamp: Whether to add a timestamp to the data (default is True).
     """
     if org_id:
-        process_specific_org(org_id, operation, add_timestamp)
+        spreadsheets_config = load_spreadsheets_config()
+        # Find the matching configuration for the given org_id
+        entry = [config for config in spreadsheets_config if config['org_id'] == org_id]
+        if not entry:
+            print(f"Error: org_id '{org_id}' not found in configuration.")
+            return
+        entry = entry[0]
+        process_specific_org(data_folder=data_folder, ref_name=entry['ref_name'], data_file=entry['data_file'], org_id=org_id, operation=operation, add_timestamp=add_timestamp)
     else:
-        process_all_orgs(operation, add_timestamp)
+        process_all_orgs(data_folder=data_folder, operation=operation, add_timestamp=add_timestamp)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Performs either 'load' (clears & loads data) or 'update' data in Google Sheets. e.g: python data_to_sheet.py load")

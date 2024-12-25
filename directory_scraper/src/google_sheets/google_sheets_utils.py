@@ -57,7 +57,7 @@ class GoogleSheetManager:
         """
         try:
             self.worksheet.clear()
-            print("Successfully cleared Google Sheet.")
+            print("Cleared sheet.")
         except gspread.exceptions.APIError as e:
             print(f"Error clearing Google Sheet: {e}")
             raise e
@@ -76,7 +76,7 @@ class GoogleSheetManager:
         while retries < max_retries:
             try:
                 self.worksheet.append_rows(rows)
-                print("Successfully inserted rows.")
+                print(f"Successfully inserted {len(rows)} rows.")
                 break  # Success, exit loop
             except gspread.exceptions.APIError as e:
                 if e.response.status_code == 429:  # Rate limit exceeded

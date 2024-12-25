@@ -1,14 +1,152 @@
 [
     {
-        "org_id": "JPM",
-        "data_file": "jpm.json"
-    },
-    {
+        "ref_name": "digital",
         "org_id": "DIGITAL",
         "data_file": "digital.json"
     },
     {
+        "ref_name": "ekonomi",
+        "org_id": "EKONOMI",
+        "data_file": "ekonomi.json"
+    },
+    {
+        "ref_name": "jpm",
+        "org_id": "JPM",
+        "data_file": "jpm.json"
+    },
+    {
+        "ref_name": "kbs",
+        "org_id": "KBS",
+        "data_file": "kbs.json"
+    },
+    {
+        "ref_name": "kkr",
+        "org_id": "KKR",
+        "data_file": "kkr.json"
+    },
+    {
+        "ref_name": "kln",
+        "org_id": "KLN",
+        "data_file": "kln.json"
+    },
+    {
+        "ref_name": "komunikasi",
+        "org_id": "KOMUNIKASI",
+        "data_file": "komunikasi.json"
+    },
+    {
+        "ref_name": "kpdn_negeri",
+        "org_id": "KPDN",
+        "data_file": "kpdn_negeri.json"
+    },
+    {
+        "ref_name": "kpdn",
+        "org_id": "KPDN",
+        "data_file": "kpdn.json"
+    },
+    {
+        "ref_name": "kpk",
+        "org_id": "KPK",
+        "data_file": "kpk.json"
+    },
+    {
+        "ref_name": "kpkm",
+        "org_id": "KPKM",
+        "data_file": "kpkm.json"
+    },
+    {
+        "ref_name": "kpkt",
+        "org_id": "KPKT",
+        "data_file": "kpkt.json"
+    },
+    {
+        "ref_name": "kpn",
+        "org_id": "KPN",
+        "data_file": "kpn.json"
+    },
+    {
+        "ref_name": "kpt",
+        "org_id": "KPT",
+        "data_file": "kpt.json"
+    },
+    {
+        "ref_name": "kpwkm",
+        "org_id": "KPWKM",
+        "data_file": "kpwkm.json"
+    },
+    {
+        "ref_name": "kuskop",
+        "org_id": "KUSKOP",
+        "data_file": "kuskop.json"
+    },
+    {
+        "ref_name": "miti",
+        "org_id": "MITI",
+        "data_file": "miti.json"
+    },
+    {
+        "ref_name": "mod",
         "org_id": "MOD",
         "data_file": "mod.json"
+    },
+    {
+        "ref_name": "moe",
+        "org_id": "MOE",
+        "data_file": "moe.json"
+    },
+    {
+        "ref_name": "mof",
+        "org_id": "MOF",
+        "data_file": "mof.json"
+    },
+    {
+        "ref_name": "moh",
+        "org_id": "MOH",
+        "data_file": "moh.json"
+    },
+    {
+        "ref_name": "moha",
+        "org_id": "MOHA",
+        "data_file": "moha.json"
+    },
+    {
+        "ref_name": "mohr",
+        "org_id": "MOHR",
+        "data_file": "mohr.json"
+    },
+    {
+        "ref_name": "mosti",
+        "org_id": "MOSTI",
+        "data_file": "mosti.json"
+    },
+    {
+        "ref_name": "mot",
+        "org_id": "MOT",
+        "data_file": "mot.json"
+    },
+    {
+        "ref_name": "motac",
+        "org_id": "MOTAC",
+        "data_file": "motac.json"
+    },
+    {
+        "ref_name": "nres",
+        "org_id": "NRES",
+        "data_file": "nres.json"
+    },
+    {
+        "ref_name": "petra",
+        "org_id": "PETRA",
+        "data_file": "petra.json"
+    },
+    {
+        "ref_name": "rurallink_anggota",
+        "org_id": "RURALLINK",
+        "data_file": "rurallink_anggota.json"
+    },
+    {
+        "ref_name": "rurallink_pkd",
+        "org_id": "RURALLINK",
+        "data_file": "rurallink_pkd.json"
     }
 ]
