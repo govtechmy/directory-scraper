@@ -19,11 +19,16 @@ from directory_scraper.src.data_processing.run_spiders import main as run_spider
 # from directory_scraper.src.elasticsearch_upload.data_to_es import main as data_to_es_main
 from directory_scraper.src.google_sheets.data_to_gsheet import  process_specific_org
 from directory_scraper.src.utils.file_utils import load_spreadsheets_config
+from directory_scraper.src.utils.discord_bot import send_discord_notification
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 CLEAN_DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
 RAW_OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_SPIDERS_OUTPUT_FOLDER)
-BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")  
+BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
+
+row_summary = {}
 
 def main():
     
@@ -96,11 +101,22 @@ def main():
             # Step 2: Process valid entries
             for ref_name, data_file, org_id in to_process:
                 processed_items.add((ref_name, data_file, org_id))
-                process_specific_org(CLEAN_DATA_FOLDER, ref_name, data_file, org_id, operation="load", add_timestamp=True)
+                rows_processed = process_specific_org(CLEAN_DATA_FOLDER, ref_name, data_file, org_id, operation="load", add_timestamp=True)
+                row_summary[(ref_name, org_id)] = rows_processed
 
         except Exception as e:
             print("Error uploading data to Google Sheets:", e)
             return
+        
+        print("\n📗 Gsheets Summary (no.of rows inserted):")
+        summary_messages = []
+        for (ref_name, org_id), rows in row_summary.items():
+            message = f"- {ref_name}: {rows} rows"
+            print(message)
+            summary_messages.append(message)
+        final_summary_message = "\n".join(summary_messages)
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"\n======= Gsheets Summary (no.of rows inserted) ======= \n{final_summary_message}", DISCORD_WEBHOOK_URL, THREAD_ID)
 
     print("\nFinished workflow.")
 
