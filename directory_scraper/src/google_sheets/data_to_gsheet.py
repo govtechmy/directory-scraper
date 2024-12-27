@@ -42,11 +42,14 @@ def main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, or
     google_sheets_manager = GoogleSheetManager(GOOGLE_SERVICE_ACCOUNT_CREDS, sheet_id, SCOPES)
     if operation == "load":
         google_sheets_manager.clear_sheet()
-        load_data_into_sheet(google_sheets_manager, org_data, add_timestamp)
+        row_summary = load_data_into_sheet(google_sheets_manager, org_data, add_timestamp)
     elif operation == "update":
-        update_data_in_sheet(google_sheets_manager, org_data, add_timestamp)
+        row_summary = update_data_in_sheet(google_sheets_manager, org_data, add_timestamp)
     else:
         print("Wrong operation. Only 'load' or 'update' is allowed.")
+        return 0
+    
+    return sum(row_summary.values())
 
 def process_all_orgs(data_folder, operation="update", add_timestamp=True):
     """Process all organizations listed in `gsheets_config.json`"""
@@ -77,25 +80,24 @@ def process_all_orgs(data_folder, operation="update", add_timestamp=True):
         except Exception as e:
             print(f"Error processing ref_name {ref_name} (data_file: {data_file}): {e}")
 
-
-
 def process_specific_org(data_folder, ref_name, data_file, org_id, operation="update", add_timestamp=True):
     """Process a specific ref_name and data_file for the given org_id."""
     try:
         sheet_id = get_gsheet_id(ref_name)
-
-        # Load the data from the data file
         org_data = load_org_data(data_folder, data_file)
 
         if not org_data:
             print(f"No data found for {ref_name} (org_id: {org_id} - data_file: {data_file})")
-            return
+            return 0
 
         print(f"\n 🟡 Processing: {ref_name} (org_id: {org_id})")
-        main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data)
-
+        rows_processed = main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data)
+        # print(f"✅ {org_id}: {rows_processed} rows inserted.")
+        return rows_processed
+    
     except ValueError as e:
         print(f"Error processing org_id {org_id}: {e}")
+        return 0 
 
 def main(data_folder=None, operation="update", org_id=None, add_timestamp=True):
     data_folder = data_folder or DATA_FOLDER

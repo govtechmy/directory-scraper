@@ -59,6 +59,7 @@ def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
     grouped_data = group_data_by_org_id(data)
     total_orgs = len(grouped_data)
     print(f"Total org_id found in data: {total_orgs}")
+    row_count_summary = {}
 
     # Write the header once, before inserting any data
     header = list(data[0].keys())
@@ -84,6 +85,9 @@ def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
 
         # Insert the rows into Google Sheets with exponential backoff
         google_sheets_manager.append_rows(group_rows)
+        row_count_summary[org_id] = len(group_rows)
+
+        return row_count_summary
 
 def update_data_in_sheet(google_sheets_manager, data, add_timestamp=True):
     """
