@@ -116,7 +116,7 @@ def main():
             summary_messages.append(message)
         final_summary_message = "\n".join(summary_messages)
         if DISCORD_WEBHOOK_URL:
-            send_discord_notification(f"\n📗 Gsheets Summary (no.of rows inserted): \n{final_summary_message}", DISCORD_WEBHOOK_URL, THREAD_ID)
+            send_discord_notification(f"\n======= Gsheets Summary (no.of rows inserted) ======= \n{final_summary_message}", DISCORD_WEBHOOK_URL, THREAD_ID)
 
     print("\nFinished workflow.")
 
