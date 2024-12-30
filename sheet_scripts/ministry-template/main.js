@@ -28,21 +28,36 @@ function posSort(e) {
  */
 function createSpreadsheetChangeTrigger() {
   var changeTriggerExists = false;
+  var timedTriggerExists = false;
   var allTriggers = ScriptApp.getProjectTriggers();
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   for (let i=0;i<allTriggers.length;i++){
     if (allTriggers[i].getHandlerFunction()=="posSort") {
       changeTriggerExists = true;
     }
+    else if (allTriggers[i].getHandlerFunction()=="timedSetup") {
+      timedTriggerExists = true;
+    }
   }
 
   if (changeTriggerExists) {
-    console.log("Trigger already exists, skipping step");
+    console.log("Trigger posSort already exists, skipping creation step");
   } else {
     ScriptApp.newTrigger('posSort')
     .forSpreadsheet(spreadsheet)
     .onChange()
     .create();
+    console.log("Successfully created trigger posSort")
+  }
+  if (timedTriggerExists) {
+    console.log("Trigger mainSetupn already exists");
+  } else {
+    ScriptApp.newTrigger('mainSetup')
+    .timeBased()
+    .everyDays(1)
+    .atHour(1)
+    .create();
+    console.log("Successfully created trigger mainSetup")
   }
 }
 
@@ -142,25 +157,27 @@ function setupLookupSheet() {
   if (lookupSheet == null) {
     lookupSheet = spreadsheets.insertSheet("LookupSheet");
     lookupSheet.appendRow(["org_id", "org_sort", "org_type", "org_name", "division_sort", "division_name"]);
+    var orgSheet = refSheet.getSheetByName("OrgLookup");
+    var rowCountOrg = orgSheet.getDataRange().getLastRow()-1;
+    var orgData = orgSheet
+    .getRange(2, 1, rowCountOrg, 4)
+    .getValues()
+    .filter(function (x) {return (x[0]==sheetOrgId)});
+
+    var divSheet = refSheet.getSheetByName("DivisionLookup");
+    var rowCountDiv = divSheet.getDataRange().getLastRow()-1;
+    var divData = refSheet.getSheetByName("DivisionLookup")
+    .getRange(2, 1, rowCountDiv, 5)
+    .getValues()
+    .filter(function (x) {return (x[0]==sheetOrgId && x[4]==sheetDivision)})
+    .map(function (x) {return x.slice(2, 4)});
+
+    lookupSheet.getRange("$A$2:$D$2").setValues(orgData);
+    lookupSheet.getRange(2, 5, divData.length, 2).setValues(divData);
+  } else {
+    console.log("LookupSheet already exists, skipping setup")
   }
 
-  var orgSheet = refSheet.getSheetByName("OrgLookup");
-  var rowCountOrg = orgSheet.getDataRange().getLastRow()-1;
-  var orgData = orgSheet
-  .getRange(2, 1, rowCountOrg, 4)
-  .getValues()
-  .filter(function (x) {return (x[0]==sheetOrgId)});
-
-  var divSheet = refSheet.getSheetByName("DivisionLookup");
-  var rowCountDiv = divSheet.getDataRange().getLastRow()-1;
-  var divData = refSheet.getSheetByName("DivisionLookup")
-  .getRange(2, 1, rowCountDiv, 5)
-  .getValues()
-  .filter(function (x) {return (x[0]==sheetOrgId && x[4]==sheetDivision)})
-  .map(function (x) {return x.slice(2, 4)});
-
-  lookupSheet.getRange("$A$2:$D$2").setValues(orgData);
-  lookupSheet.getRange(2, 5, divData.length, 2).setValues(divData);
 }
 
 /**
