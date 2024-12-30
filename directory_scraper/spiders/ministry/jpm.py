@@ -77,7 +77,7 @@ class JPMSpider(scrapy.Spider):
                 unit_full = main_unit  # if only main_unit exists
 
             #iterate contact row in the section's table
-            for contact in section.css('tbody tr.d-flex'):
+            for contact in section.css('tbody tr'):
                 self.person_sort_order += 1  # Increment global person_sort_order
 
                 person_name = contact.css('td.col-4 b::text').get(default='').strip()
@@ -88,14 +88,8 @@ class JPMSpider(scrapy.Spider):
                     person_phone = person_phone_prefix if person_phone_prefix.startswith("03") or person_phone_prefix.startswith("01") else f"03-{person_phone_prefix}"
                 else:
                     person_phone = ''
-
-                email_list = contact.css('td.col-3::text').getall()
-                if email_list:
-                    person_email_prefix = email_list[-1].strip()
-                    if person_email_prefix.lower() == 'timbalan setiausaha bahagian pembangunan (seksyen teknikal)': #specific case
-                        person_email_prefix = ''
-                else:
-                    person_email_prefix = ''
+                
+                person_email_prefix = contact.css('td.col-3 canvas.email::attr(data-email)').get(default='').strip()
                 person_email = f"{person_email_prefix}@jpm.gov.my" if person_email_prefix else None
 
                 yield {
