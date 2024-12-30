@@ -123,26 +123,31 @@ function createValidation() {
 function setupLookupSheet() {
   var spreadsheets = SpreadsheetApp.getActiveSpreadsheet();
   var sheetName = spreadsheets.getName();
-  var sheetOrgId = sheetName.split(" ").pop().toUpperCase();
   var lookupSheet = spreadsheets.getSheetByName("LookupSheet");
-  var refSheet = SpreadsheetApp.openById("11iszULwAgixtSgSfUmyQt4EX054CTe47xMn4QheVgJw");
+  var refSheet = SpreadsheetApp.openById("")
+
+  // Checks if sheetname contains negeri
+  var [sheetOrgId, sheetDivision] = sheetName.split("-")
+  .pop()
+  .trim()
+  .toUpperCase()
+  .split("_");
+
+  if (sheetDivision == null){
+    sheetDivision = "standard";
+  } else {
+    sheetDivision = sheetDivision.toLowerCase();
+  }
 
   if (lookupSheet == null) {
     lookupSheet = spreadsheets.insertSheet("LookupSheet");
     lookupSheet.appendRow(["org_id", "org_sort", "org_type", "org_name", "division_sort", "division_name"]);
   }
 
-  var stateIndex = sheetName.indexOf("NEGERI");
-  var divisionType = "standard";
-  if (stateIndex > -1) {
-    sheetName = sheetName.slice(0, stateIndex-1);
-    divisionType = "state";
-  }
-
   var orgSheet = refSheet.getSheetByName("OrgLookup");
   var rowCountOrg = orgSheet.getDataRange().getLastRow()-1;
   var orgData = orgSheet
-  .getRange(2, 1, rowCountOrg, 5)
+  .getRange(2, 1, rowCountOrg, 4)
   .getValues()
   .filter(function (x) {return (x[0]==sheetOrgId)});
 
@@ -151,7 +156,7 @@ function setupLookupSheet() {
   var divData = refSheet.getSheetByName("DivisionLookup")
   .getRange(2, 1, rowCountDiv, 5)
   .getValues()
-  .filter(function (x) {return (x[0]==sheetOrgId && x[4]==divisionType)})
+  .filter(function (x) {return (x[0]==sheetOrgId && x[4]==sheetDivision)})
   .map(function (x) {return x.slice(2, 4)});
 
   lookupSheet.getRange("$A$2:$D$2").setValues(orgData);
