@@ -34,7 +34,7 @@ class KOMUNIKASIpider(scrapy.Spider):
                 "org_name": "Kementerian Komunikasi",
                 "org_type": "ministry",
                 "division_sort": 1,
-                "division_name": None,
+                "division_name": "PEJABAT MENTERI, SETIAUSAHA, & BAHAGIAN",
                 "subdivision_name": None,
                 "position_sort": person_sort+1,
                 "person_name": self.none_handler(row.css("h3 > strong::text").get()),
