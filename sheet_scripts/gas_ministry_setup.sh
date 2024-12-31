@@ -36,19 +36,19 @@ for name in "${SHEET_NAMES[@]}"; do # Loops over array, creates directory with t
     mkdir -p "${BASE_DIR}/deployments/${name}" && cd "${BASE_DIR}/deployments/${name}"
     cp "${BASE_DIR}/ministry-template/main.js" "${BASE_DIR}/deployments/${name}/main.js"
 
-    # If project exists, skip the current iteration and continue to the next ministry
-    if [ -e '.clasp.json' ]; then
-        clasp push -f && clasp push
-        continue
-    fi
-
-    # Runs clasp action and pipes the output to a temporary logfile
     logfile=$(mktemp -p "${logdir}")
-    (clasp create --type sheets --title "Directory Gov ${name}") &> "${logfile}" &
-    clasp push && clasp push # Double push to forcefully update remote
+    # If project exists, skip the creation step and push the changes to remote
+    if [ -e '.clasp.json' ]; then
+        echo "Pushing code to sheet: Directory Gov - ${name}"
+        clasp push -f && clasp push &> "${logfile}" &
+    else
+        # Runs clasp action and pipes the output to a temporary logfile
+        (clasp create --type sheets --title "Directory Gov - ${name}") &> "${logfile}" &
+        clasp push && clasp push # Double push to forcefully update remote
 
+    fi
     # Deploy the GAS project
-    clasp deploy --versionNumber 1 --description 'Initial version'
+    clasp deploy --versionNumber $CODE_VERSION --description 'Initial version' &> "${logfile}" &
 
     # Takes the PID of the last program run in the shell and keeps them in mapps them to the sheet name and the logfile
     pid=$!; pid_pro_map[${pid}]="${name}"; pid_log_map[${pid}]="${logfile}"
