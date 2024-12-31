@@ -87,9 +87,9 @@ function createValidation() {
   var dataSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetById(0);
   var dataRefSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("LookupSheet");
   var lastRowRefSheet = dataRefSheet.getLastRow();
-  var protectedRanges = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE)
+  var protectedRanges = dataSheet.getProtections(SpreadsheetApp.ProtectionType.RANGE)
   .map(function (x) {return x.getRange().getA1Notation()});
-  
+
   
   // org_sort data validation
   var orgSortRule = SpreadsheetApp.newDataValidation().requireNumberBetween(1, 29).build();
