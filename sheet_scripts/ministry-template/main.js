@@ -35,7 +35,7 @@ function createSpreadsheetChangeTrigger() {
     if (allTriggers[i].getHandlerFunction()=="posSort") {
       changeTriggerExists = true;
     }
-    else if (allTriggers[i].getHandlerFunction()=="timedSetup") {
+    else if (allTriggers[i].getHandlerFunction()=="mainSetup") {
       timedTriggerExists = true;
     }
   }
@@ -56,6 +56,7 @@ function createSpreadsheetChangeTrigger() {
     .timeBased()
     .everyDays(1)
     .atHour(1)
+    .nearMinute(10)
     .create();
     console.log("Successfully created trigger mainSetup")
   }
