@@ -87,45 +87,60 @@ function createValidation() {
   var dataSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetById(0);
   var dataRefSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("LookupSheet");
   var lastRowRefSheet = dataRefSheet.getLastRow();
+  var protectedRanges = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE)
+  .map(function (x) {return x.getRange().getA1Notation()});
+  
   
   // org_sort data validation
   var orgSortRule = SpreadsheetApp.newDataValidation().requireNumberBetween(1, 29).build();
   var orgSortRange = dataSheet.getRange("$A$2:$A");
   orgSortRange.setDataValidation(orgSortRule);
-  orgSortRange.protect().setDescription("The sorting order of the Organisation");
+  if (protectedRanges.indexOf("A2:A") == -1) {
+    orgSortRange.protect().setDescription("The sorting order of the Organisation");
+  }
 
   // org_id data validation
   var orgIdArray = dataRefSheet.getRange("$A$2:$A").getValues().filter(String);
   var orgIdRule = SpreadsheetApp.newDataValidation().requireValueInList(orgIdArray, false).build();
   var orgIdRange = dataSheet.getRange("Sheet1!$B$2:$B");
   orgIdRange.setDataValidation(orgIdRule);
-  orgIdRange.protect().setDescription("The ID of the Organisation");
+  if (protectedRanges.indexOf("B2:B") == -1) {
+    orgIdRange.protect().setDescription("The ID of the Organisation");
+  }
 
   // org_name data validation
   var orgArray = dataRefSheet.getRange("$D$2:$D").getValues().filter(String);
   var orgNameRule = SpreadsheetApp.newDataValidation().requireValueInList(orgArray).build();
   var orgNameRange = dataSheet.getRange("$C$2:$C");
   orgNameRange.setDataValidation(orgNameRule);
-  orgNameRange.protect().setDescription("The full name of the Organisation");
+  if (protectedRanges.indexOf("C2:C") == -1) {
+    orgNameRange.protect().setDescription("The full name of the Organisation");
+  }
 
   // org_type data validation
   var orgTypeRule = SpreadsheetApp.newDataValidation().requireValueInList(["ministry"], false).build();
   var orgTypeRange = dataSheet.getRange("$D$2:$D")
   orgTypeRange.setDataValidation(orgTypeRule);
-  orgTypeRange.protect().setDescription("The type of the Organisation");
+  if (protectedRanges.indexOf("D2:D") == -1) {
+    orgTypeRange.protect().setDescription("The type of the Organisation");
+  }
 
   // division_sort data validation
   var divSortRule = SpreadsheetApp.newDataValidation().requireNumberGreaterThan(0).build();
   var divSortRange = dataSheet.getRange("$E$2:$E")
   divSortRange.setDataValidation(divSortRule)
-  divSortRange.protect().setDescription("The sort order of the Organisation's divisions");
+  if (protectedRanges.indexOf("E2:E") == -1) {
+    divSortRange.protect().setDescription("The sort order of the Organisation's divisions");
+  }
 
   // division_name data validation
   var divArray = dataRefSheet.getRange(2, 6, lastRowRefSheet-1, 1).getValues().flat();
   var divNameRule = SpreadsheetApp.newDataValidation().requireValueInList(divArray, true).build();
   var divNameRange = dataSheet.getRange("$F$2:F");
   divNameRange.setDataValidation(divNameRule);
-  divNameRange.protect().setDescription("The division names under the Organisation");
+  if (protectedRanges.indexOf("F2:F") == -1) {
+    divNameRange.protect().setDescription("The division names under the Organisation");
+  }
 
   // person_email data validation
   var emailRange = dataSheet.getRange("$K$2:$K");
@@ -140,7 +155,7 @@ function setupLookupSheet() {
   var spreadsheets = SpreadsheetApp.getActiveSpreadsheet();
   var sheetName = spreadsheets.getName();
   var lookupSheet = spreadsheets.getSheetByName("LookupSheet");
-  var refSheet = SpreadsheetApp.openById("")
+  var refSheet = SpreadsheetApp.openById("11iszULwAgixtSgSfUmyQt4EX054CTe47xMn4QheVgJw")
 
   // Checks if sheetname contains negeri
   var [sheetOrgId, sheetDivision] = sheetName.split("-")
