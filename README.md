@@ -96,4 +96,39 @@ To run this project, you will need to have Tesseract OCR installed on your syste
    which tesseract
    ```
 
+-------------
 
+## Building Docker Image and Running Container
+
+To build and run the API, you will need to download install Docker and Docker Compose.
+
+### 1. macOS
+
+#### Steps:
+1.  Install Docker and Docker Compose
+
+2.  Navigate to the root folder of the repo
+
+3.  Build the container by running:
+    ```
+    docker compose -f docker/docker-compose.yml build --no-cache
+    ```
+
+4.  Run the container using:
+    ```
+    docker compose -f docker/docker-compose.yml up
+    ```
+    
+    To run in detached mode use:
+    ```
+    docker compose -f docker/docker-compose.yml up --detach
+    ```
+
+5.  Access the API by going to: `http://0.0.0.0:80`
+
+    or to access the interactive docs, go to: `http://0.0.0.0:80/docs`
+
+5.  To shut down the container run:
+    ```
+    docker compose -f docker/docker-compose.yml down
+    ```

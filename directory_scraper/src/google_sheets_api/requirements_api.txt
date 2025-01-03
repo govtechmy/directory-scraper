@@ -1,0 +1,7 @@
+fastapi[standard]==0.115.5
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+gspread==6.1.4
+pandas==2.2.2
+elasticsearch==8.15.1
+pydantic==2.9.2

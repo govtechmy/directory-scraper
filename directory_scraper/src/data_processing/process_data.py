@@ -4,7 +4,12 @@ import re
 import uuid
 import shutil
 import logging
+import sys
+from pathlib import Path
 from directory_scraper.src.utils.file_utils import load_org_mapping
+
+PATH_ROOT = Path(__file__).parents[3]
+sys.path.append(str(PATH_ROOT))
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="process_data.log", filemode="w", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
