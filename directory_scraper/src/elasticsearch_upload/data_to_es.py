@@ -11,8 +11,12 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
+from directory_scraper.src.utils.discord_bot import send_discord_notification
 
 load_dotenv()
+
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ES_URL = os.getenv('ES_URL') #ES_URL
@@ -83,13 +87,13 @@ logs_mapping = {
 }
 
 api_key_info = ES_API_KEY
-if api_key_info:
-    es = Elasticsearch(
-        ES_URL,
-        api_key=ES_API_KEY
-    )
-else:
-    es = Elasticsearch(ES_URL)
+es = Elasticsearch(
+    ES_URL,
+    api_key=api_key_info if api_key_info else None,
+    timeout=30,
+    max_retries=3,
+    retry_on_timeout=True
+)
 
 def calculate_sha256_for_document(doc):
     """
@@ -185,11 +189,18 @@ def delete_documents_by_org_id(org_id):
     except Exception as e:
         print(f"Error deleting documents with org_id {org_id}: {e}")
 
-def upload_clean_data_to_es(files_to_upload):
-    """
-    Upload JSON documents to Elasticsearch, using new files as the source of truth.
-    Handles on-disk files and in-memory files differently.
-    """
+def upload_clean_data_to_es(files_to_upload, log_changes=True):
+    """Upload JSON documents to Elasticsearch, using new files as the source of truth."""
+    all_summaries = [] 
+    changes_log = {
+        "metadata": {
+            "timestamp": datetime.now().isoformat() + "Z", 
+            "description": "Logs of data changes uploaded to Elasticsearch",
+            "files_processed": files_to_upload
+        },
+        "changes": {}
+    } if log_changes else None
+
     for file_path in files_to_upload:
         if isinstance(files_to_upload, (str,)):
             file_name = os.path.basename(file_path)
@@ -214,11 +225,14 @@ def upload_clean_data_to_es(files_to_upload):
         # Process each org_id group separately
         for org_id, docs in org_id_groups.items():
             print(f"\nChecking org_id: {org_id} in file: {file_name}")
-            
+
+            if log_changes:
+                changes_log["changes"][org_id] = {"added": [], "updated": [], "deleted": []}
+
             # Load existing documents for this org_id
             existing_docs_query = {"query": {"term": {"org_id": org_id}}, "size": 10000}
             existing_docs = es.search(index=ES_INDEX, body=existing_docs_query)
-            existing_docs_by_id = {hit['_id']: hit['_source']['sha_256_hash'] for hit in existing_docs['hits']['hits']}
+            existing_docs_by_id = {hit['_id']: hit['_source'] for hit in existing_docs['hits']['hits']}
             
             actions = []
             processed_ids = set()
@@ -232,39 +246,56 @@ def upload_clean_data_to_es(files_to_upload):
                 sha_256_hash = calculate_sha256_for_document(doc)
                 doc['sha_256_hash'] = sha_256_hash
                 document_id = f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}"
-                
+
                 # Mark this document as processed, even if unchanged
                 processed_ids.add(document_id)
 
                 if document_id in existing_docs_by_id:
                     # Update if SHA differs
-                    if existing_docs_by_id[document_id] != sha_256_hash:
-                        print(f"Updating document: {document_id}")
+                    existing_doc = existing_docs_by_id[document_id]
+                    if existing_doc['sha_256_hash'] != sha_256_hash:
+                        # print(f"Updating document: {document_id}")
                         actions.append({
                             "_index": ES_INDEX,
                             "_id": document_id,
                             "_source": doc
                         })
+                        if log_changes:
+                            changes_log["changes"][org_id]["updated"].append({
+                                "_id": document_id,
+                                "before": existing_doc,
+                                "after": doc
+                            })
                         updated_count += 1
                 else:
                     # Add new document
-                    print(f"Adding new document: {document_id}")
+                    # print(f"Adding new document: {document_id}")
                     actions.append({
                         "_index": ES_INDEX,
                         "_id": document_id,
                         "_source": doc
                     })
+                    if log_changes:
+                        changes_log["changes"][org_id]["added"].append({
+                            "_id": document_id,
+                            "doc": doc
+                        })
                     added_count += 1
 
             # Identify and delete stale documents (those in Elasticsearch but not in new_data)
             stale_docs = set(existing_docs_by_id.keys()) - processed_ids
             for stale_id in stale_docs:
-                print(f"Deleting stale document: {stale_id}")
+                # print(f"Deleting stale document: {stale_id}")
                 actions.append({
                     "_op_type": "delete",
                     "_index": ES_INDEX,
                     "_id": stale_id
                 })
+                if log_changes:
+                    changes_log["changes"][org_id]["deleted"].append({
+                        "_id": stale_id,
+                        "doc": existing_docs_by_id[stale_id]
+                    })
                 deleted_count += 1
 
             # Execute bulk actions for this org_id
@@ -280,6 +311,17 @@ def upload_clean_data_to_es(files_to_upload):
             print(f"  - Added: {added_count}")
             print(f"  - Updated: {updated_count}")
             print(f"  - Deleted: {deleted_count}")
+
+            summary = (f"🛢️ {org_id} - Added: {added_count}, Updated: {updated_count}, Deleted: {deleted_count}")
+            all_summaries.append(summary)
+
+    # Save the changes log to a JSON file
+    if log_changes and changes_log:
+        with open("es_changes_log.json", "w") as log_file:
+            json.dump(changes_log, log_file, indent=4)
+
+    return all_summaries
+
 
 def get_elasticsearch_info():
     """Get Elasticsearch cluster info for debugging connection issues."""
@@ -329,14 +371,28 @@ def main(data_folder=None):
 
     if not get_elasticsearch_info():
         print("Skipping indexing due to Elasticsearch connection issues.")
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"Skipping indexing due to Elasticsearch connection issues.", DISCORD_WEBHOOK_URL, THREAD_ID)
+        else:
+            print("Discord webhook URL not provided. Skipping notifications.") 
         return
         
     if create_index_if_not_exists() and create_logs_if_not_exists():
         changed_files = check_sha_and_update(data_folder)
         if changed_files:
-            upload_clean_data_to_es(changed_files)
+            all_summaries = upload_clean_data_to_es(changed_files)
+            # Consolidate and send a single Discord notification
+            if all_summaries:
+                final_summary_message = "\n".join(all_summaries)
+                print("Final Summary:\n", final_summary_message)
+                if DISCORD_WEBHOOK_URL:
+                    send_discord_notification(final_summary_message, DISCORD_WEBHOOK_URL, THREAD_ID)
+                else:
+                    print("Discord webhook URL not provided. Skipping notifications.")
         else:
             print("\nNo changes detected in data. Skipping upload.")
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"🛢️ No changes detected in data. Skipping upload to ES.", DISCORD_WEBHOOK_URL, THREAD_ID)
     else:
         print("Skipping indexing due to index creation issues.")
 

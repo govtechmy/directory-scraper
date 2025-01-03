@@ -1,4 +1,6 @@
 """
+SOURCE OF TRUTH: Google Sheets
+
 IMPORTANT: 
 1. The uploaded data is considered the source of truth.
    - Any new data provided will completely overwrite the old data for the same `org_id`.
@@ -13,57 +15,54 @@ import sys
 import os
 import subprocess
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
-from directory_scraper.path_config import DEFAULT_SPIDERS_OUTPUT_FOLDER, DEFAULT_CLEAN_DATA_FOLDER
+from directory_scraper.path_config import DEFAULT_GSHEETS_OUTPUT_FOLDER, DEFAULT_CLEAN_DATA_FOLDER
 from directory_scraper.src.data_processing.process_data import process_all_json_files
-from directory_scraper.src.data_processing.run_spiders import main as run_spiders_main
+from directory_scraper.src.google_sheets.fetch_gsheets import main as fetch_gsheet_main
 from directory_scraper.src.elasticsearch_upload.data_to_es import main as data_to_es_main
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 CLEAN_DATA_FOLDER = os.path.join(BASE_DIR, DEFAULT_CLEAN_DATA_FOLDER)
-RAW_OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_SPIDERS_OUTPUT_FOLDER)
-BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")  
-
+RAW_OUTPUT_FOLDER = os.path.join(BASE_DIR, DEFAULT_GSHEETS_OUTPUT_FOLDER)
 
 def main():
     print("IMPORTANT: The newer data will overwrite existing data for the same 'org_id' in Elasticsearch.")
     print("Ensure the uploaded file is complete and represents the latest information.")
+    
     # Step 1: Ensure directories exist
     os.makedirs(RAW_OUTPUT_FOLDER, exist_ok=True)
     os.makedirs(CLEAN_DATA_FOLDER, exist_ok=True)
-    os.makedirs(BACKUP_FOLDER, exist_ok=True)
+    # os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
-    # Step 2: Run spiders
-    if len(sys.argv) < 2:
-        print("Usage: python main.py <spider name | category | special keyword> [organization name] [subcategory]")
+    ref_name = sys.argv[1] if len(sys.argv) > 1 else None
+    if len(sys.argv) > 2:
+        print("Usage: python main_gsheets.py [ref_name]. Refer to: utils/json/gsheets_config.json for ref_name")
         return
-    
+
+    # Step 1: Fetch Google Sheets
     try:
-        # Run spiders and proceed based on the presence of output files
-        run_spiders_main(output_folder=RAW_OUTPUT_FOLDER, backup_folder=BACKUP_FOLDER)
+        # Run fetch and proceed based on the presence of output files
+        fetch_gsheet_main(ref_name=ref_name, output_folder=RAW_OUTPUT_FOLDER, backup_folder=None)
 
         # Check if any files were generated in the output folder
         if not os.listdir(RAW_OUTPUT_FOLDER):
-            print("No spiders were run or no data was collected. Skipping data processing and upload.")
+            print("No google sheets was fetched. Skipping data processing and upload.")
             return
     except Exception as e:
-        print("Error encountered while running spiders:", e)
+        print("Error encountered while fetching google sheets:", e)
         return
 
-    # Step 3: Process spiders output into clean data
-    try:
-        print("\nSpiders ran successfully. Proceeding with data processing...")
-        process_all_json_files(input_folder=RAW_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
-        if not os.listdir(CLEAN_DATA_FOLDER):
-            print("No data was cleaned nor processed. Skipping load data to Elasticsearch")
-            return
-    except Exception as e:
-        print("Data processing failed:", e)
-        return
-
-    # Step 4: Check SHA and upload to Elasticsearch if there are changes
+    # # Step 2 Process spiders output into clean data
+    # try:
+    #     print("\nProceeding with data processing...")
+    #     process_all_json_files(input_folder=RAW_OUTPUT_FOLDER, output_folder=CLEAN_DATA_FOLDER)
+    # except Exception as e:
+    #     print("Data processing failed:", e)
+    #     return
+    
+    # Step 3: Check SHA and upload to Elasticsearch if there are changes
     try:
         print("\nChecking for changes and uploading to Elasticsearch...")
-        data_to_es_main(CLEAN_DATA_FOLDER)
+        data_to_es_main(RAW_OUTPUT_FOLDER)
     except Exception as e:
         print("Elasticsearch upload failed:", e)
 

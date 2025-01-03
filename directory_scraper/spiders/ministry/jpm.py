@@ -3,34 +3,34 @@ import re
 
 class JPMSpider(scrapy.Spider):
     name = 'jpm'
-    start_urls = [
-        'https://direktori.jpm.gov.my/jpm/1',
-        'https://direktori.jpm.gov.my/jpm/2',
-        'https://direktori.jpm.gov.my/jpm/3',
-        'https://direktori.jpm.gov.my/jpm/4',
-        'https://direktori.jpm.gov.my/jpm/5',
-        'https://direktori.jpm.gov.my/jpm/6',
-        'https://direktori.jpm.gov.my/jpm/7',
-        'https://direktori.jpm.gov.my/jpm/8',
-        'https://direktori.jpm.gov.my/jpm/9',
-        'https://direktori.jpm.gov.my/jpm/10',
-        'https://direktori.jpm.gov.my/jpm/11',
-        'https://direktori.jpm.gov.my/jpm/12',
-        'https://direktori.jpm.gov.my/jpm/13'
-    ]
+    start_urls = ['https://direktori.jpm.gov.my']
+
+    custom_settings = {
+        'RETRY_TIMES': 2,                # Retry failed requests 2x
+        'CLOSESPIDER_TIMEOUT': 300,      # Stop the spider after 5 mins
+    }
 
     person_sort_order = 0 
 
-    def start_requests(self):
-        for i, url in enumerate(self.start_urls):
-            division_sort = i + 1  #assign division_sort based on the URL's index
-            priority_value = len(self.start_urls) - i  #set higher priority for earlier URLs
+    def parse(self, response):
+        dynamic_urls = response.css('a.list-group-item::attr(href)').getall()
+
+        # print(f"Extracted URLs: {dynamic_urls}")
+
+        for i, url in enumerate(dynamic_urls):
+            full_url = response.urljoin(url)
+            division_sort = i + 1
+            priority_value = len(dynamic_urls) - i  #set higher priority for earlier URLs
             yield scrapy.Request(
-                url=url,
+                url=full_url,
                 callback=self.parse_static,
+                errback=self.handle_error,
                 meta={'division_sort': division_sort},  # Pass division_sort to the callback
                 priority=priority_value  #set priority for ordering
             )
+
+    def handle_error(self, failure):
+        self.logger.error(f"Request failed for {failure.request.url}: {repr(failure)}")
 
     def parse_static(self, response):
         division_sort = response.meta['division_sort']
@@ -77,7 +77,7 @@ class JPMSpider(scrapy.Spider):
                 unit_full = main_unit  # if only main_unit exists
 
             #iterate contact row in the section's table
-            for contact in section.css('tbody tr.d-flex'):
+            for contact in section.css('tbody tr'):
                 self.person_sort_order += 1  # Increment global person_sort_order
 
                 person_name = contact.css('td.col-4 b::text').get(default='').strip()
@@ -88,14 +88,8 @@ class JPMSpider(scrapy.Spider):
                     person_phone = person_phone_prefix if person_phone_prefix.startswith("03") or person_phone_prefix.startswith("01") else f"03-{person_phone_prefix}"
                 else:
                     person_phone = ''
-
-                email_list = contact.css('td.col-3::text').getall()
-                if email_list:
-                    person_email_prefix = email_list[-1].strip()
-                    if person_email_prefix.lower() == 'timbalan setiausaha bahagian pembangunan (seksyen teknikal)': #specific case
-                        person_email_prefix = ''
-                else:
-                    person_email_prefix = ''
+                
+                person_email_prefix = contact.css('td.col-3 canvas.email::attr(data-email)').get(default='').strip()
                 person_email = f"{person_email_prefix}@jpm.gov.my" if person_email_prefix else None
 
                 yield {
