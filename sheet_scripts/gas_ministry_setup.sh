@@ -41,7 +41,7 @@ for name in "${SHEET_NAMES[@]}"; do # Loops over array, creates directory with t
     pid_lst=()
     # If project exists, skip the creation step and push the changes to remote
     if [ -e '.clasp.json' ]; then
-        # echo "Pushing code to sheet: Directory Gov - ${name}"
+        echo "Pushing code to sheet: Directory Gov - ${name}"
         clasp push -f  &> /dev/null & pid_lst+=( "$!" );
         pid_type_map+=( "push" );
         pid_type_map["$!"]='push'
@@ -61,7 +61,7 @@ for name in "${SHEET_NAMES[@]}"; do # Loops over array, creates directory with t
     for pid in "${pid_lst[@]}"; do
         pid_pro_map[$pid]="${name}"; pid_log_map[$pid]="${logfile}"
     done
-    # echo -e "Started clasp action for project '\e[1m${name}\e[0m' (pid ${pid_lst[@]})"
+    echo -e "Started clasp action for project '\e[1m${name}\e[0m' (pid ${pid_lst[@]})"
 
 done
 
