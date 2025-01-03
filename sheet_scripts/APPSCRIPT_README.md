@@ -23,6 +23,7 @@ cd <repository-directory>
 
 
 ## Runing Setup
-- 
+- Run `clasp login` and log into your google account
+- Save the `.clasprc.json` under the `repository-directory`
 - Fill in sheet names in `sheet_scripts/sheetconfig.sh` file
 - Run setup with `bash sheet_scripts/gas_ministry_setup.sh`
