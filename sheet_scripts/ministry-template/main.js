@@ -155,7 +155,7 @@ function setupLookupSheet() {
   var spreadsheets = SpreadsheetApp.getActiveSpreadsheet();
   var sheetName = spreadsheets.getName();
   var lookupSheet = spreadsheets.getSheetByName("LookupSheet");
-  var refSheet = SpreadsheetApp.openById("11iszULwAgixtSgSfUmyQt4EX054CTe47xMn4QheVgJw")
+  var refSheet = SpreadsheetApp.openById("")
 
   // Checks if sheetname contains negeri
   var [sheetOrgId, sheetDivision] = sheetName.split("-")
@@ -197,6 +197,21 @@ function setupLookupSheet() {
 }
 
 /**
+ * Function to setup a button to refresh the data validation rules
+ */
+function setupButton() {
+  var lookupSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("LookupSheet");
+  var buttonImages = lookupSheet.getImages().filter(function (x) {return x.getAltTextDescription() == "Refresh data validation rules"});
+  if (buttonImages.length == 0) {
+    var image = DriveApp.getFileById("").getThumbnail().getAs("image/png");
+    var sheetImage = lookupSheet.insertImage(image, 1, 4).setHeight(34).setWidth(200);
+    sheetImage.assignScript("createValidation").setAltTextDescription("Refresh data validation rules");
+  } else {
+    console.log("Refresh data validation button already exists, skipping step");
+  }
+}
+
+/**
  * Converting columns org_sort, org_id, org_type, div_sort, pos_sort into gsheet formulas
  */
 function columnConversion() {
@@ -221,6 +236,10 @@ function mainSetup() {
   console.log("Setting Lookup Sheet");
   setupLookupSheet();
   console.log("Successfully set up Lookup Sheet");
+
+  console.log("Inserting data validation refresh button");
+  setupButton();
+  console.log("Successfully inserted refresh button")
 
   console.log("Converting prepopulated columns to XLOOKUP formulas");
   columnConversion();
