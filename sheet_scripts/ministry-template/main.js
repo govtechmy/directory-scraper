@@ -203,7 +203,7 @@ function setupButton() {
   var lookupSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("LookupSheet");
   var buttonImages = lookupSheet.getImages().filter(function (x) {return x.getAltTextDescription() == "Refresh data validation rules"});
   if (buttonImages.length == 0) {
-    var image = DriveApp.getFileById("").getThumbnail().getAs("image/png");
+    var image = DriveApp.getFileById("1BmM1q9W1yHD5ZocnMaQrtnl_UB8nv70m").getThumbnail().getAs("image/png");
     var sheetImage = lookupSheet.insertImage(image, 1, 4).setHeight(34).setWidth(200);
     sheetImage.assignScript("createValidation").setAltTextDescription("Refresh data validation rules");
   } else {
@@ -240,6 +240,7 @@ function mainSetup() {
   console.log("Inserting data validation refresh button");
   setupButton();
   console.log("Successfully inserted refresh button")
+
 
   console.log("Converting prepopulated columns to XLOOKUP formulas");
   columnConversion();

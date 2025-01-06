@@ -17,7 +17,7 @@ class KuskopcsrfSpider(scrapy.Spider):
             'https': 'scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler',
         },
         'TWISTED_REACTOR': 'twisted.internet.asyncioreactor.AsyncioSelectorReactor',
-        'PLAYWRIGHT_LAUNCH_OPTIONS': {'headless': True},
+        'PLAYWRIGHT_LAUNCH_OPTIONS': {'headless': False},
     }
 
     def parse(self, response):

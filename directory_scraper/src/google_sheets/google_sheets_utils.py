@@ -3,9 +3,41 @@ from google.oauth2.service_account import Credentials
 import time
 import random
 
+import os
+import json
+import tempfile
+
+import os
+import json
+import tempfile
+
+def get_credentials():
+    """
+    Retrieve Google service account credentials from the environment variable.
+    If the environment variable contains JSON, save it to a temporary file and return the file path.
+    If the environment variable contains a file path, validate its existence and return it.
+    """
+    creds = os.getenv("GOOGLE_SERVICE_ACCOUNT_CREDS")
+    if not creds:
+        raise ValueError("GOOGLE_SERVICE_ACCOUNT_CREDS environment variable is not set.")
+
+    # Check if the creds is a valid file path
+    if os.path.exists(creds):
+        return creds
+
+    # Assume it's a JSON string, validate and save it to a temporary file
+    try:
+        creds_json = json.loads(creds)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+        temp_file.write(json.dumps(creds_json).encode())
+        temp_file.close()
+        return temp_file.name
+    except json.JSONDecodeError as e:
+        raise ValueError(f"GOOGLE_SERVICE_ACCOUNT_CREDS does not contain valid JSON or a valid file path. Error: {e}")
+
 class GoogleSheetManager:
     def __init__(self, creds_file, sheet_id, scopes):
-        self.creds_file = creds_file
+        self.creds_file = get_credentials()
         self.sheet_id = sheet_id
         self.scopes = scopes
         self.worksheet = self.connect_to_sheet()
@@ -25,12 +57,12 @@ class GoogleSheetManager:
         """
         try:
             self.worksheet.clear()
-            print("Successfully cleared Google Sheet.")
+            print("Cleared sheet.")
         except gspread.exceptions.APIError as e:
             print(f"Error clearing Google Sheet: {e}")
             raise e
-
-    def exponential_backoff(self, retries):
+    
+    def exponential_backoff(retries):
         """
         Implements exponential backoff for retrying API calls.
         """
@@ -44,7 +76,7 @@ class GoogleSheetManager:
         while retries < max_retries:
             try:
                 self.worksheet.append_rows(rows)
-                print("Successfully inserted rows.")
+                print(f"Successfully inserted {len(rows)} rows.")
                 break  # Success, exit loop
             except gspread.exceptions.APIError as e:
                 if e.response.status_code == 429:  # Rate limit exceeded
@@ -110,10 +142,9 @@ class GoogleSheetManager:
         # Step 1: Find all the rows that match the org_id
         rows_to_delete = self.find_rows_by_org_id(org_id, org_id_column_index)
         if not rows_to_delete:
-            print(f"No rows found for org_id {org_id}")
+            print(f"No rows found")
             return
-
-        print(f"Found {len(rows_to_delete)} rows to delete for org_id {org_id}")
+        print(f"Found {len(rows_to_delete)} rows to delete")
 
         retries = 0
         while retries < max_retries:
@@ -123,7 +154,7 @@ class GoogleSheetManager:
                     start = rows_to_delete[0]
                     end = rows_to_delete[-1]
                     self.worksheet.delete_rows(start, end)  # Delete all consecutive rows in a range
-                    print(f"Successfully deleted rows {start} to {end} for org_id {org_id}")
+                    print(f"Successfully deleted row {start} to {end}")
                 break  # Exit loop after success
             except gspread.exceptions.APIError as e:
                 if e.response.status_code == 429:  # Rate limit exceeded
