@@ -133,6 +133,8 @@ class MohaSpider(CrawlSpider):
             person_position_list = item.css('div.list-title::text').getall()
             person_position = ' '.join([text.strip() for text in person_position_list if text.strip()])
             person_position = re.sub(r'\s+', ' ', person_position).strip()
+            if person_position.startswith('|'):
+                person_position = person_position[1:].strip()
             person_phone_text = item.css('div.span3::text').get()
             person_phone = self.extract_phone(person_phone_text)
 
