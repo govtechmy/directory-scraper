@@ -42,7 +42,7 @@ def main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, or
     google_sheets_manager = GoogleSheetManager(GOOGLE_SERVICE_ACCOUNT_CREDS, sheet_id, SCOPES)
     if operation == "load":
         google_sheets_manager.clear_sheet()
-        row_summary = load_data_into_sheet(google_sheets_manager, org_data, add_timestamp)
+        row_summary = load_data_into_sheet(google_sheets_manager, org_data, add_timestamp=True, separate_grouped_data_by_sheet=True, group_key="division_name")
     elif operation == "update":
         row_summary = update_data_in_sheet(google_sheets_manager, org_data, add_timestamp)
     else:

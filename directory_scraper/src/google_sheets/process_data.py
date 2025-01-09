@@ -49,12 +49,16 @@ def add_timestamp_to_rows(rows, add_timestamp=True):
 #===========================================================================
 # Refactor load_data.py & update_data.py as a single file in process_data.py
 
-def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
+def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True, separate_grouped_data_by_sheet=False, group_key="division_name"):
     """
-    Load data into Google Sheet.
-    1. Identify org_id to be inserted.
-    2. Add header
-    3. Insert/Append rows for the org_id, including timestamp.
+    Load data into Google Sheets.
+
+    Args:
+        google_sheets_manager: An instance of GoogleSheetManager for managing Google Sheets.
+        data: List of dictionaries representing the data to upload.
+        add_timestamp: Whether to append a timestamp to each row.
+        separate_grouped_data_by_sheet: Whether to separate the data into sheets grouped by `group_key`.
+        group_key: The key to use for grouping data (if `separate_grouped_data_by_sheet` is True).
     """
     grouped_data = group_data_by_org_id(data)
     total_orgs = len(grouped_data)
@@ -83,11 +87,44 @@ def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True):
         if add_timestamp:
             group_rows = [row + [timestamp] for row in group_rows]
 
-        # Insert the rows into Google Sheets with exponential backoff
+        # Insert the rows into Google Sheets
         google_sheets_manager.append_rows(group_rows)
         row_count_summary[org_id] = len(group_rows)
 
-        return row_count_summary
+    print(f"Full data loaded into the main sheet.")
+
+    if separate_grouped_data_by_sheet:
+        print(f"\nSeparating data by '{group_key}' and loading into separate sheets...")
+        # Group the data by the specified key
+        grouped_by_key = {}
+        for row in data:
+            key_value = row.get(group_key, "Unknown")
+            if key_value not in grouped_by_key:
+                grouped_by_key[key_value] = []
+            grouped_by_key[key_value].append(row)
+        
+        total_groups = len(grouped_by_key)
+        print(f"Total groups found for {group_key}: {total_groups}")
+
+        # Process each group and load them into separate sheets
+        for index, (key_value, group_rows) in enumerate(grouped_by_key.items(), start=1):
+            sheet_name = f"{key_value}"
+            print(f"\nUploading group '{key_value}' to sheet '{sheet_name}' ({index}/{total_groups})...")
+            
+            try:
+                google_sheets_manager.switch_to_sheet(sheet_name)
+                google_sheets_manager.clear_sheet()
+                google_sheets_manager.append_rows([header])
+                
+                # Convert group rows to values and append
+                rows_to_append = [list(row.values()) for row in group_rows]
+                if add_timestamp:
+                    rows_to_append = [row + [timestamp] for row in rows_to_append]
+                google_sheets_manager.append_rows(rows_to_append)
+            except Exception as e:
+                print(f"Error uploading group '{key_value}' to sheet '{sheet_name}': {e}")
+
+    return row_count_summary
 
 def update_data_in_sheet(google_sheets_manager, data, add_timestamp=True):
     """
