@@ -280,7 +280,7 @@ function mainSetup() {
 
   // Get list of all data sheet names
   var sheetList = spreadsheet.getSheetByName("DivisionSheet")
-  .getRange("B2:B")
+  .getRange("C2:C")
   .getValues()
   .flat()
   .filter(String)
