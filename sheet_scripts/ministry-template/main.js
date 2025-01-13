@@ -299,16 +299,21 @@ function mainSetup() {
 
   // run columnConversion and createValidation functions over all data sheets
   for (var sheetIdx in sheetList) {
-    var sheet = spreadsheet.getSheetByName(sheetList[sheetIdx])
-    console.log("Converting prepopulated columns to XLOOKUP formulas for sheet: ", sheetList[sheetIdx]);
+    var sheetName = sheetList[sheetIdx];
+    var sheet = spreadsheet.getSheetByName(sheetName)
+    if (sheet == null) {
+      console.log("Skipping division sheet: ", sheetName);
+      continue
+    }
+    console.log("Converting prepopulated columns to XLOOKUP formulas for sheet: ", sheetName);
     columnConversion(sheet, "DivisionSheet", "MetadataSheet");
-    console.log("Finished column conversion for sheet: ", sheetList[sheetIdx]);
+    console.log("Finished column conversion for sheet: ", sheetName);
 
-    console.log("Creating data validation rules for sheet: ", sheetList[sheetIdx]);
+    console.log("Creating data validation rules for sheet: ", sheetName);
     createValidation(sheet, divisionSort, divisionName, metadataDictionary);
-    console.log("Successfully created validation rules for sheet: ", sheetList[sheetIdx]);
-
+    console.log("Successfully created validation rules for sheet: ", sheetName);
   }
+
   console.log("Creating new row spreadsheet trigger");
   createSpreadsheetChangeTrigger();
   console.log("Spreadsheet trigger successfully created");
