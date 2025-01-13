@@ -23,16 +23,16 @@ function setupDivisionSheet(spreadsheet, refSheet) {
     spreadsheet.moveActiveSheet(3);
   }
   if (divisionSheet.getLastRow() == 0) {
-    divisionSheet.appendRow(["division_sort", "division_name"]);
+    divisionSheet.appendRow(["division_sort", "division_name", "sheet_name"]);
     var divSheet = refSheet.getSheetByName("DivisionLookup");
     var rowCountDiv = divSheet.getDataRange().getLastRow()-1;
     var divData = refSheet.getSheetByName("DivisionLookup")
     .getRange(2, 1, rowCountDiv, 5)
     .getValues()
     .filter(function (x) {return (x[0]==sheetOrgId && x[4]==sheetDivision)})
-    .map(function (x) {return x.slice(2, 4)});
+    .map(function (x) {return x.slice(2, 4).concat(x.slice(3, 4))});
 
-    divisionSheet.getRange(2, 1, divData.length, 2).setValues(divData);
+    divisionSheet.getRange(2, 1, divData.length, 3).setValues(divData);
   } else {
     console.log("Division Sheet already exists, skipping setup");
   }
