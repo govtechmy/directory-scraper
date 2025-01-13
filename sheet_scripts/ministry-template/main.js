@@ -97,7 +97,7 @@ function columnConversion(sheet, divisionSheetName, metadataSheetName) {
   var orgIdFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', metadataSheetName, '!$B$4,', metadataSheetName, '!$B$1, "")'].join("");
   var orgSortFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', metadataSheetName, '!$B$4,', metadataSheetName, '!$B$2, "")'].join("");
   var orgTypeFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', metadataSheetName, '!$B$4,', metadataSheetName, '!$B$3, "")'].join("");
-  var divSortFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', divisionSheetName, '!$B$2:$B,', divisionSheetName, '!$A$2:$A, "")'].join("");
+  var divSortFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 6)),', divisionSheetName, '!$B$2:$B,', divisionSheetName, '!$A$2:$A, "")'].join("");
   var posSortFormula = '=IF(AND(ARRAYFORMULA(OFFSET(INDIRECT(ADDRESS(ROW(), COLUMN())), 0, -7, 1, 7)="")),"",IF(INDIRECT(ADDRESS(ROW()-1, 5))=INDIRECT(ADDRESS(ROW(),5)), INDIRECT(ADDRESS(ROW()-1,8))+1, 1))';
 
   sheet.getRange("$A$2:$A").setValue(orgSortFormula);
@@ -185,7 +185,7 @@ function posSort(e) {
         var orgIdFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', metadataSheetName, '!$B$4,', metadataSheetName, '!$B$1, "")'].join("");
         var orgSortFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', metadataSheetName, '!$B$4,', metadataSheetName, '!$B$2, "")'].join("");
         var orgTypeFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', metadataSheetName, '!$B$4,', metadataSheetName, '!$B$3, "")'].join("");
-        var divSortFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 3)),', divisionSheetName, '!$B$2:$B,', divisionSheetName, '!$A$2:$A, "")'].join("");
+        var divSortFormula = ['=XLOOKUP(INDIRECT(ADDRESS(ROW(), 6)),', divisionSheetName, '!$B$2:$B,', divisionSheetName, '!$A$2:$A, "")'].join("");
         var posSortFormula = '=IF(AND(ARRAYFORMULA(OFFSET(INDIRECT(ADDRESS(ROW(), COLUMN())), 0, -7, 1, 7)="")),"",IF(INDIRECT(ADDRESS(ROW()-1, 5))=INDIRECT(ADDRESS(ROW(),5)), INDIRECT(ADDRESS(ROW()-1,8))+1, 1))';
 
         sheet.getRange(row, 1).setValue(orgSortFormula);
