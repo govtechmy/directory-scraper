@@ -256,6 +256,35 @@ function createSpreadsheetChangeTrigger() {
 // }
 
 /**
+ * Function to compile data from division sheets into a main sheet
+ */
+function mergeDivisions () {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var divisionSheet = spreadsheet.getSheetByName("DivisionSheet");
+  var divisionName = divisionSheet.getRange(2, 2, divisionSheet.getLastRow()-1, 1).getValues().flat();
+  var compiledData = [];
+  var fullDataSheet = spreadsheet.getSheetByName("Keseluruhan Direktori");
+
+  for (var sheetIdx in divisionName) {
+    var sheet = spreadsheet.getSheetByName(divisionName[sheetIdx]);
+    if (sheet != null) {
+      var sheetLength = sheet.getRange("O:O").getValues().flat().filter(String).length-1;
+      compiledData = compiledData.concat(sheet.getRange(2, 1, sheetLength, 15).getValues());
+    }
+  }
+  if (fullDataSheet != null) {
+    fullDataSheet.getRange(1, 1, 1, 15)
+    .setValues([[
+      "org_sort", "org_id", "org_name", "org_type","division_sort",
+      "division_name", "subdivision_name", "position_sort",
+      "position_name", "person_name", "person_email",
+      "person_phone", "person_fax", "parent_org_id", "last_uploaded"
+    ]])
+    fullDataSheet.getRange(2, 1, compiledData.length, 15).setValues(compiledData);
+  }
+}
+
+/**
  * Main setup function for the google sheet
  */
 function mainSetup() {
