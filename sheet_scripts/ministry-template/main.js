@@ -199,41 +199,57 @@ function posSort(e) {
 }
 
 /**
- * Automatically create spreadsheet trigger
+ * Automatically create spreadsheet triggers
  */
-function createSpreadsheetChangeTrigger() {
-  var changeTriggerExists = false;
-  var timedTriggerExists = false;
+function createSpreadsheetChangeTrigger(spreadsheet) {
+  var triggerDict = {
+    "changeTriggerExists": false,
+    "timedTriggerExists": false,
+    "mergeDivisionsExists": false
+  };
   var allTriggers = ScriptApp.getProjectTriggers();
-  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   for (let i=0;i<allTriggers.length;i++){
     if (allTriggers[i].getHandlerFunction()=="posSort") {
-      changeTriggerExists = true;
+      triggerDict["changeTriggerExists"] = true;
     }
     else if (allTriggers[i].getHandlerFunction()=="mainSetup") {
-      timedTriggerExists = true;
+      triggerDict["timedTriggerExists"] = true;
+    }
+    else if (allTriggers[i].getHandlerFunction()=="mergeDivisions") {
+      triggerDict["mergeDivisionsExists"] = true;
     }
   }
 
-  if (changeTriggerExists) {
+  if (triggerDict["changeTriggerExists"]) {
     console.log("Trigger posSort already exists, skipping creation step");
   } else {
-    ScriptApp.newTrigger('posSort')
+    ScriptApp.newTrigger("posSort")
     .forSpreadsheet(spreadsheet)
     .onChange()
     .create();
-    console.log("Successfully created trigger posSort")
+    console.log("Successfully created trigger posSort");
   }
-  if (timedTriggerExists) {
-    console.log("Trigger mainSetupn already exists");
+  if (triggerDict["timedTriggerExists"]) {
+    console.log("Trigger mainSetup already exists");
   } else {
-    ScriptApp.newTrigger('mainSetup')
+    ScriptApp.newTrigger("mainSetup")
+    .forSpreadsheet(spreadsheet)
     .timeBased()
     .everyDays(1)
     .atHour(1)
     .nearMinute(10)
     .create();
-    console.log("Successfully created trigger mainSetup")
+    console.log("Successfully created trigger mainSetup");
+  }
+  if (triggerDict["mergeDivisionsExists"]) {
+    console.log("Trigger mergeDivision already exists");
+  } else {
+    ScriptApp.newTrigger("mergeDivisions")
+    .forSpreadsheet(spreadsheet)
+    .timeBased()
+    .everyMinutes(30)
+    .create();
+    console.log("Successfully created trigger mergeDivisions");
   }
 }
 
@@ -344,6 +360,6 @@ function mainSetup() {
   }
 
   console.log("Creating new row spreadsheet trigger");
-  createSpreadsheetChangeTrigger();
+  createSpreadsheetChangeTrigger(spreadsheet);
   console.log("Spreadsheet trigger successfully created");
 }
