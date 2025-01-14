@@ -313,7 +313,7 @@ function mainSetup() {
   .getValues()
   .flat()
   .filter(String)
-  .concat(["Keseluruhan Direktori"]);
+  .concat(["Keseluruhan Direktori", "Sheet1"]);
 
   // Get data values for columnConversion and createValidation functions
   var divisionSort = divisionSheet.getRange(2, 1, divisionSheet.getLastRow()-1, 1).getValues().flat();
