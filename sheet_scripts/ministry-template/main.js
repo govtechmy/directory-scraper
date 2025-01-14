@@ -245,7 +245,6 @@ function createSpreadsheetChangeTrigger(spreadsheet) {
     console.log("Trigger mergeDivision already exists");
   } else {
     ScriptApp.newTrigger("mergeDivisions")
-    .forSpreadsheet(spreadsheet)
     .timeBased()
     .everyMinutes(30)
     .create();
