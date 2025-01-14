@@ -3,8 +3,6 @@ import re
 import scrapy
 import base64
 from html import unescape
-import json
-
 
 class MODSpider(scrapy.Spider):
     name = "mod"
@@ -86,7 +84,7 @@ class MODSpider(scrapy.Spider):
 
     def populate_mappings(self, hierarchy):
         """
-        Generate and populate sort mappings and hierarchy relationships.
+        Generate and populate sort mappings and hierarchy relationships with unique keys.
         """
         level1_sort = 1
         level2_sort = 1
@@ -95,37 +93,49 @@ class MODSpider(scrapy.Spider):
 
         # Traverse the hierarchy and assign sort numbers
         for level1_name, level1_children in hierarchy.items():
+            # Create a unique key for LEVEL1
+            level1_key = level1_name
+
             # Assign a unique sort number for LEVEL1
-            if level1_name not in self.level1_sort_map:
-                self.level1_sort_map[level1_name] = level1_sort
+            if level1_key not in self.level1_sort_map:
+                self.level1_sort_map[level1_key] = level1_sort
                 level1_sort += 1
 
             # Initialize LEVEL1 to LEVEL2 mapping
-            self.level1_to_level2_map[level1_name] = []
+            self.level1_to_level2_map[level1_key] = []
             for level2_name, level2_children in level1_children.items():
-                if level2_name not in self.level2_sort_map:
-                    self.level2_sort_map[level2_name] = level2_sort
+                # Create a unique key for LEVEL2
+                level2_key = f"{level1_name}::{level2_name}"
+
+                if level2_key not in self.level2_sort_map:
+                    self.level2_sort_map[level2_key] = level2_sort
                     level2_sort += 1
                 # Map LEVEL2 to its LEVEL1 parent
-                self.level1_to_level2_map[level1_name].append(level2_name)
+                self.level1_to_level2_map[level1_key].append(level2_key)
 
                 # Initialize LEVEL2 to LEVEL3 mapping
-                self.level2_to_level3_map[level2_name] = []
+                self.level2_to_level3_map[level2_key] = []
                 for level3_name, level3_children in level2_children.items():
-                    if level3_name not in self.level3_sort_map:
-                        self.level3_sort_map[level3_name] = level3_sort
+                    # Create a unique key for LEVEL3
+                    level3_key = f"{level2_key}::{level3_name}"
+
+                    if level3_key not in self.level3_sort_map:
+                        self.level3_sort_map[level3_key] = level3_sort
                         level3_sort += 1
                     # Map LEVEL3 to its LEVEL2 parent
-                    self.level2_to_level3_map[level2_name].append(level3_name)
+                    self.level2_to_level3_map[level2_key].append(level3_key)
 
                     # Initialize LEVEL3 to LEVEL4 mapping
-                    self.level3_to_level4_map[level3_name] = []
+                    self.level3_to_level4_map[level3_key] = []
                     for level4_name, level4_children in level3_children.items():
-                        if level4_name not in self.level4_sort_map:
-                            self.level4_sort_map[level4_name] = level4_sort
+                        # Create a unique key for LEVEL4
+                        level4_key = f"{level3_key}::{level4_name}"
+
+                        if level4_key not in self.level4_sort_map:
+                            self.level4_sort_map[level4_key] = level4_sort
                             level4_sort += 1
                         # Map LEVEL4 to its LEVEL3 parent
-                        self.level3_to_level4_map[level3_name].append(level4_name)
+                        self.level3_to_level4_map[level3_key].append(level4_key)
 
         self.logger.debug(f"\nLEVEL1 Sort Map: {self.level1_sort_map}")
         self.logger.debug(f"\nLEVEL2 Sort Map: {self.level2_sort_map}")
@@ -169,6 +179,69 @@ class MODSpider(scrapy.Spider):
             callback=self.parse_divisions,
             meta={"hierarchy": self.hierarchy},
         )
+
+    def populate_mappings(self, hierarchy):
+        """
+        Generate and populate sort mappings and hierarchy relationships with unique keys.
+        """
+        level1_sort = 1
+        level2_sort = 1
+        level3_sort = 1
+        level4_sort = 1
+
+        # Traverse the hierarchy and assign sort numbers
+        for level1_name, level1_children in hierarchy.items():
+            # Create a unique key for LEVEL1
+            level1_key = level1_name
+
+            # Assign a unique sort number for LEVEL1
+            if level1_key not in self.level1_sort_map:
+                self.level1_sort_map[level1_key] = level1_sort
+                level1_sort += 1
+
+            # Initialize LEVEL1 to LEVEL2 mapping
+            self.level1_to_level2_map[level1_key] = []
+            for level2_name, level2_children in level1_children.items():
+                # Create a unique key for LEVEL2
+                level2_key = f"{level1_name}::{level2_name}"
+
+                if level2_key not in self.level2_sort_map:
+                    self.level2_sort_map[level2_key] = level2_sort
+                    level2_sort += 1
+                # Map LEVEL2 to its LEVEL1 parent
+                self.level1_to_level2_map[level1_key].append(level2_key)
+
+                # Initialize LEVEL2 to LEVEL3 mapping
+                self.level2_to_level3_map[level2_key] = []
+                for level3_name, level3_children in level2_children.items():
+                    # Create a unique key for LEVEL3
+                    level3_key = f"{level2_key}::{level3_name}"
+
+                    if level3_key not in self.level3_sort_map:
+                        self.level3_sort_map[level3_key] = level3_sort
+                        level3_sort += 1
+                    # Map LEVEL3 to its LEVEL2 parent
+                    self.level2_to_level3_map[level2_key].append(level3_key)
+
+                    # Initialize LEVEL3 to LEVEL4 mapping
+                    self.level3_to_level4_map[level3_key] = []
+                    for level4_name, level4_children in level3_children.items():
+                        # Create a unique key for LEVEL4
+                        level4_key = f"{level3_key}::{level4_name}"
+
+                        if level4_key not in self.level4_sort_map:
+                            self.level4_sort_map[level4_key] = level4_sort
+                            level4_sort += 1
+                        # Map LEVEL4 to its LEVEL3 parent
+                        self.level3_to_level4_map[level3_key].append(level4_key)
+
+        self.logger.debug(f"\nLEVEL1 Sort Map: {self.level1_sort_map}")
+        self.logger.debug(f"\nLEVEL2 Sort Map: {self.level2_sort_map}")
+        self.logger.debug(f"\nLEVEL3 Sort Map: {self.level3_sort_map}")
+        self.logger.debug(f"\nLEVEL4 Sort Map: {self.level4_sort_map}")
+        self.logger.debug(f"\nLEVEL1 to LEVEL2 Map: {self.level1_to_level2_map}")
+        self.logger.debug(f"\nLEVEL2 to LEVEL3 Map: {self.level2_to_level3_map}")
+        self.logger.debug(f"\nLEVEL3 to LEVEL4 Map: {self.level3_to_level4_map}")
 
     def parse_divisions(self, response):
         """
@@ -238,6 +311,14 @@ class MODSpider(scrapy.Spider):
                 division_name,
                 subdivision_name_initial
             )
+
+            level2_key = f"{division_name}::{cleaned_data.get('subdivision_level2', '')}"
+            level3_key = f"{level2_key}::{cleaned_data.get('subdivision_level3', '')}"
+            level4_key = f"{level3_key}::{cleaned_data.get('subdivision_level4', '')}"
+            
+            level2_sort = self.level2_sort_map.get(level2_key, 0)
+            level3_sort = self.level3_sort_map.get(level3_key, 0)
+            level4_sort = self.level4_sort_map.get(level4_key, 0)
             
             data = {
                 "org_sort": 13,
@@ -245,9 +326,9 @@ class MODSpider(scrapy.Spider):
                 "org_name": "Kementerian Pertahanan",
                 "org_type": "ministry",
                 "division_sort": division_sort,
-                "level2_sort": self.level2_sort_map.get(cleaned_data["subdivision_level2"], 0),
-                "level3_sort": self.level3_sort_map.get(cleaned_data["subdivision_level3"], 0),
-                "level4_sort": self.level4_sort_map.get(cleaned_data["subdivision_level4"], 0),
+                "level2_sort": level2_sort,
+                "level3_sort": level3_sort,
+                "level4_sort": level4_sort,
                 "person_sort": self.global_person_sort,  # Use global counter
                 "division_name": division_name,
                 "subdivision_name_initial": subdivision_name_initial,
@@ -266,7 +347,6 @@ class MODSpider(scrapy.Spider):
             self.global_person_sort += 1 
             self.global_collected_items.append(data)
             self.logger.debug(f"Appended data to collected_items: {data}")
-            print(f"Appended data to collected_items: {data}")
             # yield data  # Yield item immediately for Scrapy to process and log
 
         # Sort and yield items before making pagination requests
@@ -331,8 +411,6 @@ class MODSpider(scrapy.Spider):
         Args:
             division_name (str): The name of the division.
             subdivision_name_initial (str): The raw subdivision name with potential redundancies.
-            level2_parent_names (list): List of LEVEL2 parent names.
-            level2_names (list): List of LEVEL2 names.
 
         Returns:
             dict: Processed information with cleaned subdivision name and parent hierarchy.
@@ -349,89 +427,114 @@ class MODSpider(scrapy.Spider):
             subdivision_name = subdivision_name.replace(division_name, "").strip(", ").strip()
             print(f"Removed division name: {division_name} -> {subdivision_name}")
 
-        # Step 2: Determine `subdivision_level2` (LEVEL2) from `level2_to_level3_map`
-        for level2, level3_list in self.level2_to_level3_map.items():
-            if level2 in subdivision_name:
-                subdivision_level2 = level2
-                subdivision_name = subdivision_name.replace(level2, "").strip(", ").strip()
-                print(f"Identified level2: {subdivision_level2}")
-                break
-            
-        # Step 3: Determine `subdivision_level3` (LEVEL3) based on `LEVEL2`
-        if subdivision_level2 and subdivision_level2 in self.level2_to_level3_map:
-            for level3 in self.level2_to_level3_map[subdivision_level2]:
-                if level3 in subdivision_name:
-                    subdivision_level3 = level3
-                    subdivision_name = subdivision_name.replace(level3, "").strip(", ").strip()
+        # Restriction to only map by division
+        current_level2_to_level3_map = {
+            k: v for k, v in self.level2_to_level3_map.items() if k.startswith(division_name)
+        }
+        
+        # Step 2: Determine `subdivision_level2` (LEVEL2) using keys
+        for level1_name, level1_children in self.level1_to_level2_map.items():
+            if division_name == level1_name:  # Match LEVEL1
+                for level2_key in level1_children:
+                    level2_name = level2_key.split("::")[-1]  # Extract the LEVEL2 name from the key
+                    if level2_name in subdivision_name:
+                        subdivision_level2 = level2_key
+                        subdivision_name = subdivision_name.replace(level2_name, "").strip(", ").strip()
+                        print(f"Identified level2: {subdivision_level2}")
+                        break
+
+        # Step 3: Determine `subdivision_level3` (LEVEL3) based on `LEVEL2` using keys
+        if subdivision_level2 and subdivision_level2 in current_level2_to_level3_map:
+            for level3_key in current_level2_to_level3_map[subdivision_level2]:
+                level3_name = level3_key.split("::")[-1]  # Extract the LEVEL3 name from the key
+                if level3_name in subdivision_name:
+                    subdivision_level3 = level3_key
+                    subdivision_name = subdivision_name.replace(level3_name, "").strip(", ").strip()
                     print(f"Identified level3: {subdivision_level3}")
                     break
         else:
+            # Step 4: Handle missing LEVEL2 when LEVEL3 is identified. 
             # Even if no level2 found, find out if there is level3. Then, solve the missing level2!
-            for level2, level3_list in self.level2_to_level3_map.items():
-                for level3 in level3_list:
-                    if level3 in subdivision_name:
-                        subdivision_level3 = level3
-                        subdivision_name = subdivision_name.replace(level3, "").strip(", ").strip()
+            for level2_key, level3_list in current_level2_to_level3_map.items():
+                for level3_key in level3_list:
+                    level3_name = level3_key.split("::")[-1]
+                    if level3_name in subdivision_name:
+                        subdivision_level3 = level3_key
+                        subdivision_name = subdivision_name.replace(level3_name, "").strip(", ").strip()
+                        subdivision_level2 = level2_key
                         print(f"Identified level3 (without level2): {subdivision_level3}")
-                        print(f"Solving... mapping a level2: '{level2}' for it !!!")
-                        subdivision_level2 = level2
+                        print(f"Resolved missing level2: '{subdivision_level2}''")
                         break
                 if subdivision_level3:
                     break
 
         # Step 5: Handle fallback normalization for LEVEL3
         if not subdivision_level3 and subdivision_name:
-            for level2, level3_list in self.level2_to_level3_map.items():
-                for level3 in level3_list:
-                    normalized_level3 = re.sub(r"[^\w\s]", "", level3).lower().strip()
+            for level2_key, level3_list in current_level2_to_level3_map.items():
+                for level3_key in level3_list:
+                    normalized_level3 = re.sub(r"[^\w\s]", "", level3_key.split("::")[-1]).lower().strip()
                     normalized_subdivision_name = re.sub(r"[^\w\s]", "", subdivision_name).lower().strip()
 
                     if normalized_level3 in normalized_subdivision_name:
-                        print(f"Fallback level3 match found: '{level3}' in '{subdivision_name}'")
-                        subdivision_name = subdivision_name.replace(level3, "").strip(", ").strip()
-                        subdivision_level3 = level3
+                        print(f"Fallback level3 match found: '{level3_key}' in '{subdivision_name}'")
+                        subdivision_name = subdivision_name.replace(level3_key.split("::")[-1], "").strip(", ").strip()
+                        subdivision_level3 = level3_key
                         break
                 if subdivision_level3:
                     break
+                
+        # Restriction to only map by division
+        current_level3_to_level4_map = {
+            k: v for k, v in self.level3_to_level4_map.items() if k.startswith(division_name)
+        }
 
-        # Step 6: Determine `subdivision_level4` (LEVEL4) based on `LEVEl32`
-        if subdivision_level3 and subdivision_level3 in self.level3_to_level4_map:
-            for level4 in self.level3_to_level4_map[subdivision_level3]:
-                if level4 in subdivision_name:
-                    subdivision_level4 = level4
-                    subdivision_name = subdivision_name.replace(level4, "").strip(", ").strip()
+        # Step 6: Determine `subdivision_level4` (LEVEL4) based on `LEVEL3` using keys
+        if subdivision_level3 and subdivision_level3 in current_level3_to_level4_map:
+            for level4_key in current_level3_to_level4_map[subdivision_level3]:
+                level4_name = level4_key.split("::")[-1]  # Extract the LEVEL4 name from the key
+                if level4_name in subdivision_name:
+                    subdivision_level4 = level4_key
+                    subdivision_name = subdivision_name.replace(level4_name, "").strip(", ").strip()
                     print(f"Identified level4: {subdivision_level4}")
                     break
         else:
+            # Step 7: Handle missing LEVEL3 when LEVEL4 is identified
             # Even if no level3 found, find out if there is level3. Then, solve the missing level3!
-            for level3, level4_list in self.level3_to_level4_map.items():
-                for level4 in level4_list:
-                    if level4 in subdivision_name:
-                        subdivision_level4 = level4
-                        subdivision_name = subdivision_name.replace(level4, "").strip(", ").strip()
+            for level3_key, level4_list in current_level3_to_level4_map.items():
+                for level4_key in level4_list:
+                    level4_name = level4_key.split("::")[-1]
+                    if level4_name in subdivision_name:
+                        subdivision_level4 = level4_key
+                        subdivision_name = subdivision_name.replace(level4_name, "").strip(", ").strip()
+                        subdivision_level3 = level3_key
                         print(f"Identified level4 (without level3): {subdivision_level4}")
-                        print(f"Solving... mapping a level3: '{level3}' for it !!!")
-                        subdivision_level3 = level3
+                        print(f"Resolved missing level3: '{subdivision_level3}'")
                         break
                 if subdivision_level4:
                     break
 
-        # Step 7: Check if the newly resolved `level3` has an associated `level2`
+        # Step 8: Handle missing LEVEL2 when LEVEL3 is resolved
+        # Check if the newly resolved `level3` has an associated `level2`
         if subdivision_level3 and not subdivision_level2:
-            for level2, level3_list in self.level2_to_level3_map.items():
+            for level2_key, level3_list in current_level2_to_level3_map.items():
                 if subdivision_level3 in level3_list:
-                    print("The newly resolved `level3` has an associated `level2`")
-                    subdivision_level2 = level2
-                    print(f"Solving... mapping level2: '{subdivision_level2}' for it !!!")
+                    subdivision_level2 = level2_key
+                    print(f"Resolved missing level2: {subdivision_level2} for level3: {subdivision_level3}")
                     break
-                
-        # Step 8: Handle redundant names
-        if subdivision_name and subdivision_level3 and subdivision_name in subdivision_level3:
+
+        # Step 9: Handle redundant names
+        if subdivision_name and subdivision_level3 and subdivision_name in subdivision_level3.split("::")[-1]:
             print(f"Redundant name found: '{subdivision_name}' matches '{subdivision_level3}'")
             subdivision_name = None
 
-        # Step 9: Final hierarchy cleanup and formatting
-        subdivision_name_final = " > ".join(filter(None, [subdivision_level2, subdivision_level3, subdivision_level4, subdivision_name]))
+        # Step 10: Final hierarchy cleanup and formatting
+        subdivision_name_final = " > ".join(filter(None, [
+            subdivision_level2.split("::")[-1] if subdivision_level2 else None,
+            subdivision_level3.split("::")[-1] if subdivision_level3 else None,
+            subdivision_level4.split("::")[-1] if subdivision_level4 else None,
+            subdivision_name
+        ]))
+
         subdivision_name_final = subdivision_name_final.strip() if subdivision_name_final.strip() else None
 
         print(f"Final cleaned name: {subdivision_name_final}")
