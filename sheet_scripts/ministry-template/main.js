@@ -48,12 +48,11 @@ function setupMetadataSheet(spreadsheet, refSheet) {
   var metadataSheet = spreadsheet.getSheetByName("MetadataSheet");
 
   // Checks if sheetname contains negeri
-  var sheetOrgId = sheetName.split("-")
+  var [sheetOrgId, sheetDivision] = sheetName.split("-")
   .pop()
   .trim()
   .toUpperCase()
-  .split("_")
-  .pop();
+  .split("_");
 
   if (metadataSheet == null) {
     metadataSheet = spreadsheet.insertSheet("MetadataSheet").activate();
