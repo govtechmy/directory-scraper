@@ -99,7 +99,9 @@ def load_data_into_sheet(google_sheets_manager, data, separate_grouped_data_by_s
     if add_timestamp:
         header.append('last_uploaded')
 
-    retry_with_backoff(google_sheets_manager.append_rows, [header])  # Write header once to the main sheet
+    retry_with_backoff(google_sheets_manager.switch_to_sheet, "Keseluruhan Direktori")
+    retry_with_backoff(google_sheets_manager.clear_sheet)
+    retry_with_backoff(google_sheets_manager.append_rows, [header])
 
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if add_timestamp else None
 
