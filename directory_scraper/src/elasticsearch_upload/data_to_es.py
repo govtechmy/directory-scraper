@@ -202,127 +202,138 @@ def upload_clean_data_to_es(files_to_upload, log_changes=True):
     } if log_changes else None
          
     for file_path in files_to_upload:
-        if isinstance(file_path, str):
-            file_name = os.path.basename(file_path)
-            try:
-                with open(file_path, 'r') as f:
-                    new_data = json.load(f)
-            except json.JSONDecodeError as e:
-                print(f"Invalid JSON in file {file_path}: {e}")
-                continue  # Skip to the next file
-            except FileNotFoundError as e:
-                print(f"File not found: {file_path}: {e}")
-                continue
-            except Exception as e:
-                print(f"Error reading file {file_path}: {e}")
-                continue
+        try:
+            if isinstance(file_path, str):
+                file_name = os.path.basename(file_path)
+                try:
+                    with open(file_path, 'r') as f:
+                        new_data = json.load(f)
+                except json.JSONDecodeError as e:
+                    print(f"Invalid JSON in file {file_path}: {e}")
+                    continue  # Skip to the next file
+                except FileNotFoundError as e:
+                    print(f"File not found: {file_path}: {e}")
+                    continue
+                except Exception as e:
+                    print(f"Error reading file {file_path}: {e}")
+                    continue
 
-        elif isinstance(files_to_upload, (dict,)):
-            file_name = file_path.get("file_name", None)
-            new_data = file_path.get("file_data", None)
-            if not file_name or not new_data:
-                raise ValueError("Warning - files_to_upload is neither a path or a dictionary. Check the input and rerun the function")
+            elif isinstance(files_to_upload, (dict,)):
+                file_name = file_path.get("file_name", None)
+                new_data = file_path.get("file_data", None)
+                if not file_name or not new_data:
+                    raise ValueError("Warning - files_to_upload is neither a path or a dictionary. Check the input and rerun the function")
 
-        # Group documents by org_id
-        org_id_groups = {}
-        for doc in new_data:
-            org_id = doc.get("org_id")
-            if org_id not in org_id_groups:
-                org_id_groups[org_id] = []
-            org_id_groups[org_id].append(doc)
+            # Group documents by org_id
+            org_id_groups = {}
+            for doc in new_data:
+                org_id = doc.get("org_id")
+                if org_id not in org_id_groups:
+                    org_id_groups[org_id] = []
+                org_id_groups[org_id].append(doc)
 
-        # Process each org_id group separately
-        for org_id, docs in org_id_groups.items():
-            print(f"\nChecking org_id: {org_id} in file: {file_name}")
+            # Process each org_id group separately
+            for org_id, docs in org_id_groups.items():
+                try:
+                    print(f"\nChecking org_id: {org_id} in file: {file_name}")
 
-            if log_changes:
-                changes_log["changes"][org_id] = {"added": [], "updated": [], "deleted": []}
+                    if log_changes:
+                        changes_log["changes"][org_id] = {"added": [], "updated": [], "deleted": []}
 
-            # Load existing documents for this org_id
-            existing_docs_query = {"query": {"term": {"org_id": org_id}}, "size": 10000}
-            existing_docs = es.search(index=ES_INDEX, body=existing_docs_query)
-            existing_docs_by_id = {hit['_id']: hit['_source'] for hit in existing_docs['hits']['hits']}
-            
-            actions = []
-            processed_ids = set()
+                    # Load existing documents for this org_id
+                    existing_docs_query = {"query": {"term": {"org_id": org_id}}, "size": 10000}
+                    existing_docs = es.search(index=ES_INDEX, body=existing_docs_query)
+                    existing_docs_by_id = {hit['_id']: hit['_source'] for hit in existing_docs['hits']['hits']}
+                    
+                    actions = []
+                    processed_ids = set()
 
-            # Initialize counters for added, updated, and deleted documents
-            added_count = 0
-            updated_count = 0
-            deleted_count = 0
+                    # Initialize counters for added, updated, and deleted documents
+                    added_count = 0
+                    updated_count = 0
+                    deleted_count = 0
 
-            for doc in docs:
-                sha_256_hash = calculate_sha256_for_document(doc)
-                doc['sha_256_hash'] = sha_256_hash
-                document_id = f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}"
+                    for doc in docs:
+                        sha_256_hash = calculate_sha256_for_document(doc)
+                        doc['sha_256_hash'] = sha_256_hash
+                        document_id = f"{doc.get('org_id', '')}_{str(doc.get('division_sort', '')).zfill(3)}_{str(doc.get('position_sort', '')).zfill(6)}"
 
-                # Mark this document as processed, even if unchanged
-                processed_ids.add(document_id)
+                        # Mark this document as processed, even if unchanged
+                        processed_ids.add(document_id)
 
-                if document_id in existing_docs_by_id:
-                    # Update if SHA differs
-                    existing_doc = existing_docs_by_id[document_id]
-                    if existing_doc['sha_256_hash'] != sha_256_hash:
-                        # print(f"Updating document: {document_id}")
+                        if document_id in existing_docs_by_id:
+                            # Update if SHA differs
+                            existing_doc = existing_docs_by_id[document_id]
+                            if existing_doc['sha_256_hash'] != sha_256_hash:
+                                # print(f"Updating document: {document_id}")
+                                actions.append({
+                                    "_index": ES_INDEX,
+                                    "_id": document_id,
+                                    "_source": doc
+                                })
+                                if log_changes:
+                                    changes_log["changes"][org_id]["updated"].append({
+                                        "_id": document_id,
+                                        "before": existing_doc,
+                                        "after": doc
+                                    })
+                                updated_count += 1
+                        else:
+                            # Add new document
+                            # print(f"Adding new document: {document_id}")
+                            actions.append({
+                                "_index": ES_INDEX,
+                                "_id": document_id,
+                                "_source": doc
+                            })
+                            if log_changes:
+                                changes_log["changes"][org_id]["added"].append({
+                                    "_id": document_id,
+                                    "doc": doc
+                                })
+                            added_count += 1
+
+                    # Identify and delete stale documents (those in Elasticsearch but not in new_data)
+                    stale_docs = set(existing_docs_by_id.keys()) - processed_ids
+                    for stale_id in stale_docs:
+                        # print(f"Deleting stale document: {stale_id}")
                         actions.append({
+                            "_op_type": "delete",
                             "_index": ES_INDEX,
-                            "_id": document_id,
-                            "_source": doc
+                            "_id": stale_id
                         })
                         if log_changes:
-                            changes_log["changes"][org_id]["updated"].append({
-                                "_id": document_id,
-                                "before": existing_doc,
-                                "after": doc
+                            changes_log["changes"][org_id]["deleted"].append({
+                                "_id": stale_id,
+                                "doc": existing_docs_by_id[stale_id]
                             })
-                        updated_count += 1
-                else:
-                    # Add new document
-                    # print(f"Adding new document: {document_id}")
-                    actions.append({
-                        "_index": ES_INDEX,
-                        "_id": document_id,
-                        "_source": doc
-                    })
-                    if log_changes:
-                        changes_log["changes"][org_id]["added"].append({
-                            "_id": document_id,
-                            "doc": doc
-                        })
-                    added_count += 1
+                        deleted_count += 1
 
-            # Identify and delete stale documents (those in Elasticsearch but not in new_data)
-            stale_docs = set(existing_docs_by_id.keys()) - processed_ids
-            for stale_id in stale_docs:
-                # print(f"Deleting stale document: {stale_id}")
-                actions.append({
-                    "_op_type": "delete",
-                    "_index": ES_INDEX,
-                    "_id": stale_id
-                })
-                if log_changes:
-                    changes_log["changes"][org_id]["deleted"].append({
-                        "_id": stale_id,
-                        "doc": existing_docs_by_id[stale_id]
-                    })
-                deleted_count += 1
+                    # Execute bulk actions for this org_id
+                    if actions:
+                        print(f"Processing {len(actions)} actions for org_id {org_id}...")
+                        success, failed = bulk(es, actions)
+                        print(f"Successfully processed {success} actions.")
+                        if failed:
+                            print("\nSome actions failed:", failed)
 
-            # Execute bulk actions for this org_id
-            if actions:
-                print(f"Processing {len(actions)} actions for org_id {org_id}...")
-                success, failed = bulk(es, actions)
-                print(f"Successfully processed {success} actions.")
-                if failed:
-                    print("\nSome actions failed:", failed)
+                    # Print summary for each org_id in the file
+                    print(f"Summary for org_id {org_id}:")
+                    print(f"  - Added: {added_count}")
+                    print(f"  - Updated: {updated_count}")
+                    print(f"  - Deleted: {deleted_count}")
+                    summary = (f"🛢️ {org_id} - Added: {added_count}, Updated: {updated_count}, Deleted: {deleted_count}")
+                    all_summaries.append(summary)
 
-            # Print summary for each org_id in the file
-            print(f"Summary for org_id {org_id}:")
-            print(f"  - Added: {added_count}")
-            print(f"  - Updated: {updated_count}")
-            print(f"  - Deleted: {deleted_count}")
+                except Exception as e:
+                    print(f"Error processing org_id {org_id} in file {file_name}: {e}")
+                    all_summaries.append(f"🛢️ {org_id} - Failed: {e}")
+                    continue  # Skip to the next org_id
 
-            summary = (f"🛢️ {org_id} - Added: {added_count}, Updated: {updated_count}, Deleted: {deleted_count}")
-            all_summaries.append(summary)
+        except Exception as e:
+            print(f"Error processing file {file_path}: {e}")
+            all_summaries.append(f"-- {file_path} - Failed: {e}")
+            continue  # Skip to the next file
 
     # Save the changes log to a JSON file
     if log_changes and changes_log:
