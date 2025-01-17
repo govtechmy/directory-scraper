@@ -162,7 +162,7 @@ def check_sha_and_update(data_folder):
         for file_name in os.listdir(data_folder):
             file_path = os.path.join(data_folder, file_name)
             if file_name.endswith(".json") and check_and_update_file_sha(file_path):
-                print(f'Status file | {file_name}: CHANGES DETECTED')
+                # print(f'Status file | {file_name}: CHANGES DETECTED')
                 changed_files.append(file_path)
 
     elif isinstance(data_folder, (list,)):
@@ -200,13 +200,22 @@ def upload_clean_data_to_es(files_to_upload, log_changes=True):
         },
         "changes": {}
     } if log_changes else None
-
+         
     for file_path in files_to_upload:
-        if isinstance(files_to_upload, (str,)):
+        if isinstance(file_path, str):
             file_name = os.path.basename(file_path)
-            
-            with open(file_path, 'r') as f:
-                new_data = json.load(f)
+            try:
+                with open(file_path, 'r') as f:
+                    new_data = json.load(f)
+            except json.JSONDecodeError as e:
+                print(f"Invalid JSON in file {file_path}: {e}")
+                continue  # Skip to the next file
+            except FileNotFoundError as e:
+                print(f"File not found: {file_path}: {e}")
+                continue
+            except Exception as e:
+                print(f"Error reading file {file_path}: {e}")
+                continue
 
         elif isinstance(files_to_upload, (dict,)):
             file_name = file_path.get("file_name", None)
@@ -368,7 +377,7 @@ def main(data_folder=None):
     """
     if isinstance(data_folder, (str,)):
         data_folder = data_folder or DATA_FOLDER
-
+        
     if not get_elasticsearch_info():
         print("Skipping indexing due to Elasticsearch connection issues.")
         if DISCORD_WEBHOOK_URL:
@@ -376,7 +385,7 @@ def main(data_folder=None):
         else:
             print("Discord webhook URL not provided. Skipping notifications.") 
         return
-        
+
     if create_index_if_not_exists() and create_logs_if_not_exists():
         changed_files = check_sha_and_update(data_folder)
         if changed_files:
