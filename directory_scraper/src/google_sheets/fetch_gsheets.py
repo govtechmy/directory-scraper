@@ -34,7 +34,7 @@ def exponential_backoff(retries):
     """
     return min(60, (2 ** retries) + random.random())
 
-def fetch_and_store_gsheet(sheet_id, file_name, output_folder, max_retries=5):
+def fetch_and_store_gsheet(sheet_id, sheet_name, file_name, output_folder, max_retries=5):
     """
     Fetch data from Google Sheets and store it as a JSON file.
     """
@@ -44,9 +44,18 @@ def fetch_and_store_gsheet(sheet_id, file_name, output_folder, max_retries=5):
             # Initialize Google Sheet Manager
             sheet_manager = GoogleSheetManager(CREDS_FILE, sheet_id, SCOPES)
 
-            # Fetch all data
-            data = sheet_manager.get_all_data()
+            # Switch to the specified sheet
+            if sheet_name:
+                sheet_manager.switch_to_sheet(sheet_name)
 
+            # Fetch all data (current active sheet)
+            data = sheet_manager.get_all_data()
+            
+            # Check if the data is empty
+            if not data or len(data) < 2:  # means no header or no data rows
+                print(f"Empty {file_name} fetched")
+                return "empty", f"{file_name}: File fetched. But its an empty sheet!"
+            
             # Process column names and data rows
             column_names, data_without_header = data[0], data[1:]
             data_as_dict = [
@@ -75,7 +84,7 @@ def fetch_and_store_gsheet(sheet_id, file_name, output_folder, max_retries=5):
                 print(f"Error fetching or storing data for file_name={file_name}: {e}")
                 return "failed", f"{file_name}: Error ({e})"
 
-def main(ref_name=None, output_folder=None, backup_folder=None):
+def main(ref_name=None, sheet_name=None, output_folder=None, backup_folder=None):
     """
     Main function to fetch data for a specific ref_name from Google Sheets.
     If no parameters are passed, the global OUTPUT_FOLDER and BACKUP_FOLDER will be used.
@@ -84,8 +93,8 @@ def main(ref_name=None, output_folder=None, backup_folder=None):
     OUTPUT_FOLDER = output_folder or OUTPUT_FOLDER
     BACKUP_FOLDER = backup_folder or BACKUP_FOLDER
 
-    print(f"Using output folder: {OUTPUT_FOLDER}")
-    print(f"Using backup folder: {BACKUP_FOLDER}")
+    # print(f"Using output folder: {OUTPUT_FOLDER}")
+    # print(f"Using backup folder: {BACKUP_FOLDER}")
 
     spreadsheets_config = load_spreadsheets_config()
 
@@ -102,7 +111,7 @@ def main(ref_name=None, output_folder=None, backup_folder=None):
                 return
             sheet = matching_config[0]
             # print(f"Fetching {ref_name}...")
-            status, message = fetch_and_store_gsheet(sheet_id=sheet_id, file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
+            status, message = fetch_and_store_gsheet(sheet_name=sheet_name, sheet_id=sheet_id, file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
             (success_messages if status == "success" else failed_messages).append(message)
         except ValueError as e:
             print(f"Error: {e}")
@@ -114,7 +123,7 @@ def main(ref_name=None, output_folder=None, backup_folder=None):
             try:
                 sheet_id = get_gsheet_id(sheet["ref_name"])
                 # print(f"Fetching {sheet['ref_name']}...")
-                status, message = fetch_and_store_gsheet(sheet_id=sheet_id, file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
+                status, message = fetch_and_store_gsheet(sheet_name=sheet_name, sheet_id=sheet_id, file_name=sheet["data_file"], output_folder=OUTPUT_FOLDER)
                 (success_messages if status == "success" else failed_messages).append(message)
             except ValueError as e:
                 print(f"Error processing ref_name {sheet['ref_name']}: {e}")
@@ -125,7 +134,7 @@ def main(ref_name=None, output_folder=None, backup_folder=None):
     if success_messages:
         fetch_summary.append("✅ Successful Fetches:\n" + "\n".join(success_messages))
     if failed_messages:
-        fetch_summary.append("\n❌ Failed Fetches:\n" + "\n".join(failed_messages))
+        fetch_summary.append("❌ Failed Fetches:\n" + "\n".join(failed_messages))
     final_summary = "\n========= Gsheets Fetch Summary =========\n" + "\n".join(fetch_summary)
     print(final_summary)
     if DISCORD_WEBHOOK_URL:

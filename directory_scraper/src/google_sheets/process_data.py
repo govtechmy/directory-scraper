@@ -1,7 +1,14 @@
 import json
 from datetime import datetime
+import time
 from directory_scraper.src.google_sheets.google_sheets_utils import GoogleSheetManager
 import os
+from collections import defaultdict
+import random
+from directory_scraper.src.utils.discord_bot import send_discord_notification
+
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
 
 def validate_data(json_data):
     """
@@ -49,7 +56,29 @@ def add_timestamp_to_rows(rows, add_timestamp=True):
 #===========================================================================
 # Refactor load_data.py & update_data.py as a single file in process_data.py
 
-def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True, separate_grouped_data_by_sheet=False, group_key="division_name"):
+def retry_with_backoff(func, *args, retries=5, base_delay=2, manager=None, **kwargs):
+    """
+    Retry a function with exponential backoff, using the GoogleSheetManager's backoff logic.
+    """
+    delay = base_delay
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            if "429" in str(e):  # Quota exceeded error
+                # Use GoogleSheetManager's exponential_backoff if available
+                if manager and hasattr(manager, "exponential_backoff"):
+                    delay = manager.exponential_backoff(attempt)
+                else:
+                    delay = min(60, (2 ** attempt) + random.random())  # Fallback logic
+                
+                print(f"Quota exceeded, retrying in {delay:.2f} seconds... (Attempt {attempt + 1}/{retries})")
+                time.sleep(delay)
+            else:
+                raise
+    raise Exception("Max retries exceeded")
+    
+def load_data_into_sheet(google_sheets_manager, data, separate_grouped_data_by_sheet, add_timestamp=True, group_key="division_name"):
     """
     Load data into Google Sheets.
 
@@ -69,60 +98,67 @@ def load_data_into_sheet(google_sheets_manager, data, add_timestamp=True, separa
     header = list(data[0].keys())
     if add_timestamp:
         header.append('last_uploaded')
-    google_sheets_manager.append_rows([header])  # Append the header to the sheet
 
-    # Generate a single timestamp for all rows if needed
-    timestamp = None
-    if add_timestamp:
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    retry_with_backoff(google_sheets_manager.switch_to_sheet, "Keseluruhan Direktori")
+    retry_with_backoff(google_sheets_manager.clear_sheet)
+    retry_with_backoff(google_sheets_manager.append_rows, [header])
 
-    # Process each org_id group and insert the data in batches
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if add_timestamp else None
+
+    # Process and insert data into the main sheet
     for org_index, (org_id, group_data) in enumerate(grouped_data.items(), start=1):
         print(f"Loading org_id: {org_id} ({org_index}/{total_orgs})")
-        
-        # Convert group_data to rows
+        start_time = datetime.now()
         group_rows = [list(item.values()) for item in group_data]
-
-        # Add timestamp to each row if needed
         if add_timestamp:
             group_rows = [row + [timestamp] for row in group_rows]
-
-        # Insert the rows into Google Sheets
-        google_sheets_manager.append_rows(group_rows)
+        retry_with_backoff(google_sheets_manager.append_rows, group_rows)
         row_count_summary[org_id] = len(group_rows)
 
     print(f"Full data loaded into the main sheet.")
 
     if separate_grouped_data_by_sheet:
         print(f"\nSeparating data by '{group_key}' and loading into separate sheets...")
-        # Group the data by the specified key
-        grouped_by_key = {}
+        grouped_by_key = defaultdict(list)
         for row in data:
             key_value = row.get(group_key, "Unknown")
-            if key_value not in grouped_by_key:
-                grouped_by_key[key_value] = []
             grouped_by_key[key_value].append(row)
-        
+
         total_groups = len(grouped_by_key)
         print(f"Total groups found for {group_key}: {total_groups}")
 
         # Process each group and load them into separate sheets
         for index, (key_value, group_rows) in enumerate(grouped_by_key.items(), start=1):
             sheet_name = f"{key_value}"
-            print(f"\nUploading group '{key_value}' to sheet '{sheet_name}' ({index}/{total_groups})...")
-            
+            print(f"\nUploading group - {org_id}: '{key_value}' ({index}/{total_groups}) ...")
+
             try:
-                google_sheets_manager.switch_to_sheet(sheet_name)
-                google_sheets_manager.clear_sheet()
-                google_sheets_manager.append_rows([header])
-                
+                retry_with_backoff(google_sheets_manager.switch_to_sheet, sheet_name)
+                retry_with_backoff(google_sheets_manager.clear_sheet)
+                retry_with_backoff(google_sheets_manager.append_rows, [header])
+
                 # Convert group rows to values and append
                 rows_to_append = [list(row.values()) for row in group_rows]
                 if add_timestamp:
                     rows_to_append = [row + [timestamp] for row in rows_to_append]
                 google_sheets_manager.append_rows(rows_to_append)
             except Exception as e:
-                print(f"Error uploading group '{key_value}' to sheet '{sheet_name}': {e}")
+                if DISCORD_WEBHOOK_URL:
+                    send_discord_notification(f"\n❗ Error uploading group - {org_id} - '{key_value}']: {e}", DISCORD_WEBHOOK_URL, THREAD_ID)
+            
+                print(f"❗ Error uploading group '{key_value}' to sheet '{sheet_name}': {e}")
+
+            end_time = datetime.now()
+            duration = end_time - start_time
+
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"\n({index}/{total_groups}) {key_value} [Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
+
+        end_time = datetime.now()
+        duration = end_time - start_time
+
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"\nFinished: {org_id} [Total Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
 
     return row_count_summary
 

@@ -77,7 +77,8 @@ class GoogleSheetManager:
         except gspread.exceptions.WorksheetNotFound:
             self.worksheet = self.sheet.add_worksheet(title=sheet_name, rows="1000", cols="26")
             print(f"Created and switched to new sheet: {sheet_name}")
-
+    
+    @staticmethod
     def exponential_backoff(retries):
         """
         Implements exponential backoff for retrying API calls.
