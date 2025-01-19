@@ -55,6 +55,8 @@ def main():
             spiders_successful = True
     except Exception as e:
         print("Error encountered while running spiders:", e)
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"\n❗❗❗ Error encountered while running spiders: {e}", DISCORD_WEBHOOK_URL, THREAD_ID)
         return
 
     # Step 3: Process spiders output into clean data
@@ -106,9 +108,11 @@ def main():
 
         except Exception as e:
             print("Error uploading data to Google Sheets:", e)
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"\n❗❗❗ Error uploading data to Google Sheets: {e}", DISCORD_WEBHOOK_URL, THREAD_ID)
             return
-        
-        print("\n📗 Gsheets Summary (no.of rows inserted):")
+
+        print("\n📗 GOOGLE SHEETS SUMMARY (no.of rows inserted):")
         summary_messages = []
         for (ref_name, org_id), rows in row_summary.items():
             message = f"- {ref_name}: {rows} rows"
@@ -116,7 +120,7 @@ def main():
             summary_messages.append(message)
         final_summary_message = "\n".join(summary_messages)
         if DISCORD_WEBHOOK_URL:
-            send_discord_notification(f"\n======= Gsheets Summary (no.of rows inserted) ======= \n{final_summary_message}", DISCORD_WEBHOOK_URL, THREAD_ID)
+            send_discord_notification(f"\n📗 GOOGLE SHEETS SUMMARY (no.of rows inserted)\n{final_summary_message}", DISCORD_WEBHOOK_URL, THREAD_ID)
 
     print("\nFinished workflow.")
 

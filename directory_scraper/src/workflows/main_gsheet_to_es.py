@@ -41,7 +41,7 @@ def main():
     # Step 1: Fetch Google Sheets
     try:
         # Run fetch and proceed based on the presence of output files
-        fetch_gsheet_main(ref_name=ref_name, output_folder=RAW_OUTPUT_FOLDER, backup_folder=None)
+        fetch_gsheet_main(sheet_name="Keseluruhan Direktori", ref_name=ref_name, output_folder=RAW_OUTPUT_FOLDER, backup_folder=None)
 
         # Check if any files were generated in the output folder
         if not os.listdir(RAW_OUTPUT_FOLDER):

@@ -40,16 +40,20 @@ class GoogleSheetManager:
         self.creds_file = get_credentials()
         self.sheet_id = sheet_id
         self.scopes = scopes
-        self.worksheet = self.connect_to_sheet()
+        self.client = None
+        self.sheet = None
+        self.worksheet = None
+        self.connect_to_sheet()
+
 
     def connect_to_sheet(self):
         """
         Connects to Google Sheets using service account credentials.
         """
         creds = Credentials.from_service_account_file(self.creds_file, scopes=self.scopes)
-        client = gspread.authorize(creds)
-        sheet = client.open_by_key(self.sheet_id)
-        return sheet.sheet1  # Access the first sheet
+        self.client = gspread.authorize(creds)
+        self.sheet = self.client.open_by_key(self.sheet_id)
+        self.worksheet = self.sheet.sheet1  # Default to the first sheet
     
     def clear_sheet(self):
         """
@@ -61,7 +65,20 @@ class GoogleSheetManager:
         except gspread.exceptions.APIError as e:
             print(f"Error clearing Google Sheet: {e}")
             raise e
+
+    def switch_to_sheet(self, sheet_name):
+        """
+        Switch to a different sheet within the same Google Sheets file.
+        If the sheet does not exist, it creates a new one.
+        """
+        try:
+            self.worksheet = self.sheet.worksheet(sheet_name)
+            print(f"Switched to existing sheet: {sheet_name}")
+        except gspread.exceptions.WorksheetNotFound:
+            self.worksheet = self.sheet.add_worksheet(title=sheet_name, rows="1000", cols="26")
+            print(f"Created and switched to new sheet: {sheet_name}")
     
+    @staticmethod
     def exponential_backoff(retries):
         """
         Implements exponential backoff for retrying API calls.

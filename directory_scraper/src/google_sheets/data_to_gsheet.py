@@ -15,6 +15,10 @@ from directory_scraper.src.google_sheets.process_data import validate_data, grou
 from directory_scraper.src.utils.file_utils import load_spreadsheets_config
 from directory_scraper.path_config import DEFAULT_CLEAN_DATA_FOLDER
 from dotenv import load_dotenv
+from directory_scraper.src.utils.discord_bot import send_discord_notification
+
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') 
+THREAD_ID = os.getenv('THREAD_ID')
 
 load_dotenv()
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -41,8 +45,7 @@ def load_org_data(data_folder, data_file):
 def main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data):
     google_sheets_manager = GoogleSheetManager(GOOGLE_SERVICE_ACCOUNT_CREDS, sheet_id, SCOPES)
     if operation == "load":
-        google_sheets_manager.clear_sheet()
-        row_summary = load_data_into_sheet(google_sheets_manager, org_data, add_timestamp)
+        row_summary = load_data_into_sheet(google_sheets_manager, org_data, add_timestamp=True, separate_grouped_data_by_sheet=False, group_key="division_name")
     elif operation == "update":
         row_summary = update_data_in_sheet(google_sheets_manager, org_data, add_timestamp)
     else:
@@ -91,6 +94,8 @@ def process_specific_org(data_folder, ref_name, data_file, org_id, operation="up
             return 0
 
         print(f"\n 🟡 Processing: {ref_name} (org_id: {org_id})")
+        if DISCORD_WEBHOOK_URL:
+            send_discord_notification(f"\n 🟡 Processing upload to gsheet: {ref_name} (org_id: {org_id})", DISCORD_WEBHOOK_URL, THREAD_ID)
         rows_processed = main_process_org(data_folder, org_id, sheet_id, operation, add_timestamp, org_data)
         # print(f"✅ {org_id}: {rows_processed} rows inserted.")
         return rows_processed
