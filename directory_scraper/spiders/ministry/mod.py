@@ -147,7 +147,7 @@ class MODSpider(scrapy.Spider):
 
     def extract_hierarchy(self, response):
         """Step 1: Parse the hierarchy from the main page."""
-        print("Starting to extract hierarchy...")
+        self.logger.debug("Starting to extract hierarchy...")
         options = response.css("select#elements_itemcategory-0 option")
         raw_entries = []
 
@@ -166,11 +166,11 @@ class MODSpider(scrapy.Spider):
         self.hierarchy = self.build_hierarchy(raw_entries)
         self.populate_mappings(self.hierarchy)
 
-        print(f"\nHIERARCHY EXTRACTED: \n{self.hierarchy}")
+        self.logger.debug(f"\nHIERARCHY EXTRACTED: \n{self.hierarchy}")
         self.logger.debug(f"Excluded links found: {self.excluded_links_found}")
-        print(f"\nLEVEL1 to LEVEL2: \n{self.level1_to_level2_map}")
-        print(f"\nLEVEL2 to LEVEL3: \n{self.level2_to_level3_map}")
-        print(f"\nLEVEL3 to LEVEL4: \n{self.level3_to_level4_map}")
+        self.logger.debug(f"\nLEVEL1 to LEVEL2: \n{self.level1_to_level2_map}")
+        self.logger.debug(f"\nLEVEL2 to LEVEL3: \n{self.level2_to_level3_map}")
+        self.logger.debug(f"\nLEVEL3 to LEVEL4: \n{self.level3_to_level4_map}")
 
         # Step 2: Go to the second URL for division links
         division_url = "https://direktori.mod.gov.my/index.php/mindef/"
@@ -247,7 +247,7 @@ class MODSpider(scrapy.Spider):
         """
         Extract division links from the second URL.
         """
-        print("Extracting division links...")
+        self.logger.debug("Extracting division links...")
         divisions = response.css("ul.zoo-category-warp6 li a")
         hierarchy = response.meta.get("hierarchy", {})
 
@@ -262,7 +262,7 @@ class MODSpider(scrapy.Spider):
             if not division_name:
                 self.logger.warning(f"Missing division name for URL: {division_url}")
 
-            print(f"Scraping division: {division_name} - ({division_url})")
+            self.logger.debug(f"Scraping division: {division_name} - ({division_url})")
             yield scrapy.Request(
                 url=division_url,
                 callback=self.extract_person_details,
@@ -354,7 +354,7 @@ class MODSpider(scrapy.Spider):
             sorted_items = self.sort_collected_data(self.global_collected_items)
             for item in sorted_items:
                 yield item
-            self.global_collected_items = []  # Clear collected items after yielding
+            self.global_collected_items = [] 
 
         # Handle pagination
         pagination_links = response.css("ul.uk-pagination li a::attr(href)").getall()
@@ -365,7 +365,7 @@ class MODSpider(scrapy.Spider):
             for link in pagination_links:
                 next_page_url = response.urljoin(link)
                 if next_page_url not in visited_pages:
-                    print(F"\nNEXT PAGE TO SCRAPE: {next_page_url}")
+                    self.logger.debug(F"\nNEXT PAGE TO SCRAPE: {next_page_url}")
                     yield scrapy.Request(
                         next_page_url,
                         callback=self.extract_person_details,
@@ -420,12 +420,12 @@ class MODSpider(scrapy.Spider):
         subdivision_level3 = None
         subdivision_level4 = None
 
-        print(f"\nStarting cleaning for: {subdivision_name_initial}")
+        self.logger.debug(f"\nStarting cleaning for: {subdivision_name_initial}")
 
         # Step 1: Remove division name from the raw subdivision name
         if division_name in subdivision_name:
             subdivision_name = subdivision_name.replace(division_name, "").strip(", ").strip()
-            print(f"Removed division name: {division_name} -> {subdivision_name}")
+            self.logger.debug(f"Removed division name: {division_name} -> {subdivision_name}")
 
         # Restriction to only map by division
         current_level2_to_level3_map = {
@@ -440,7 +440,7 @@ class MODSpider(scrapy.Spider):
                     if level2_name in subdivision_name:
                         subdivision_level2 = level2_key
                         subdivision_name = subdivision_name.replace(level2_name, "").strip(", ").strip()
-                        print(f"Identified level2: {subdivision_level2}")
+                        self.logger.debug(f"Identified level2: {subdivision_level2}")
                         break
 
         # Step 3: Determine `subdivision_level3` (LEVEL3) based on `LEVEL2` using keys
@@ -450,7 +450,7 @@ class MODSpider(scrapy.Spider):
                 if level3_name in subdivision_name:
                     subdivision_level3 = level3_key
                     subdivision_name = subdivision_name.replace(level3_name, "").strip(", ").strip()
-                    print(f"Identified level3: {subdivision_level3}")
+                    self.logger.debug(f"Identified level3: {subdivision_level3}")
                     break
         else:
             # Step 4: Handle missing LEVEL2 when LEVEL3 is identified. 
@@ -462,8 +462,8 @@ class MODSpider(scrapy.Spider):
                         subdivision_level3 = level3_key
                         subdivision_name = subdivision_name.replace(level3_name, "").strip(", ").strip()
                         subdivision_level2 = level2_key
-                        print(f"Identified level3 (without level2): {subdivision_level3}")
-                        print(f"Resolved missing level2: '{subdivision_level2}''")
+                        self.logger.debug(f"Identified level3 (without level2): {subdivision_level3}")
+                        self.logger.debug(f"Resolved missing level2: '{subdivision_level2}''")
                         break
                 if subdivision_level3:
                     break
@@ -476,7 +476,7 @@ class MODSpider(scrapy.Spider):
                     normalized_subdivision_name = re.sub(r"[^\w\s]", "", subdivision_name).lower().strip()
 
                     if normalized_level3 in normalized_subdivision_name:
-                        print(f"Fallback level3 match found: '{level3_key}' in '{subdivision_name}'")
+                        self.logger.debug(f"Fallback level3 match found: '{level3_key}' in '{subdivision_name}'")
                         subdivision_name = subdivision_name.replace(level3_key.split("::")[-1], "").strip(", ").strip()
                         subdivision_level3 = level3_key
                         break
@@ -495,7 +495,7 @@ class MODSpider(scrapy.Spider):
                 if level4_name in subdivision_name:
                     subdivision_level4 = level4_key
                     subdivision_name = subdivision_name.replace(level4_name, "").strip(", ").strip()
-                    print(f"Identified level4: {subdivision_level4}")
+                    self.logger.debug(f"Identified level4: {subdivision_level4}")
                     break
         else:
             # Step 7: Handle missing LEVEL3 when LEVEL4 is identified
@@ -507,8 +507,8 @@ class MODSpider(scrapy.Spider):
                         subdivision_level4 = level4_key
                         subdivision_name = subdivision_name.replace(level4_name, "").strip(", ").strip()
                         subdivision_level3 = level3_key
-                        print(f"Identified level4 (without level3): {subdivision_level4}")
-                        print(f"Resolved missing level3: '{subdivision_level3}'")
+                        self.logger.debug(f"Identified level4 (without level3): {subdivision_level4}")
+                        self.logger.debug(f"Resolved missing level3: '{subdivision_level3}'")
                         break
                 if subdivision_level4:
                     break
@@ -519,12 +519,12 @@ class MODSpider(scrapy.Spider):
             for level2_key, level3_list in current_level2_to_level3_map.items():
                 if subdivision_level3 in level3_list:
                     subdivision_level2 = level2_key
-                    print(f"Resolved missing level2: {subdivision_level2} for level3: {subdivision_level3}")
+                    self.logger.debug(f"Resolved missing level2: {subdivision_level2} for level3: {subdivision_level3}")
                     break
 
         # Step 9: Handle redundant names
         if subdivision_name and subdivision_level3 and subdivision_name in subdivision_level3.split("::")[-1]:
-            print(f"Redundant name found: '{subdivision_name}' matches '{subdivision_level3}'")
+            self.logger.debug(f"Redundant name found: '{subdivision_name}' matches '{subdivision_level3}'")
             subdivision_name = None
 
         # Step 10: Final hierarchy cleanup and formatting
@@ -537,7 +537,7 @@ class MODSpider(scrapy.Spider):
 
         subdivision_name_final = subdivision_name_final.strip() if subdivision_name_final.strip() else None
 
-        print(f"Final cleaned name: {subdivision_name_final}")
+        self.logger.debug(f"Final cleaned name: {subdivision_name_final}")
 
         return {
             "subdivision_level2": subdivision_level2,
