@@ -152,7 +152,6 @@ function createSpreadsheetChangeTrigger(spreadsheet) {
     console.log("Trigger mainSetup already exists");
   } else {
     ScriptApp.newTrigger("mainSetup")
-    .forSpreadsheet(spreadsheet)
     .timeBased()
     .everyDays(1)
     .atHour(1)
