@@ -12,7 +12,7 @@ class KPKMSpider(scrapy.Spider):
     person_sort_order = 0 #init
     division_sort_order = 0 #init
 
-    last_processed_division = None
+    processed_divisions = []
 
     def __init__(self, *args, **kwargs):
         super(KPKMSpider, self).__init__(*args, **kwargs)
@@ -29,7 +29,7 @@ class KPKMSpider(scrapy.Spider):
                     "playwright": True,
                     "playwright_include_page": True,
                     "playwright_page_methods": [
-                        PageMethod("wait_for_selector", 'div.person'),
+                        PageMethod("wait_for_selector", 'div.person', timeout=60000),
                     ],
                 },
             )
@@ -43,127 +43,136 @@ class KPKMSpider(scrapy.Spider):
         #process each heading group (division/unit section)
         heading_groups = response.xpath('//div[@class="heading-group"]')
         for group in heading_groups:
+            try:
             
-            division = None #init
-            unit = None #init
+                division = None #init
+                unit = None #init
 
-            #extract heading text
-            heading_text = group.xpath('.//h4[@class="heading"]/span/text()').get()
-            if heading_text:
-                heading_text = heading_text.strip()
-            else:
-                heading_text = None
+                #extract heading text
+                heading_text = group.xpath('.//h4[@class="heading"]/span/text()').get()
+                heading_text = heading_text.strip() if heading_text else None
 
-            #extract text inside <strong> tag
-            strong_text = group.xpath('.//div[@class="heading-text"]//strong/text()').get()
-            if strong_text:
-                strong_text = strong_text.strip()
-            else:
-                strong_text = None
 
-            #extract texts after <strong>, including the sibling divs
-            text_after_strong = []
+                #extract text inside <strong> tag
+                strong_text = group.xpath('.//div[@class="heading-text"]//strong/text()').get()
+                strong_text = strong_text.strip() if strong_text else None
 
-            #get the parent element of <strong>
-            strong_parent = group.xpath('.//div[@class="heading-text"]//strong/parent::*')[0]
-            #get texts from the same div after <strong>
-            texts_same_div = strong_parent.xpath('.//strong/following-sibling::text()').getall()
-            texts_same_div = [t.strip() for t in texts_same_div if t.strip()]
-            text_after_strong.extend(texts_same_div)
+                #extract texts after <strong>, including the sibling divs
+                text_after_strong = []
 
-            #get texts from sibling divs
-            following_divs = strong_parent.xpath('./following-sibling::div')
-            for div in following_divs:
-                texts = div.xpath('.//text()').getall()
-                texts = [t.strip() for t in texts if t.strip()]
-                text_after_strong.extend(texts)
+                #get the parent element of <strong>
+                strong_parent = group.xpath('.//div[@class="heading-text"]//strong/parent::*')
+                strong_parent = strong_parent[0] if strong_parent else None
+                if strong_parent:
+                    #get texts from the same div after <strong>
+                    texts_same_div = strong_parent.xpath('.//strong/following-sibling::text()').getall()
+                    texts_same_div = [t.strip() for t in texts_same_div if t.strip()]
+                    text_after_strong.extend(texts_same_div)
 
-            #filter out addresses and contact info
-            division_candidates = []
-            for text in text_after_strong:
-                if not re.search(r'(Aras|Wisma|No\.|Persiaran|Presint|Putrajaya|Telefon|Faks|Malaysia|\d{5})', text, re.IGNORECASE):
-                    division_candidates.append(text)
-
-            #determine division and unit if both exists, and if only one exists
-            if strong_text:
-                if division_candidates:
-                    unit = strong_text
-                    division = division_candidates[0]  #to use the first valid candidate
+                    #get texts from sibling divs
+                    following_divs = strong_parent.xpath('./following-sibling::div')
+                    for div in following_divs:
+                        texts = div.xpath('.//text()').getall()
+                        texts = [t.strip() for t in texts if t.strip()]
+                        text_after_strong.extend(texts)
                 else:
-                    if heading_text and strong_text == heading_text:
-                        division = strong_text
-                        unit = None
-                    else:
+                    print(f"No strong_parent found for group: {heading_text}")
+
+                #filter out addresses and contact info
+                division_candidates = []
+                for text in text_after_strong:
+                    if not re.search(r'(Aras|Wisma|No\.|Persiaran|Presint|Putrajaya|Telefon|Faks|Malaysia|\d{5})', text, re.IGNORECASE):
+                        division_candidates.append(text)
+
+                #determine division and unit if both exists, and if only one exists
+                if strong_text:
+                    if division_candidates:
                         unit = strong_text
+                        division = division_candidates[0]  #to use the first valid candidate
+                    else:
+                        if heading_text and strong_text == heading_text:
+                            division = strong_text
+                            unit = None
+                        else:
+                            unit = strong_text
+                            division = heading_text
+                else:
+                    if heading_text:
                         division = heading_text
-            else:
-                if heading_text:
-                    division = heading_text
-                    unit = None
+                        unit = None
+                
+                #extract person details within this heading group.
+                persons = self.get_persons_for_heading_group(group)
+                for person in persons:
+                    person_name = person.xpath('.//div[contains(@class, "fieldname")]/span/text()').get()
+                    person_position = person.xpath('.//div[contains(@class, "fieldposition")]/span/text()').get()
+                    person_phone = person.xpath('.//div[contains(@class, "fieldtel")]//span[@class="fieldvalue"]/text()').get()
 
-            if division != self.last_processed_division: #check if this is a new division
-                self.division_sort_order += 1 
-                self.last_processed_division = division
+                    email_element = person.xpath('.//div[contains(@class, "fieldemail")]//joomla-hidden-mail')
+                    person_email = self.extract_email(email_element)
 
-            #extract person details within this heading group.
-            persons = self.get_persons_for_heading_group(group)
-            for person in persons:
-                person_name = person.xpath('.//div[contains(@class, "fieldname")]/span/text()').get()
-                person_position = person.xpath('.//div[contains(@class, "fieldposition")]/span/text()').get()
-                person_phone = person.xpath('.//div[contains(@class, "fieldtel")]//span[@class="fieldvalue"]/text()').get()
+                    self.person_sort_order += 1
 
-                email_element = person.xpath('.//div[contains(@class, "fieldemail")]//joomla-hidden-mail')
-                person_email = self.extract_email(email_element)
+                    item = {
+                        'org_sort': 999,
+                        'org_id': "KPKM",
+                        'org_name': "KEMENTERIAN PERTANIAN DAN KETERJAMINAN MAKANAN",
+                        'org_type': 'ministry',
+                        # 'division_sort': None, # self.division_sort_order,
+                        'division_sort': self.division_sort_order,
+                        'position_sort_order': self.person_sort_order,
+                        'division_name': division if division else None,
+                        'subdivision_name': unit if unit else None,
+                        'person_name': person_name if person_name else None,
+                        'position_name': person_position if person_position else None,
+                        'person_phone': person_phone if person_phone else None,
+                        'person_email': person_email if person_email else None,
+                        'person_fax': None,
+                        'parent_org_id': None, #is the parent
+                        'ext_division_name': None  # Temporary field for processing
+                    }
 
-                self.person_sort_order += 1
+                    if division and " > " in division:
+                        parts = division.split(" > ", 1)
+                        item['division_name'] = parts[0].strip()
+                        item['ext_division_name'] = parts[1].strip()
+                    else:                        
+                        item['division_name'] = division if division else None
+                        item['ext_division_name'] = None
 
-                item = {
-                    'org_sort': 999,
-                    'org_id': "KPKM",
-                    'org_name': "KEMENTERIAN PERTANIAN DAN KETERJAMINAN MAKANAN",
-                    'org_type': 'ministry',
-                    'division_sort': self.division_sort_order,
-                    'position_sort_order': self.person_sort_order,
-                    'division_name': division if division else None,
-                    'subdivision_name': unit if unit else None,
-                    'person_name': person_name if person_name else None,
-                    'position_name': person_position if person_position else None,
-                    'person_phone': person_phone if person_phone else None,
-                    'person_email': person_email if person_email else None,
-                    'person_fax': None,
-                    'parent_org_id': None, #is the parent
-                    'ext_division_name': None  # Temporary field for processing
+    # #==========
+                    # Assign division_sort after cleaning division_name
+                    if item['division_name'] and item['division_name'] not in self.processed_divisions:
+                        self.division_sort_order += 1
+                        self.processed_divisions.append(item['division_name'])
+                        print(f"APPENDING DIVISION: {item['division_name']} : {self.division_sort_order}")
 
-                }
+                    item['division_sort'] = (self.division_sort_order if item['division_name'] in self.processed_divisions else None)
+    # #==========
 
-                if division and " > " in division:
-                    parts = division.split(" > ", 1)
-                    item['division_name'] = parts[0].strip()
-                    item['ext_division_name'] = parts[1].strip()
-                else:                        
-                    item['division_name'] = division if division else None
-                    item['ext_division_name'] = None
-
-                #if 'ext_division_name' exists, append it to 'unit_name'
-                if item['ext_division_name']:
-                    if item['subdivision_name']:
-                        if item['subdivision_name'] != item['ext_division_name']:
-                            item['subdivision_name'] = f"{item['ext_division_name']} > {item['subdivision_name']}"                            
+                    #if 'ext_division_name' exists, append it to 'unit_name'
+                    if item['ext_division_name']:
+                        if item['subdivision_name']:
+                            if item['subdivision_name'] != item['ext_division_name']:
+                                item['subdivision_name'] = f"{item['ext_division_name']} > {item['subdivision_name']}"                            
+                        else:
+                            item['subdivision_name'] = item['subdivision_name']
                     else:
                         item['subdivision_name'] = item['subdivision_name']
-                else:
-                    item['subdivision_name'] = item['subdivision_name']
 
-                # remove 'ext_division_name' from the item before yielding
-                item.pop('ext_division_name', None)
+                    # remove 'ext_division_name' from the item before yielding
+                    item.pop('ext_division_name', None)
 
-                # Check duplicates without person_sort_order and division_sort_order
-                item_tuple = (person_name, person_position, person_phone, person_email, division, unit)
-                if item_tuple not in self.seen_items:
-                    self.seen_items.add(item_tuple)
-                    self.item_count += 1
-                    #print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
-                    yield item
+                    # Check duplicates without person_sort_order and division_sort_order
+                    item_tuple = (person_name, person_position, person_phone, person_email, division, unit)
+                    if item_tuple not in self.seen_items:
+                        self.seen_items.add(item_tuple)
+                        self.item_count += 1
+                        #print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
+                        yield item
+
+            except Exception as e:
+                print(f"Error processing group: {e}")
 
         await page.close()
 
@@ -201,5 +210,3 @@ class KPKMSpider(scrapy.Spider):
         except Exception as e:
             print(f"Error decoding: {e}")
             return None
-
-#can use last_processed_division bcs the data is already sorted row by row
