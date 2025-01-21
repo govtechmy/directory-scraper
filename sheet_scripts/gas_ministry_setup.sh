@@ -21,7 +21,7 @@ echo "Creating folders: ${SHEET_NAMES[@]}"
 
 # Creating GAS directories and start specific clasp action for each project
 max_jobs=25
-poll_delay="0.1s"
+poll_delay="0.5s"
 
 declare -A pid_pro_map=() pid_log_map=() pid_type_map=()
 for name in "${SHEET_NAMES[@]}"; do # Loops over array, creates directory with the array names and copies main.js into the new directories
@@ -42,18 +42,18 @@ for name in "${SHEET_NAMES[@]}"; do # Loops over array, creates directory with t
     # If project exists, skip the creation step and push the changes to remote
     if [ -e '.clasp.json' ]; then
         echo "Pushing code to sheet: Directory Gov - ${name}"
-        clasp push -f  &> /dev/null & pid_lst+=( "$!" );
+        clasp push -f &> $logfile & pid_lst+=( "$!" );
         pid_type_map+=( "push" );
         pid_type_map["$!"]='push'
-        clasp push  &> /dev/null & pid_lst+=( "$!" );
+        clasp push &> $logfile & pid_lst+=( "$!" );
         pid_type_map+=( "push" )
         pid_type_map["$!"]='push'
     else
         # Runs clasp action and pipes the output to a temporary logfile
-        (clasp create --type sheets --title "Directory Gov - ${name}") &> "${logfile}" & pid_lst+=( "$!" ); pid_type_map+=( "create" )
+        (clasp create --type sheets --title "Directory Gov - ${name}") &> $logfile & pid_lst+=( "$!" ); pid_type_map+=( "create" )
         # Double push to forcefully update remote
-        clasp push -f & pid_lst+=( "$!" ); pid_type_map+=( "push" )
-        clasp push & pid_lst+=( "$!" ); pid_type_map+=( "push" )
+        clasp push -f &> $logfile & pid_lst+=( "$!" ); pid_type_map+=( "push" )
+        clasp push &> $logfile & pid_lst+=( "$!" ); pid_type_map+=( "push" )
 
     fi
 
@@ -77,9 +77,10 @@ while true; do
 
     # Echos out exit code of processes
     if (( ${result} == 0 )); then
-        echo -e "Clasp action for project '\e[1m${pid_pro_map[${pid}]}\e[0m' (action ${pid_type_map[${pid}]}) (pid ${pid}) (${jobs_done}/${jobs_total}): \e[1;32mSUCCESS\e[0m"
+        echo -e "Clasp action for project '\e[1m${pid_pro_map[${pid}]}\e[0m' (action: ${pid_type_map[${pid}]}) (pid ${pid}) (${jobs_done}/${jobs_total}): \e[1;32mSUCCESS\e[0m"
     else
-        echo -e "Clasp action for project '\e[1m${pid_pro_map[${pid}]}\e[0m' (action ${pid_type_map[${pid}]}) (pid ${pid}) (${jobs_done}/${jobs_total}): \e[1;31mFAILURE\e[0m"
+        echo -e "Clasp action for project '\e[1m${pid_pro_map[${pid}]}\e[0m' (action: ${pid_type_map[${pid}]}) (pid ${pid}) (${jobs_done}/${jobs_total}): \e[1;31mFAILURE\e[0m"
+        echo "${pid_log_map[${pid}]}"
         cat "${pid_log_map[${pid}]}"
     fi
 done
