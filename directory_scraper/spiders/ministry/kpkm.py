@@ -163,13 +163,14 @@ class KPKMSpider(scrapy.Spider):
                     # remove 'ext_division_name' from the item before yielding
                     item.pop('ext_division_name', None)
 
-                    # Check duplicates without person_sort_order and division_sort_order
-                    item_tuple = (person_name, person_position, person_phone, person_email, division, unit)
-                    if item_tuple not in self.seen_items:
-                        self.seen_items.add(item_tuple)
-                        self.item_count += 1
-                        #print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
-                        yield item
+                    if person_name: # only yield if the item has person_name
+                        # Check duplicates without person_sort_order and division_sort_order
+                        item_tuple = (person_name, person_position, person_phone, person_email, division, unit)
+                        if item_tuple not in self.seen_items:
+                            self.seen_items.add(item_tuple)
+                            self.item_count += 1
+                            #print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
+                            yield item
 
             except Exception as e:
                 print(f"Error processing group: {e}")
