@@ -141,13 +141,16 @@ class KPKMSpider(scrapy.Spider):
                         item['ext_division_name'] = None
 
     # #==========
+                    # Normalize and clean item['division_name']
+                    if item['division_name']:
+                        item['division_name'] = " ".join(item['division_name'].strip().upper().split())
+
                     # Assign division_sort after cleaning division_name
                     if item['division_name'] and item['division_name'] not in self.processed_divisions:
-                        self.division_sort_order += 1
                         self.processed_divisions.append(item['division_name'])
-                        print(f"APPENDING DIVISION: {item['division_name']} : {self.division_sort_order}")
 
-                    item['division_sort'] = (self.division_sort_order if item['division_name'] in self.processed_divisions else None)
+                    item['division_sort'] = (self.processed_divisions.index(item['division_name']) + 1 if item['division_name'] in self.processed_divisions else None)
+                    print(f"APPENDING DIVISION: {item['division_name']} : {item['division_sort']}")
     # #==========
 
                     #if 'ext_division_name' exists, append it to 'unit_name'
