@@ -7,7 +7,7 @@ class MitiSpider(scrapy.Spider):
 
     division_sort_order = 0
     person_sort_order = 0
-    seen_divisions = set()  #track unique divisions
+    seen_divisions = {}
 
     def start_requests(self):
         #1: switch language to BM
@@ -76,17 +76,24 @@ class MitiSpider(scrapy.Spider):
             if person_email:
                 person_email = person_email + '@miti.gov.my'
 
-            #check if division is new, and increment division_sort_order accordingly
-            if division and division not in self.seen_divisions:
-                self.division_sort_order += 1  #increment division sort order for new unique division
-                self.seen_divisions.add(division)  #add the division to the set of seen divisions
+            if division:
+                # Normalize and clean division name
+                division = " ".join(division.strip().upper().split())
+
+                if division not in self.seen_divisions:
+                    self.division_sort_order += 1
+                    self.seen_divisions[division] = self.division_sort_order  # Map division_name to division_sort
+
+                division_sort = self.seen_divisions[division]
+            else:
+                division_sort = None
 
             yield {
                 'org_sort': 999,
                 'org_id': "MITI",
                 'org_name': "KEMENTERIAN PELABURAN, PERDAGANGAN DAN INDUSTRI MALAYSIA",
                 'org_type': 'ministry',
-                'division_sort': self.division_sort_order,
+                'division_sort': division_sort,
                 'position_sort_order': self.person_sort_order,
                 'division_name': division if division else None,
                 'subdivision_name': section if section else None,
@@ -105,5 +112,3 @@ class MitiSpider(scrapy.Spider):
         if index < len(details):
             return details[index].css('td.data-label::text').get(default='').strip()
         return None
-
-#language EN/BM
