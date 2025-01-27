@@ -3,7 +3,7 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 
 class KPTSpider(CrawlSpider):
-    name = "kpt_v2"
+    name = "kpt"
     allowed_domains = ["app.mohe.gov.my"]
     start_urls=[
         "https://app.mohe.gov.my/direktori/menteri/KPT",
