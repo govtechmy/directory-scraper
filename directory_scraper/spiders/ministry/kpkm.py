@@ -21,7 +21,7 @@ class KPKMSpider(scrapy.Spider):
 
     def start_requests(self):
         for url in self.start_urls:
-            #print(f"Starting scrape from: {url}")
+            #self.logger.debug(f"Starting scrape from: {url}")
             yield scrapy.Request(
                 url=url,
                 callback=self.parse_page,
@@ -38,7 +38,7 @@ class KPKMSpider(scrapy.Spider):
         page = response.meta["playwright_page"]
         await page.wait_for_selector('div.person')
 
-        #print(f"\nProcessing URL: {response.url}")
+        #self.logger.debug(f"\nProcessing URL: {response.url}")
 
         #process each heading group (division/unit section)
         heading_groups = response.xpath('//div[@class="heading-group"]')
@@ -76,7 +76,7 @@ class KPKMSpider(scrapy.Spider):
                         texts = [t.strip() for t in texts if t.strip()]
                         text_after_strong.extend(texts)
                 else:
-                    print(f"No strong_parent found for group: {heading_text}")
+                    self.logger.debug(f"No strong_parent found for group: {heading_text}")
 
                 #filter out addresses and contact info
                 division_candidates = []
@@ -150,7 +150,7 @@ class KPKMSpider(scrapy.Spider):
                         self.processed_divisions.append(item['division_name'])
 
                     item['division_sort'] = (self.processed_divisions.index(item['division_name']) + 1 if item['division_name'] in self.processed_divisions else None)
-                    print(f"APPENDING DIVISION: {item['division_name']} : {item['division_sort']}")
+                    self.logger.debug(f"APPENDING DIVISION: {item['division_name']} : {item['division_sort']}")
     # #==========
 
                     #if 'ext_division_name' exists, append it to 'unit_name'
@@ -172,11 +172,11 @@ class KPKMSpider(scrapy.Spider):
                         if item_tuple not in self.seen_items:
                             self.seen_items.add(item_tuple)
                             self.item_count += 1
-                            #print(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
+                            #self.logger.debug(f"Scraped item {self.item_count}: {person_name} - {person_position} - Division: {division} - Unit: {unit}")
                             yield item
 
             except Exception as e:
-                print(f"Error processing group: {e}")
+                self.logger.warning(f"Error processing group: {e}")
 
         await page.close()
 
@@ -206,11 +206,10 @@ class KPKMSpider(scrapy.Spider):
         else:
             return None
 
-    @staticmethod
-    def b64_decode_unicode(encoded_str):
+    def b64_decode_unicode(self, encoded_str):
         try:
             decoded = base64.b64decode(encoded_str).decode('utf-8')
             return decoded
         except Exception as e:
-            print(f"Error decoding: {e}")
+            self.logger.warning(f"Error decoding: {e}")
             return None
