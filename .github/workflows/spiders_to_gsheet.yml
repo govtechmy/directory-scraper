@@ -2,7 +2,7 @@ name: Run Spider & Load to Google Sheets
 
 on:
   push:
-    branches: [ "feat/GHA-main_spiders_to_gsheet.py" ]
+#    branches: [ "main" ]
 #   schedule:
 #     - cron: '0 0 * * *'
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
 
     env:
       TZ: Asia/Kuala_Lumpur
@@ -56,7 +56,7 @@ jobs:
           THREAD_ID: ${{ secrets.THREAD_ID }}
           GSHEET_ID_MAPPING: ${{ secrets.GSHEET_ID_MAPPING }} 
           GOOGLE_SERVICE_ACCOUNT_CREDS: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDS }} 
-        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders_to_gsheet.py digital # timeout (seconds)
+        run: timeout 1000 python $DIRECTORY_SRC/workflows/main_spiders_to_gsheet.py ministry # timeout (seconds)
         continue-on-error: true
 
       # - name: Upload spider output as artifact
@@ -81,18 +81,18 @@ jobs:
           path: ${{ github.workspace}}/logs/run_spiders.log
           retention-days: 5
 
-    #   - name: Upload custom run_spiders.log as an artifact
-    #     if: always() # Always run this step
-    #     uses: actions/upload-artifact@v4
-    #     with:
-    #       name: custom_run_spiders-log
-    #       path: ${{ github.workspace}}/logs/run_spiders_custom.log
-    #       retention-days: 5
+      # - name: Upload custom run_spiders.log as an artifact
+      #   if: always() # Always run this step
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: custom_run_spiders-log
+      #     path: ${{ github.workspace}}/logs/run_spiders_custom.log
+      #     retention-days: 5
 
-      - name: Archive es_changes_log.json
-        if: success() # Run if all previous steps succeeded
-        uses: actions/upload-artifact@v4
-        with:
-          name: es-changes-log
-          path: ${{ github.workspace }}/es_changes_log.json
-          retention-days: 5
+      # - name: Archive es_changes_log.json
+      #   if: success() # Run if all previous steps succeeded
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: es-changes-log
+      #     path: ${{ github.workspace }}/es_changes_log.json
+      #     retention-days: 5
