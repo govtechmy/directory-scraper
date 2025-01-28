@@ -1,143 +1,108 @@
 import scrapy
 import json
-from scrapy_playwright.page import PageMethod
-import logging
 
-class RURALLINK_PKDSpider(scrapy.Spider):
-    name = "rurallink_pkd"
-    
-    seen_divisions = {} #init
-    division_sort_counter = 1000000  #init (start w/ 1)
-    person_sort_order = 0 #init global
+class RuralLinkPKDSpider(scrapy.Spider):
+    name = 'rurallink_pkd'
+    start_urls = ['https://direktori.rurallink.gov.my/pkd']
+    position_sort = 0
+    division_sort_map = {}
+    current_division_sort = 100000
 
     def start_requests(self):
-        url = 'https://www.rurallink.gov.my/direktori-pkd/'
-        yield scrapy.Request(
-            url, 
-            callback=self.parse, 
-            meta={
-                "playwright": True, 
-                "playwright_include_page": True,
-                "playwright_page_methods": [
-                    PageMethod("wait_for_selector", "table"),
-                ],
-                "errback": self.errback_httpbin,
-            }
-        )
+        url = "https://direktori.rurallink.gov.my/pkd"
+        params = {
+            "nama": "",
+            "negeri": "",
+            "pkd": "",
+            "q": "/pkd",
+            "draw": 1,
+            "columns[0][data]": "DT_RowIndex",
+            "columns[0][searchable]": "false",
+            "columns[0][orderable]": "false",
+            "columns[1][data]": "gambar",
+            "columns[1][orderable]": "false",
+            "columns[2][data]": "negeri",
+            "columns[2][orderable]": "false",
+            "columns[3][data]": "nama",
+            "columns[3][orderable]": "false",
+            "columns[4][data]": "jawatan",
+            "columns[4][orderable]": "false",
+            "columns[5][data]": "daerah",
+            "columns[5][orderable]": "false",
+            "columns[6][data]": "no_tel_pkd",
+            "columns[6][orderable]": "false",
+            "columns[7][data]": "no_tel",
+            "columns[7][orderable]": "false",
+            "columns[8][data]": "email",
+            "columns[8][orderable]": "false",
+            "order[0][column]": 0,
+            "order[0][dir]": "asc",
+            "start": 0,
+            "length": 300,
+            "search[value]": "",
+            "_": "1738032006762",
+        }
 
-    async def parse(self, response):
-        page = response.meta["playwright_page"]
-        
+        headers = {
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://direktori.rurallink.gov.my/pkd?negeri=&nama=&pkd=",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/131.0.0.0",
+        }
+
+        params = {key: str(value) for key, value in params.items()}
+
+        yield scrapy.FormRequest(url=url, method="GET", formdata=params, headers=headers, callback=self.parse)
+
+    def parse(self, response):
         try:
-            #get total number of records
-            total_records = await page.evaluate(r'''
-                () => {
-                    const info = document.querySelector('.dataTables_info');
-                    if (info) {
-                        const match = info.textContent.match(/of (\d+) entries/);
-                        return match ? parseInt(match[1]) : 0;
-                    }
-                    return 0;
+            data = json.loads(response.text)
+            for item in data.get("data", []):
+                self.position_sort += 1
+
+                division_name = item.get("negeri")
+                if division_name not in self.division_sort_map:
+                    self.current_division_sort += 1
+                    self.division_sort_map[division_name] = self.current_division_sort
+
+                division_sort = self.division_sort_map[division_name]
+
+                if division_name:
+                    final_division_name = f"PUSAT KOMUNITI DESA {division_name}"
+                else: 
+                    final_division_name = "PUSAT KOMUNITI DESA"
+
+                person_email_prefix = item.get("email")
+                if person_email_prefix and person_email_prefix != "-":
+                    person_email_prefix = (person_email_prefix
+                        .replace("[@]", "@")
+                        .replace("[at]", "@")
+                        .replace("[dot]", ".")
+                        .replace("[.]", "."))
+                    if "@" in person_email_prefix:
+                        person_email = person_email_prefix
+                    else:
+                        person_email = f"{person_email_prefix}@rurallink.gov.my" 
+                else:
+                    person_email = None
+
+                yield {
+                    'org_sort': 999,
+                    'org_id': "RURALLINK",
+                    'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
+                    'org_type': 'ministry',
+                    'division_name': final_division_name,
+                    'division_sort': division_sort,
+                    'subdivision_name': item.get("daerah"),
+                    'person_name': item.get("nama"),
+                    'position_name': item.get("jawatan"),
+                    'person_phone': item.get("no_tel"),
+                    'person_email': person_email,
+                    'person_fax': None,
+                    'position_sort': self.position_sort,
+                    "parent_org_id": None,
                 }
-            ''')
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Failed to parse JSON response: {e}")
 
-            #calculate number of pages (assume 10 records per page as of that website)
-            num_pages = -(-total_records // 10)
 
-            wdt_nonce = await page.evaluate('''
-                    () => document.querySelector('input[name="wdtNonceFrontendServerSide_106"]').value
-                    ''')
-
-            for page_num in range(num_pages):
-                ajax_url = 'https://www.rurallink.gov.my/wp-admin/admin-ajax.php?action=get_wdtable&table_id=106'
-                
-                payload = {
-                    "draw": page_num + 1,
-                    "columns": [
-                        {"data": i, "name": col_name, "searchable": "true", "orderable": "true", "search": {"value": "", "regex": "false"}}
-                        for i, col_name in enumerate(["bil", "wdt_ID", "negeri", "gambarpengurus", "namapengurus", "jawatan", "pkd", "notelefon", "notelefonpejabat", "emel"])
-                    ],
-                    "order": [{"column": 0, "dir": "asc"}],
-                    "start": page_num * 10,
-                    "length": 10,
-                    "search": {"value": "", "regex": "false"},
-                    "wdtNonce": wdt_nonce,
-                    "sRangeSeparator": "|"
-                }
-
-                ajax_response = await page.evaluate(f'''
-                    async () => {{
-                        const response = await fetch('{ajax_url}', {{
-                            method: 'POST',
-                            headers: {{
-                                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }},
-                            body: new URLSearchParams({json.dumps(payload)}).toString()
-                        }});
-                        return await response.json();
-                    }}
-                ''')
-
-                if not ajax_response or not ajax_response.get('data'):
-                    self.logger.warning(f"No data returned for page {page_num + 1}")
-                    break
-
-                for item in self.parse_ajax_data(ajax_response['data']):
-                    yield item
-
-        except Exception as e:
-            self.logger.error(f"Error in parse method: {str(e)}")
-
-        finally:
-            await page.close()
-
-    def parse_ajax_data(self, data):
-        for row in data:
-            division_name = row[2]
-            
-            # Check if this is a new division
-            if division_name not in self.seen_divisions:
-                self.seen_divisions[division_name] = self.division_sort_counter
-                division_sort_order = self.division_sort_counter
-                self.division_sort_counter += 1
-            else:
-                division_sort_order = self.seen_divisions[division_name]
-
-            self.person_sort_order += 1
-
-            yield {
-                'org_sort': 999,
-                'org_id': "RURALLINK",
-                'org_name': 'KEMENTERIAN KEMAJUAN DESA DAN WILAYAH',
-                'org_type': 'ministry',
-                'division_sort': division_sort_order,
-                'position_sort_order': self.person_sort_order,
-                #'no': row[0],
-                #'wdt_ID': row[1],
-                'division_name': f"Pusat Komuniti Desa {row[2]}" if row[2] else f"Pusat Komuniti Desa",
-                'subdivision_name': row[6] if row[6] else None, 
-                #'photo': self.extract_image_url(row[3]),
-                'person_name': row[4] if row[4] else None,
-                'position_name': row[5] if row[5] else None,
-                #'personal_phone': row[7] if row[7] else None,
-                'person_phone': row[8] if row[8] else None,
-                'person_email': self.extract_email(row[9]) if row[9] else None,
-                'person_fax': None,
-                'parent_org_id': None, 
-            }
-
-    def extract_image_url(self, html_string):
-        import re
-        match = re.search(r'src=[\'"]?([^\'" >]+)', html_string)
-        return match.group(1) if match else None
-
-    def extract_email(self, html_string):
-        import re
-        match = re.search(r'mailto:([^\'"]+)', html_string)
-        return match.group(1) if match else None
-
-    async def errback_httpbin(self, failure):
-        page = failure.request.meta["playwright_page"]
-        await page.close()
-        self.logger.error(f"Error occurred: {failure.value}")

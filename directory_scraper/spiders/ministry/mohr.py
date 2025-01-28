@@ -1,100 +1,100 @@
-from typing import Iterable
+import re
 import scrapy
-from scrapy_playwright.page import PageMethod
 
-class MOHRScraper(scrapy.Spider):
+class MOHRSpider(scrapy.Spider):
     name = "mohr"
-    
-    custom_settings = {
-        "COOKIES_ENABLED": True,
-        "DOWNLOAD_DELAY": 5
-    }
 
-    start_urls = ["https://app1.mohr.gov.my/staff/staff_name.php?department="]
     none_handler = lambda self, condition: result.strip() if (result := condition) else None
     email_handler = lambda self, condition: f"{result}@mohr.gov.my" if (result := condition) else None
 
-    
-    division_mapping = {
-        "00010": "PEJABAT MENTERI ",
-        "00020": "PEJABAT TIMBALAN MENTERI ",
-        "00030": "PEJABAT KETUA SETIAUSAHA ",
-        "00040": "PEJABAT TIMBALAN KETUA SETIAUSAHA (DASAR DAN ANTARABANGSA) ",
-        "00041": "BAHAGIAN DASAR ",
-        "00041-A": "CAWANGAN DASAR SUMBER MANUSIA ",
-        "00041-B": "CAWANGAN DASAR PERBURUHAN ",
-        "00041-C": "CAWANGAN PERANCANGAN STRATEGIK, PARLIMEN DAN KABINET ",
-        "00042": "ILMIA (INSTITUTE OF LABOUR MARKET INFORMATION AND ANALYSIS) ",
-        "00043": "BAHAGIAN ANTARABANGSA ",
-        "00044": "MAJLIS PERUNDINGAN GAJI NEGARA ",
-        "00045": "BAHAGIAN PENGURUSAN PEKERJA ASING ",
-        "00050": "PEJABAT TIMBALAN KETUA SETIAUSAHA (OPERASI) ",
-        "00051": "BAHAGIAN PEMBANGUNAN, KEWANGAN & SUMBER MANUSIA ",
-        "00051-A": "CAWANGAN PENGURUSAN SUMBER MANUSIA ",
-        "00051-B": "CAWANGAN PEMBANGUNAN DAN KEWANGAN ",
-        "00052": "BAHAGIAN KHIDMAT PENGURUSAN ",
-        "00053": "BAHAGIAN AKAUN ",
-        "00054": "BAHAGIAN PENGURUSAN MAKLUMAT ",
-        "00055": "CAWANGAN KAWALSELIA DAN PENGUATKUASAAN ",
-        "00060": "BAHAGIAN UNDANG-UNDANG ",
-        "00070": "UNIT AUDIT DALAM ",
-        "00080": "UNIT KOMUNIKASI KORPORAT ",
-        "00100": "UNIT INTEGRITI ",
-        "00110": "UNIT KOORDINASI PENDIDIKAN DAN LATIHAN TEKNIKAL DAN VOKASIONAL (TVET) ",
-        "10000": "JABATAN TENAGA KERJA SEMENANJUNG ",
-        "20000": "JABATAN TENAGA KERJA SABAH ",
-        "30000": "JABATAN TENAGA KERJA SARAWAK ",
-        "40000": "JABATAN HAL EHWAL KESATUAN SEKERJA ",
-        "50000": "JABATAN PERHUBUNGAN PERUSAHAAN ",
-        "60000": "JABATAN PEMBANGUNAN KEMAHIRAN ",
-        "70000": "MAHKAMAH PERUSAHAAN ",
-        "80000": "JABATAN KESELAMATAN DAN KESIHATAN PEKERJAAN ",
-        "90000": "JABATAN TENAGA MANUSIA "
-    }
-    
     def start_requests(self):
-        for division_sort, (code, name) in enumerate(self.division_mapping.items()):
+        main_url = "https://app1.mohr.gov.my/staff/staff_name.php?"
+        print("\n", "#"*30, "STARTING REQUESTS\n\n", main_url, "#"*30, "\n", sep="\n")
+        yield scrapy.Request(
+            url=main_url,
+            callback=self.extract_divisions
+        )
+
+    def extract_divisions(self, response):
+        print("\n", "#"*30, "EXTRACTING DIVISIONS\n\n", response.url, "#"*30, "\n", sep="\n")
+        division_options = {
+            row.css("::text").get().upper().strip(): row.attrib.get("value", None)
+            for row in response.css("select[id='jabatan'] option")
+            if row.attrib.get("value")
+        }
+
+        yield scrapy.Request(
+            url="https://myapp.mohr.gov.my/smp-master/",
+            callback=self.extract_hierarchy,
+            meta={"division_options": division_options}
+        )
+
+    def extract_hierarchy(self, response):
+        division_options = response.meta["division_options"]
+        hierarchy = dict()
+        division_lst = []
+        temp_division = None
+        for row in response.css("a"):
+            row_txt = None
+            if clean_txt := [txt.strip() for txt in row.css("*::text").getall() if txt.strip()]:
+                row_txt = re.sub(pattern=r"> |(?<=\() | (?=\))", repl="", string=clean_txt[0], flags=re.IGNORECASE).upper()
+
+            if row_txt and "division/" in row.css("::attr(href)").get():
+                # Appending division urls from main directory page
+                division_lst.append(row_txt.upper())
+                
+                # Getting divisional parents for units
+                if "CAWANGAN" not in row_txt:
+                    temp_division = row_txt
+                else:
+                    hierarchy[row_txt] = temp_division
+
+        print("\n", "#"*30, "EXTRACTING HIERARCHY\n\n", hierarchy, "\n\nMAPPING DIVISION LIST\n\n", division_lst, "#"*30, "\n", sep="\n")
+        
+        # Matching Directory Division name with URL value
+        for division_sort, name in enumerate(division_lst):
+            max_match = {"name": None, "length": 0}
+            for key in division_options.keys():
+                key_set = {elem for elem in key.split() if elem}
+                name_set = {elem for elem in name.split() if elem}
+                match_len = len(key_set.intersection(name_set))
+                
+                if match_len > max_match["length"]:
+                    max_match["name"] = key
+                    max_match["length"] = match_len
+            
+            division_url = f"https://app1.mohr.gov.my/staff/staff_name.php?department={max_match['name']}"
+            meta_dict = {"division_sort": division_sort, "division_name": name, "hierarchy": hierarchy}
+            print("\n", "#"*30, "PASSING DIVISION URL\n", division_url, "\n\nPASSING META DICTIONARY\n", meta_dict, "#"*30, "\n", sep="\n")
             yield scrapy.Request(
-                    url=f"https://app1.mohr.gov.my/staff/staff_name.php?department={code}",
-                    callback=self.parse,
-                    meta={
-                        "code": code,
-                        "name": name,
-                        "division_sort": division_sort
-                    }
-                )
-    
-    def parse(self, response):
-        code = response.meta["code"]
-        name = response.meta["name"]
+                url=division_url,
+                callback=self.parse_item,
+                meta=meta_dict
+            )
+
+    def parse_item(self, response):
+        hierarchy = response.meta["hierarchy"]
         division_sort = response.meta["division_sort"]
+        team_name = response.meta["division_name"]
+        division_name = hierarchy.get(team_name, team_name)
+        unit_name = team_name if division_name != team_name else None
+        print("\n", "#"*30, "PARSING DIVISION\n\n", division_name, "#"*30, "\n", sep="\n")
 
-        if code in ["00041-A", "00041-B", "00041-C"]:
-            current_division = "BAHAGIAN DASAR"
-            current_unit = name
-        elif code in ["00051-A", "00051-B", "00055"]:
-            current_division = "BAHAGIAN PEMBANGUNAN, KEWANGAN & SUMBER MANUSIA"
-            current_unit = name
-        else:
-            current_division = name
-            current_unit = None
-
-        for person_sort, row in enumerate(response.css("tbody > tr")):
+        for position_sort, row in enumerate(response.css("tbody > tr")):
             phone = self.none_handler(row.xpath("td[5]/text()").get())
-            person_data = {
+            yield {
                 "org_sort": 29,
                 "org_id": "MOHR",
                 "org_name": "KEMENTERIAN SUMBER MANUSIA",
                 "org_type": "ministry",
-                "division_name": current_division,
-                "division_sort": division_sort+1,
-                "subdivision_name": current_unit,
-                "position_sort": person_sort+1,
+                "division_name":division_name,
+                "division_sort": division_sort,
+                "subdivision_name": unit_name,
+                "position_sort": position_sort+1,
                 "person_name": self.none_handler(row.xpath("td[1]/text()").get()),
                 "position_name": self.none_handler(row.xpath("td[2]/text()").get()),
                 "person_phone": phone if (phone and phone != "N/A") else None,
                 "person_email": self.email_handler(row.xpath("td[5]/a/text()").get()),
                 "person_fax": None,
-                "parent_org_id": None,
+                "parent_org_id": None
             }
-            yield(person_data)
