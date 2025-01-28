@@ -72,6 +72,8 @@ def main():
                 data_processing_successful = True
         except Exception as e:
             print("Data processing failed:", e)
+            if DISCORD_WEBHOOK_URL:
+                send_discord_notification(f"\n❗❗❗ Error encountered while data processing: {e}", DISCORD_WEBHOOK_URL, THREAD_ID)
             return
 
     # Step 4: Upload data to Google Sheets
