@@ -1,7 +1,7 @@
 name: Run Spider & Load to Google Sheets
 
 on:
-  push:
+#  push:
 #    branches: [ "main" ]
 #   schedule:
 #     - cron: '0 0 * * *'
