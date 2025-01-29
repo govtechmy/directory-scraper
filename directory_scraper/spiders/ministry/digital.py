@@ -66,12 +66,12 @@ class DIGITALSpider(scrapy.Spider):
                     current_division = division
                     if name:  # If it's a person (must have name value)
                         current_unit = None  # Reset the current unit when the division changes
-                    #print(f"Detected new division: {current_division}")
+                    #self.logger.debug(f"Detected new division: {current_division}")
 
                 # If name exists and all other fields are null, it's a unit
                 if name and not division and not position and not phone and not email:
                     current_unit = name  # Set this as the current unit
-                    #print(f"Detected unit: {current_unit}")
+                    #self.logger.debug(f"Detected unit: {current_unit}")
                     continue  # Skip to the next row, as this is a unit
 
                 self.person_sort_order += 1
@@ -98,10 +98,14 @@ class DIGITALSpider(scrapy.Spider):
 
             try:
                 # Check if the "Next" button is available and clickable
-                next_button = await page.query_selector('button[aria-label="Seterusnya"]:not([disabled])')
+                # Option 1: Use the CSS selector
+                next_button = await page.wait_for_selector('body > div > div.flex-1 > main > section:nth-child(2) > div > div > div > div.flex.items-center.justify-center.gap-2.pt-8 > nav > ul > li:nth-child(10) > button:not([disabled])', timeout=10000)
+
+                # Option 2: Use the XPath
+                # next_button = await page.wait_for_selector('//html/body/div/div[2]/main/section[2]/div/div/div/div[3]/nav/ul/li[9]/button[not(@disabled)]', timeout=10000)
 
                 if next_button:
-                    #print(f"Clicking the 'Seterusnya' (Next) button to load page {page_count + 1}...")
+                    self.logger.debug(f"Clicking the 'Seterusnya' (Next) button to load page {page_count + 1}...")
                     await next_button.click()
                     await page.wait_for_selector('table')  # Wait for the next page's table to load
                     #await page.wait_for_timeout(2000)  # delay to ensure the table loads fully
@@ -113,11 +117,12 @@ class DIGITALSpider(scrapy.Spider):
                         request=response.request
                     )
                 else:
+                    self.logger.debug(f"Not found 'Seterusnya' (Next) button to load page")
                     break
 
             except PlaywrightTimeoutError:
                 # Handle case where clicking the next button fails due to visibility or timeout issues
-                #print(f"TimeoutError: Unable to click the 'Seterusnya' button on page {page_count}. Ending scraping.")
+                self.logger.debug(f"TimeoutError: Unable to click the 'Seterusnya' button on page {page_count}. Ending scraping.")
                 break
 
         await page.close()
