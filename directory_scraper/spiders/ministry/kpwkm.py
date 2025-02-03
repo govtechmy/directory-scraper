@@ -5,28 +5,15 @@ class KPWKMSpider(scrapy.Spider):
     allowed_domains = ["kpwkm.gov.my"]
     start_urls = ["https://www.kpwkm.gov.my/kpwkm/index.php?r=portal/left&id=Y3Fkb2hRdnQxeDJRZ3B1WjAvZVhWQT09"]
 
-    bahagian_mapping = [
-        {"division_code": "A01", "division_name": "PEJABAT MENTERI"},
-        {"division_code": "A02", "division_name": "PEJABAT TIMBALAN MENTERI"},
-        {"division_code": "A03", "division_name": "PEJABAT KETUA SETIAUSAHA"},
-        {"division_code": "A22", "division_name": "PEJABAT TIMBALAN KETUA SETIAUSAHA (OPERASI)"},
-        {"division_code": "A23", "division_name": "PEJABAT TIMBALAN KETUA SETIAUSAHA (STRATEGIK)"},
-        {"division_code": "A05", "division_name": "UNIT AUDIT DALAM"},
-        {"division_code": "A06", "division_name": "UNIT PENASIHAT UNDANG-UNDANG"},
-        {"division_code": "A07", "division_name": "UNIT KOMUNIKASI KORPORAT"},
-        {"division_code": "A20", "division_name": "UNIT INTEGRITI"},
-        {"division_code": "A09", "division_name": "BAHAGIAN DASAR DAN PERANCANGAN STRATEGIK"},
-        {"division_code": "A11", "division_name": "BAHAGIAN HUBUNGAN ANTARABANGSA"},
-        {"division_code": "A13", "division_name": "BAHAGIAN KEWANGAN"},
-        {"division_code": "A14", "division_name": "BAHAGIAN PEMBANGUNAN"},
-        {"division_code": "A15", "division_name": "BAHAGIAN PENGURUSAN SUMBER MANUSIA"},
-        {"division_code": "A16", "division_name": "BAHAGIAN KHIDMAT PENGURUSAN"},
-        {"division_code": "A17", "division_name": "BAHAGIAN PENGURUSAN MAKLUMAT"},
-        {"division_code": "A19", "division_name": "BAHAGIAN AKAUN"},
-        {"division_code": "A18", "division_name": "BAHAGIAN KOLABORASI STRATEGIK"}
-    ]
+    bahagian_mapping = []
 
     def parse(self, response):
+        self.bahagian_mapping = [
+            {"division_code": row.css("::attr(value)").get(), "division_name": row.css("::text").get()}
+            for row in response.css("select[class='form-control'][name='department_code'] option")
+            if row.css("::attr(value)").get()
+        ]
+
         for division_sort, row in enumerate(self.bahagian_mapping):
             division_code = row["division_code"]
             yield scrapy.Request(
