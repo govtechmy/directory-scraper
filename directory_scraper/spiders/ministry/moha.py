@@ -24,48 +24,22 @@ class MohaSpider(CrawlSpider):
         'CONCURRENT_REQUESTS_PER_DOMAIN': 1,  # Reduced to 1 per domain
     }
 
-    division_sort_map = {
-        "Pejabat Menteri": 1,
-        "Pejabat Timbalan Menteri": 2,
-        "Pejabat Ketua Setiausaha": 3,
-        "Pejabat Timbalan Ketua Setiausaha (Keselamatan)": 4,
-        "Pejabat Timbalan Ketua Setiausaha (Pengurusan) - Ketua Pegawai Maklumat (CIO)": 5,
-        "Pejabat Timbalan Ketua Setiausaha (Dasar dan Kawalan)": 6,
-        "Bahagian Keselamatan dan Ketenteraman Awam": 7,
-        "Bahagian Penguatkuasaan dan Kawalan": 8,
-        "Bahagian Pengurusan Teknologi Maklumat": 9,
-        "Bahagian Pengurusan Sumber Manusia": 10,
-        "Bahagian Antarabangsa": 11,
-        "Bahagian Kepenjaraan, Antidadah dan RELA": 12,
-        "Pejabat Penasihat Undang-Undang": 13,
-        "Bahagian Audit Dalam": 14,
-        "Bahagian Khidmat Pengurusan": 15,
-        "Bahagian Hal Ehwal Imigresen": 16,
-        "Pejabat Strategik Nasional (NSO) MAPO": 17,
-        "Unit Komunikasi Korporat": 18,
-        "Bahagian Perancangan Strategik": 19,
-        "Bahagian Pembangunan": 20,
-        "Bahagian Kewangan": 21,
-        "Pejabat Penapisan Filem": 22,
-        "Bahagian Akaun": 23,
-        "Bahagian Perolehan": 24,
-        "Bahagian Pendaftaran Negara dan Pertubuhan": 25,
-        "Institut Keselamatan Awam Malaysia": 26,
-        "Suruhanjaya Pasukan Polis": 27,
-        "Unit Integriti": 28,
-        "Bahagian Urus Setia Lembaga Parol": 29,
-        "Bahagian Pengurusan Kawal Selia Pencegahan Jenayah dan Keganasan": 30,
-        "Pejabat Pasukan Petugas Khas NIISe": 31,
-        "Agensi Kawalan dan Perlindungan Sempadan Malaysia (MCBA)": 32,
-        "Suruhanjaya Bebas Tatakelakuan Polis (IPCC)": 33
-    }
+    division_sort_map = {}
 
     person_sort_order = 0
 
     rules = (
+        Rule(LinkExtractor(allow=r'/index.php/ms/kdn1/dir-kdn$'), callback='extract_bahagian', follow=False),
         Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn/\d+-[^/]+$'), callback='parse_item', follow=True), # match only division-level pages. (exclude individual-level pages)
         Rule(LinkExtractor(allow=r'/index\.php/ms/kdn1/dir-kdn\?start=\d+'), follow=True),
     )
+    
+    def extract_bahagian(self, response):
+        self.division_sort_map = {
+            txt.strip(): idx+1
+            for idx, txt
+            in enumerate(response.css("div[class='categories-listdirektori'] h3 a::text").getall())
+        }
 
     def extract_page(self, url):
         parsed_url = urlparse(url)
