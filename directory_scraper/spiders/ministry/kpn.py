@@ -46,7 +46,7 @@ class KPNSpider(scrapy.Spider):
         extracted_urls = {url for url in extracted_urls if "/pejabat-" in url}
 
         # Assign `division_sort` based on `bahagian_mapping` order
-        for idx, url in enumerate(self.bahagian_mapping.keys(), start=1):
+        for idx, url in enumerate(self.bahagian_mapping.keys(), start=0):
             division_name = self.bahagian_mapping[url]
             if division_name not in self.seen_divisions:
                 self.seen_divisions[division_name] = idx
