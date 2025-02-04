@@ -3,64 +3,42 @@ import re
 
 class MOFSpider(scrapy.Spider):
     name = 'mof'
+    allowed_domains = ["www.mof.gov.my"]
+    start_urls = ["https://www.mof.gov.my/portal/ms/hubungi/direktori"]
 
-    #manual mapping of division names to sort order
-    division_sort_mapping = {
-        "Pejabat Menteri, Timbalan Menteri dan Pegawai Atasan": 1,
-        "Bahagian Antarabangsa (INT)": 2,
-        "Bahagian Cukai (TAX)": 3,
-        "Bahagian Dasar Saraan dan Pengurusan (RPM)": 4,
-        "Bahagian Fiskal dan Ekonomi (FED)": 5,
-        "Bahagian Pelaburan Strategik (SID)": 6,
-        "Bahagian Pengurusan Aset Awam (PAM)": 7,
-        "Bahagian Pengurusan Strategik Badan Berkanun (SBM)": 8,
-        "Bahagian Perolehan Kerajaan (GPD)": 9,
-        "Bahagian Kawalan Kewangan Strategik dan Korporat (BKSK)": 10,
-        "Bahagian Syarikat Pelaburan Kerajaan (GIC)": 11,
-        "Bahagian Teknologi Maklumat (ITD)": 12,
-        "Bahagian Undang-Undang (BUU)": 13,
-        "Pejabat Belanjawan Negara (NBO)": 14,
-        "Pejabat Pendaftar Agensi Pelaporan Kredit (PPK)": 15,
-        "Pejabat Pesuruhjaya Khas Cukai Pendapatan (PKCP)": 16,
-        "Tribunal Rayuan Kastam (TRK)": 17,
-        "Unit Audit Dalam Perbendaharaan (ADP)": 18,
-        "Unit Integriti (UI)": 19,
-        "Unit Pantau Madani": 20,
-        "Unit Komunikasi Korporat (UKK)": 21,
-        #"Perbendaharaan Malaysia Sabah": 22, #website is different
-        #"Perbendaharaan Malaysia Sarawak":23, #website is different
-    }
+    def start_requests(self):
+        for url in self.start_urls:
+            yield scrapy.Request(url=url, callback=self.parse)
 
     person_sort_order = 0
 
-    start_urls = [
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/menteri-dan-pegawai-atasan',
-        'https://www.mof.gov.my/portal/index.php/hubungi/direktori/int',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/tax',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/rpm',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/ed',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/sid',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/pam',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/sbm',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/gpd',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/bksk',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/gic',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/itd',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/buu',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/nbo',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/ppk',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/pkcp',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/trk',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/adp',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/ui',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/madani',
-        'https://www.mof.gov.my/portal/ms/hubungi/direktori/unit-komunikasi-korporat',
-        #'https://pmsabah.treasury.gov.my/index.php/ms/hubungi-kami', #website is different
-        #'http://pmsarawak.treasury.gov.my/?page_id=46' #website is different
-    ]
-
     def parse(self, response):
+        division_sort = 0
+        excluded_hrefs = ['https://pmsabah.treasury.gov.my/index.php/ms/hubungi-kami', 
+                          'http://pmsarawak.treasury.gov.my/?page_id=46',
+                          'https://www.mof.gov.my/portal/ms/hubungi/direktori/ppk',
+                          ]
+        
+        divisions = response.css(".sppb-addon-title.sppb-feature-box-title a")
+        for division in divisions:
+            href = division.attrib.get("href")
+            division_name = division.css("::text").get().strip()
+        
+            if href in excluded_hrefs:
+                continue
 
+            division_sort += 1
+
+            self.logger.debug(f"\nDivision_name: {division_name}, {division_sort}")
+
+            yield scrapy.Request(
+                url=response.urljoin(href),
+                callback=self.parse_item,
+                meta={'division_name': division_name, 'division_sort': division_sort}
+                )
+
+    def parse_item(self, response):
+        division_sort = response.meta.get('division_sort')  
         division = response.css('h2::text').get(default='').strip()
         division_address_block = response.xpath('//div[@class="category-desc"]//p/text()[normalize-space()]').getall()
         division_address = ' '.join([line.strip() for line in division_address_block if not any(keyword in line for keyword in ['Tel', 'Fax', ':', 'Tekan'])])
@@ -75,12 +53,9 @@ class MOFSpider(scrapy.Spider):
         if division_phone:
             division_phone = division_phone.strip().replace(':', '').replace(' ', '').strip()
 
-        current_unit = None  # initialize
-        unit_address = None  # initialize
-        unit_phone = None  # initialize
-
-        #determine the division sort order using the mapping
-        division_sort_order = self.division_sort_mapping.get(division, 999)  #use 999 as default if not found
+        current_unit = None
+        unit_address = None
+        unit_phone = None
 
         #iterate row
         rows = response.css('table.table tbody tr')
@@ -122,7 +97,7 @@ class MOFSpider(scrapy.Spider):
                 'org_id': "MOF",
                 'org_name': "KEMENTERIAN KEWANGAN MALAYSIA",
                 'org_type': 'ministry',
-                'division_sort': division_sort_order,
+                'division_sort': division_sort,
                 'position_sort_order': self.person_sort_order,
                 'division_name': division if division else None,
                 #'division_address': division_address if division_address else None,
