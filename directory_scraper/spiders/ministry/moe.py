@@ -7,8 +7,8 @@ class MOESpider(scrapy.Spider):
     allowed_domains = ["direktori.moe.gov.my"]
     start_urls = ["https://direktori.moe.gov.my/ajax/public/getdir.php?id=1&textsearch=&selectsearch="]
 
-    none_handler = lambda self, condition: result.strip() if (result := condition) else None
-    email_handler = lambda self, condition: (result if ("@" in result) else f"{result}@moe.gov.my") if (result := condition) else None
+    none_handler = lambda self, condition: txt_lst[0].strip() if (txt_lst := [datum for datum in result if datum.strip()] if (result := condition) else None) else None
+    email_handler = lambda self, condition, email_domain: (result if ("@" in result) else f"{result}{email_domain}") if (result := condition) else None
 
     division_dict = dict()
     division_mapping = []
@@ -61,10 +61,7 @@ class MOESpider(scrapy.Spider):
                 self.division_mapping.extend(self.division_dict[page_key])
 
             for division_order, row in enumerate(self.division_mapping):
-                if division_order not in [10, 34, 76]:
-                    continue
                 url = f"https://direktori.moe.gov.my/ajax/public/getdir.php?id={row['page_id']}&textsearch=&selectsearch={row['division_code']}"
-                print("#"*30, "\n\n", f"{division_order}\n{row}", "\n\n", "#"*30)
                 yield scrapy.Request(
                     url=url,
                     callback=self.parse_item,
@@ -80,44 +77,44 @@ class MOESpider(scrapy.Spider):
                 )
 
     async def parse_item(self, response):
-
         page = response.meta["playwright_page"]
         division = response.meta["division"]
         division_sort_order = response.meta["division_sort_order"]
         
         await page.click("input[type='checkbox']")
-
-        person_sort_order = 1
+        # yield {"url": response.url, "body": response.text}
+        person_sort_order = 0
         current_unit = None
         current_subunit = None
-        for table in response.css("div[class='panel panel-default']"):
-            if unit_name := table.xpath("div[@class='panel-heading']/text()").getall()[-1].strip():
-                current_unit = unit_name
-            if table.xpath("div[@class='panel-heading']").attrib.get("href"):
-                for top_row in table.css(f"div > div > table[class='table table-striped table-bordered table-hover table-responsive']:nth-child(1)").css("tbody > tr"):
-                    if not top_row.css("td:nth-child(2)::text"):
-                        continue
-                    yield {
-                        "org_sort": 21,
-                        "org_id": "MOE",
-                        "org_name": "KEMENTERIAN PENDIDIKAN",
-                        "org_type": "ministry",
-                        "division_name": division,
-                        "division_sort": division_sort_order,
-                        "subdivision_name": current_unit,
-                        "position_sort": person_sort_order,
-                        "person_name": self.none_handler(top_row.css("td:nth-child(2)::text").get()),
-                        "position_name": self.none_handler(top_row.css("td:nth-child(3)::text").get()),
-                        "person_phone": self.none_handler(top_row.css("td:nth-child(5)::text").get()),
-                        "person_email": self.email_handler(top_row.css("td:nth-child(4)::text").get()),
-                        "person_fax": None,
-                        "parent_org_id": None
-                    }
-            else:
-                for row in table.css("div[class='row'] > div > div > div[class='panel panel-default']"):
-                    if subunit_name := row.css("h4 > a::text").get().strip():
-                        current_subunit = subunit_name
-                    for data_row in row.css("table > tbody > tr"):
+        for table in response.css("div[class='panel-group'] > div[class='panel panel-default']"):
+            current_unit = self.none_handler(table.xpath("div[@class='panel-heading']/text()").getall())
+            unit_data = table.xpath("div[starts-with(@class, 'panel-collapse collapse')]/div[@class='panel-body']")
+            head_email_domain = self.none_handler(unit_data.xpath("table/thead/tr[1]/th[4]/span/text()").getall())[1:-1]
+            for head_row in unit_data.xpath("table/tbody/tr"):
+                person_sort_order += 1
+                yield {
+                    "org_sort": 21,
+                    "org_id": "MOE",
+                    "org_name": "KEMENTERIAN PENDIDIKAN",
+                    "org_type": "ministry",
+                    "division_name": division,
+                    "division_sort": division_sort_order,
+                    "subdivision_name": current_unit,
+                    "position_sort": person_sort_order,
+                    "person_name": self.none_handler(head_row.xpath("td[2]/text()").getall()),
+                    "position_name": self.none_handler(head_row.xpath("td[3]/text()").getall()),
+                    "person_phone": self.none_handler(head_row.xpath("td[4]/text()").getall()),
+                    "person_email": self.email_handler(head_row.xpath("td[5]/text()").getall(), head_email_domain),
+                    "person_fax": None,
+                    "parent_org_id": None
+                }
+
+            if unit_staff := unit_data.xpath("div//div[@role='tablist']/div[@class='panel panel-default']"):
+                for subunit_table in unit_staff:
+                    current_subunit = self.none_handler(subunit_table.xpath("div[@class='panel-heading']/h4/a/text()").getall())
+                    email_domain = self.none_handler(subunit_table.xpath("div[2]//table/thead/tr[1]/th[4]/span/text()").getall())[1:-1]
+                    for subunit_row in subunit_table.xpath("div[2]//table/tbody/tr"):
+                        person_sort_order += 1
                         yield {
                             "org_sort": 21,
                             "org_id": "MOE",
@@ -127,10 +124,10 @@ class MOESpider(scrapy.Spider):
                             "division_sort": division_sort_order,
                             "subdivision_name": f"{current_unit} > {current_subunit}",
                             "position_sort": person_sort_order,
-                            "person_name": self.none_handler(data_row.css("td:nth-child(2)::text").get()),
-                            "position_name": self.none_handler(data_row.css("td:nth-child(3)::text").get()),
-                            "person_phone": self.none_handler(data_row.css("td:nth-child(5)::text").get()),
-                            "person_email": self.email_handler(data_row.css("td:nth-child(4)::text").get()),
+                            "person_name": self.none_handler(subunit_row.xpath("td[2]/text()").getall()),
+                            "position_name": self.none_handler(subunit_row.xpath("td[3]/text()").getall()),
+                            "person_phone": self.email_handler(subunit_row.xpath("td[4]/text()").getall(), email_domain),
+                            "person_email": self.none_handler(subunit_row.xpath("td[5]/text()").getall()),
                             "person_fax": None,
                             "parent_org_id": None
                         }
