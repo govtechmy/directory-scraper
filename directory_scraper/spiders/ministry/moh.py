@@ -10,56 +10,40 @@ class MOHSpider(scrapy.Spider):
     
     none_handler = lambda self, condition: result if (result := condition) else None
     
-    division_mapping = [
-        {"division_name": "Bahagian Akaun", "division_code": "29", "division_sort_order": 39},
-        {"division_name": "Bahagian Amalan Perubatan", "division_code": "2", "division_sort_order": 26},
-        {"division_name": "Bahagian Dasar Dan Hubungan Antarabangsa", "division_code": "30", "division_sort_order": 40},
-        {"division_name": "Bahagian Kawalan Penyakit", "division_code": "3", "division_sort_order": 27},
-        {"division_name": "Bahagian Kawalselia Radiasi Perubatan", "division_code": "86", "division_sort_order": 22},
-        {"division_name": "Bahagian Kejururawatan", "division_code": "13", "division_sort_order": 36},
-        {"division_name": "Bahagian Kewangan", "division_code": "31", "division_sort_order": 41},
-        {"division_name": "Bahagian Khidmat Pengurusan", "division_code": "7", "division_sort_order": 31},
-        {"division_name": "Bahagian Pemakanan", "division_code": "72", "division_sort_order": 16},
-        {"division_name": "Bahagian Pembangunan", "division_code": "81", "division_sort_order": 19},
-        {"division_name": "Bahagian Pembangunan Kesihatan Keluarga", "division_code": "8", "division_sort_order": 32},
-        {"division_name": "Bahagian Pembangunan Kompetensi", "division_code": "32", "division_sort_order": 18},
-        {"division_name": "Bahagian Pendidikan Kesihatan", "division_code": "9", "division_sort_order": 33},
-        {"division_name": "Bahagian Pengurusan Latihan", "division_code": "33", "division_sort_order": 11},
-        {"division_name": "Bahagian Pengurusan Maklumat", "division_code": "12", "division_sort_order": 35},
-        {"division_name": "Bahagian Perancangan", "division_code": "80", "division_sort_order": 10},
-        {"division_name": "Bahagian Perkembangan Kesihatan Awam", "division_code": "85", "division_sort_order": 21},
-        {"division_name": "Bahagian Perkembangan Perubatan", "division_code": "11", "division_sort_order": 25},
-        {"division_name": "Bahagian Perkhidmatan Kejuruteraan", "division_code": "4", "division_sort_order": 28},
-        {"division_name": "Bahagian Perolehan Dan Penswastaan", "division_code": "34", "division_sort_order": 12},
-        {"division_name": "Bahagian Perubatan Tradisional Dan Komplementari", "division_code": "35", "division_sort_order": 13},
-        {"division_name": "Bahagian Sains Kesihatan Bersekutu", "division_code": "74", "division_sort_order": 17},
-        {"division_name": "Bahagian Sumber Manusia", "division_code": "36", "division_sort_order": 14},
-        {"division_name": "Cawangan Audit Dalam", "division_code": "1", "division_sort_order": 34},
-        {"division_name": "Health Performance Unit (HPU)", "division_code": "124", "division_sort_order": 23},
-        {"division_name": "Pejabat Ketua Pengarah Kesihatan", "division_code": "17", "division_sort_order": 6},
-        {"division_name": "Pejabat Ketua Setiausaha", "division_code": "18", "division_sort_order": 3},
-        {"division_name": "Pejabat Menteri Kesihatan", "division_code": "19", "division_sort_order": 1},
-        {"division_name": "Pejabat Penasihat Undang-Undang", "division_code": "20", "division_sort_order": 37},
-        {"division_name": "Pejabat Timbalan Ketua Pengarah Kesihatan (Kesihatan Awam)", "division_code": "63", "division_sort_order": 8},
-        {"division_name": "Pejabat Timbalan Ketua Pengarah Kesihatan (Penyelidikan & Sokongan Teknikal)", "division_code": "64", "division_sort_order": 9},
-        {"division_name": "Pejabat Timbalan Ketua Pengarah Kesihatan (Perubatan)", "division_code": "24", "division_sort_order": 7},
-        {"division_name": "Pejabat Timbalan Ketua Setiausaha (Kewangan)", "division_code": "25", "division_sort_order": 5},
-        {"division_name": "Pejabat Timbalan Ketua Setiausaha (Pengurusan)", "division_code": "26", "division_sort_order": 4},
-        {"division_name": "Pejabat Timbalan Menteri Kesihatan", "division_code": "27", "division_sort_order": 2},
-        {"division_name": "Program Keselamatan Dan Kualiti Makanan", "division_code": "5", "division_sort_order": 29},
-        {"division_name": "Program Kesihatan Pergigian", "division_code": "6", "division_sort_order": 30},
-        {"division_name": "Program Perkhidmatan Farmasi", "division_code": "28", "division_sort_order": 38},
-        {"division_name": "Pusat Kecemerlangan Kesihatan Mental Kebangsaan (NCEMH)", "division_code": "125", "division_sort_order": 24},
-        {"division_name": "Unit Integriti", "division_code": "83", "division_sort_order": 20},
-        {"division_name": "Unit Komunikasi Korporat", "division_code": "69", "division_sort_order": 15}
-    ]
-
+    division_mapping = []
 
     def start_requests(self):
+        yield scrapy.Request(
+            url="https://www.moh.gov.my/index.php/edirectory/edirectory_list/1?mid=92",
+            callback=self.extract_bahagian,
+            meta={
+                "playwright": True,
+                "playwright_include_page": True,
+                "playwright_page_methods": [
+                    PageMethod("wait_for_selector", "select[name='division'][id='division-search']"),
+                ]
+            }
+        )
+
+    def extract_bahagian(self, response):
+        select_dict = {
+            row.css("::text").get(): division_code
+            for row in response.xpath("//select[@name='division']/option")
+            if (division_code := int(row.attrib.get("value")))
+        }
+        self.division_mapping = [
+            {
+                "division_name": data.css("a::text").get(),
+                "division_code": data.css("::attr(href)").get().rsplit("/", maxsplit=2)[-2],
+                "division_sort_order": idx+1
+            }
+            for idx, data in enumerate(response.css("div[id^='tabs'] > div[class='scrollbox lvl-content']"))
+            if (href.endswith("/1") if (href := data.css("a::attr(href)").get()) else False)
+        ]
+        
         for row in self.division_mapping:
             code = row["division_code"]
             url = f"{self.start_urls[0]}/{code}/1"
-            #print(f"Starting scrape from: {url}")
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
