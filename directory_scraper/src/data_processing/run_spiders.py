@@ -239,6 +239,30 @@ class RunSpiderPipeline:
 
         item_count = spider.crawler.stats.get_value('item_scraped_count', 0)
 
+        datetime_created = end_time.isoformat()
+
+        spider_run_data = {
+            "spider_name": spider.name,
+            "total_records": item_count,
+            "duration": str(duration),
+            "datetime_created": datetime_created
+        }
+
+        summary_file = os.path.join(LOG_DIR, f"spider_summary.json")
+
+        if os.path.exists(summary_file):
+            try:
+                with open(summary_file, "r") as f:
+                    existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = []
+        else:
+            existing_data = []
+
+        existing_data.append(spider_run_data)
+        with open(summary_file, "w") as f:
+            json.dump(existing_data, f, indent=4)
+
         if spider.name in timed_out_spiders:
             # Ensure timed-out spiders are not processed further
             logger.warning(f"Spider '{spider.name}' was previously timed out. No data saved.")
@@ -264,7 +288,7 @@ class RunSpiderPipeline:
             if DISCORD_WEBHOOK_URL:
                 send_discord_notification(f"🔴 Spider '{spider.name}' finished without results. Scraped {item_count} records. [Duration: {duration}]", DISCORD_WEBHOOK_URL, THREAD_ID)
 
-def run_spiders(spider_list, output_folder, backup_folder, max_retries=2, timeout=900): # timeout (seconds)
+def run_spiders(spider_list, output_folder, backup_folder, max_retries=0, timeout=900): # timeout (seconds)
     """
     Run spiders with retry logic for failures and enforce a timeout for all spiders.
 
