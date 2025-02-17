@@ -9,14 +9,14 @@ class MOHRSpider(scrapy.Spider):
 
     def start_requests(self):
         main_url = "https://app1.mohr.gov.my/staff/staff_name.php?"
-        print("\n", "#"*30, "STARTING REQUESTS\n\n", main_url, "#"*30, "\n", sep="\n")
+        self.logger.debug("\n", "#"*30, "STARTING REQUESTS\n\n", main_url, "#"*30, "\n", sep="\n")
         yield scrapy.Request(
             url=main_url,
             callback=self.extract_divisions
         )
 
     def extract_divisions(self, response):
-        print("\n", "#"*30, "EXTRACTING DIVISIONS\n\n", response.url, "#"*30, "\n", sep="\n")
+        self.logger.debug("\n", "#"*30, "EXTRACTING DIVISIONS\n\n", response.url, "#"*30, "\n", sep="\n")
         division_options = {
             row.css("::text").get().upper().strip(): row.attrib.get("value", None)
             for row in response.css("select[id='jabatan'] option")
@@ -49,7 +49,7 @@ class MOHRSpider(scrapy.Spider):
                 else:
                     hierarchy[row_txt] = temp_division
 
-        print("\n", "#"*30, "EXTRACTING HIERARCHY\n\n", hierarchy, "\n\nMAPPING DIVISION LIST\n\n", division_lst, "#"*30, "\n", sep="\n")
+        self.logger.debug("\n", "#"*30, "EXTRACTING HIERARCHY\n\n", hierarchy, "\n\nMAPPING DIVISION LIST\n\n", division_lst, "#"*30, "\n", sep="\n")
         
         # Matching Directory Division name with URL value
         for division_sort, name in enumerate(division_lst):
@@ -65,7 +65,7 @@ class MOHRSpider(scrapy.Spider):
             
             division_url = f"https://app1.mohr.gov.my/staff/staff_name.php?department={max_match['name']}"
             meta_dict = {"division_sort": division_sort, "division_name": name, "hierarchy": hierarchy}
-            print("\n", "#"*30, "PASSING DIVISION URL\n", division_url, "\n\nPASSING META DICTIONARY\n", meta_dict, "#"*30, "\n", sep="\n")
+            self.logger.debug("\n", "#"*30, "PASSING DIVISION URL\n", division_url, "\n\nPASSING META DICTIONARY\n", meta_dict, "#"*30, "\n", sep="\n")
             yield scrapy.Request(
                 url=division_url,
                 callback=self.parse_item,
@@ -78,7 +78,7 @@ class MOHRSpider(scrapy.Spider):
         team_name = response.meta["division_name"]
         division_name = hierarchy.get(team_name, team_name)
         unit_name = team_name if division_name != team_name else None
-        print("\n", "#"*30, "PARSING DIVISION\n\n", division_name, "#"*30, "\n", sep="\n")
+        self.logger.debug("\n", "#"*30, "PARSING DIVISION\n\n", division_name, "#"*30, "\n", sep="\n")
 
         for position_sort, row in enumerate(response.css("tbody > tr")):
             phone = self.none_handler(row.xpath("td[5]/text()").get())
