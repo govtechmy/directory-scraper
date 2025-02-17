@@ -326,13 +326,13 @@ def upload_clean_data_to_es(files_to_upload, log_changes=True):
                     all_summaries.append(summary)
 
                 except Exception as e:
-                    print(f"Error processing org_id {org_id} in file {file_name}: {e}")
-                    all_summaries.append(f"🛢️ {org_id} - Failed: {e}")
+                    print(f"❗Error processing org_id {org_id} in file {file_name}: {e}")
+                    all_summaries.append(f"❗🛢️ {org_id} - Failed: {e}")
                     continue  # Skip to the next org_id
 
         except Exception as e:
             print(f"Error processing file {file_path}: {e}")
-            all_summaries.append(f"-- {file_path} - Failed: {e}")
+            all_summaries.append(f"❗-- {file_path} - Failed: {e}")
             continue  # Skip to the next file
 
     # Save the changes log to a JSON file
