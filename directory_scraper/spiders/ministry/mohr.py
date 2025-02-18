@@ -59,7 +59,9 @@ class MOHRSpider(scrapy.Spider):
                     max_match["name"] = key
                     max_match["length"] = match_len
             
-            division_url = f"https://app1.mohr.gov.my/staff/staff_name.php?department={max_match['name']}"
+            division_code = division_options.get(max_match['name'])
+            if division_code:
+                division_url = f"https://app1.mohr.gov.my/staff/staff_name.php?department={division_code}"
             meta_dict = {"division_sort": division_sort, "division_name": name, "hierarchy": hierarchy}
             yield scrapy.Request(
                 url=division_url,
