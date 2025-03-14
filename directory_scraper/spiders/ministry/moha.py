@@ -133,3 +133,5 @@ class MohaSpider(CrawlSpider):
                 #'url': response.url,
                 #'page_number': page_number,
             }
+
+            # print(f"\nITEM FOUND:{item}")
