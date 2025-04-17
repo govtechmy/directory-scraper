@@ -7,10 +7,6 @@ import os
 import json
 import tempfile
 
-import os
-import json
-import tempfile
-
 def get_credentials():
     """
     Retrieve Google service account credentials from the environment variable.
